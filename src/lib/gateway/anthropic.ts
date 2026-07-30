@@ -388,6 +388,17 @@ export function transformOpenAIStreamToAnthropic(
             // FIX #14: Only emit close events once.
             if (!streamClosed) {
               streamClosed = true;
+              // Close any open content block before final events
+              if (currentBlockType != null) {
+                controller.enqueue(
+                  encoder.encode(
+                    emit("content_block_stop", {
+                      type: "content_block_stop",
+                      index: blockIndex,
+                    }),
+                  ),
+                );
+              }
               controller.enqueue(
                 encoder.encode(
                   emit("message_delta", {
@@ -555,6 +566,15 @@ function translateChunk(
   if (typeof delta.content === "string" && delta.content.length > 0) {
     // Start a text block if we're currently in tool_use or nothing
     if (state.currentBlockType !== "text") {
+      // Close previous block if open
+      if (state.currentBlockType != null) {
+        lines.push(
+          emit("content_block_stop", {
+            type: "content_block_stop",
+            index: state.blockIndex,
+          }),
+        );
+      }
       const idx = state.blockIndex + 1;
       lines.push(
         emit("content_block_start", {
@@ -571,7 +591,7 @@ function translateChunk(
     lines.push(
       emit("content_block_delta", {
         type: "content_block_delta",
-        index: state.currentBlockType === "text" ? state.blockIndex : state.blockIndex + 1,
+        index: state.currentBlockType === "text" ? (next.blockIndex ?? state.blockIndex) : state.blockIndex + 1,
         delta: { type: "text_delta", text: delta.content },
       }),
     );
@@ -584,6 +604,15 @@ function translateChunk(
   if (Array.isArray(delta.tool_calls)) {
     for (const tc of delta.tool_calls) {
       if (tc.id && state.toolCallId !== tc.id) {
+        // Close previous block if open
+        if (state.currentBlockType != null) {
+          lines.push(
+            emit("content_block_stop", {
+              type: "content_block_stop",
+              index: state.blockIndex,
+            }),
+          );
+        }
         // Start a new tool_use block — input starts empty, built via input_json_delta
         const idx = (next.blockIndex ?? state.blockIndex) + 1;
         lines.push(
