@@ -333,6 +333,7 @@ export function transformOpenAIStreamToAnthropic(
   let toolCallId: string | null = null;
   let started = false;
   let streamClosed = false; // FIX #14: Prevent duplicate close events.
+  let stopReason: AnthropicStopReason = null;
 
   const emit = (event: string, data: unknown): string =>
     `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
@@ -360,7 +361,7 @@ export function transformOpenAIStreamToAnthropic(
               encoder.encode(
                 emit("message_delta", {
                   type: "message_delta",
-                  delta: { stop_reason: "end_turn", stop_sequence: null },
+                  delta: { stop_reason: stopReason ?? "end_turn", stop_sequence: null },
                   usage: { output_tokens: outputTokens },
                 }),
               ),
@@ -391,7 +392,7 @@ export function transformOpenAIStreamToAnthropic(
                 encoder.encode(
                   emit("message_delta", {
                     type: "message_delta",
-                    delta: { stop_reason: "end_turn", stop_sequence: null },
+                    delta: { stop_reason: stopReason ?? "end_turn", stop_sequence: null },
                     usage: { output_tokens: outputTokens },
                   }),
                 ),
@@ -419,6 +420,7 @@ export function transformOpenAIStreamToAnthropic(
               started,
               inputTokens,
               outputTokens,
+              stopReason,
             },
           );
           for (const e of events.lines) {
@@ -433,6 +435,7 @@ export function transformOpenAIStreamToAnthropic(
           started = events.state.started ?? started;
           if (events.state.inputTokens != null) inputTokens = events.state.inputTokens;
           if (events.state.outputTokens != null) outputTokens = events.state.outputTokens;
+          if (events.state.stopReason != null) stopReason = events.state.stopReason;
         }
       } catch (err) {
         controller.error(err);
@@ -465,6 +468,8 @@ interface OpenAIStreamChunk {
   usage?: { prompt_tokens?: number; completion_tokens?: number; total_tokens?: number };
 }
 
+type AnthropicStopReason = "end_turn" | "tool_use" | "max_tokens" | "stop_sequence" | null;
+
 interface TranslationState {
   messageId: string;
   modelPublicId: string;
@@ -475,6 +480,7 @@ interface TranslationState {
   started: boolean;
   inputTokens: number;
   outputTokens: number;
+  stopReason: AnthropicStopReason;
 }
 
 interface TranslationStateUpdate {
@@ -486,6 +492,14 @@ interface TranslationStateUpdate {
   started?: boolean;
   inputTokens?: number;
   outputTokens?: number;
+  stopReason?: AnthropicStopReason;
+}
+
+function mapFinishReason(reason: string | null): AnthropicStopReason {
+  if (reason === "tool_calls") return "tool_use";
+  if (reason === "length") return "max_tokens";
+  if (reason === "stop") return "end_turn";
+  return "end_turn";
 }
 
 function translateChunk(
@@ -530,6 +544,11 @@ function translateChunk(
   const choice = chunk.choices?.[0];
   if (!choice) return { lines, state: next };
 
+  // Track finish_reason from upstream and map to Anthropic stop_reason
+  if (choice.finish_reason) {
+    next.stopReason = mapFinishReason(choice.finish_reason);
+  }
+
   const delta = choice.delta ?? {};
 
   // Text delta
@@ -565,14 +584,8 @@ function translateChunk(
   if (Array.isArray(delta.tool_calls)) {
     for (const tc of delta.tool_calls) {
       if (tc.id && state.toolCallId !== tc.id) {
-        // Start a new tool_use block
+        // Start a new tool_use block — input starts empty, built via input_json_delta
         const idx = (next.blockIndex ?? state.blockIndex) + 1;
-        let input: unknown = {};
-        try {
-          input = JSON.parse(tc.function?.arguments ?? "{}");
-        } catch {
-          input = {};
-        }
         lines.push(
           emit("content_block_start", {
             type: "content_block_start",
@@ -581,7 +594,7 @@ function translateChunk(
               type: "tool_use",
               id: tc.id,
               name: tc.function?.name ?? "",
-              input,
+              input: {},
             },
           }),
         );

@@ -16,6 +16,13 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -53,6 +60,9 @@ export function ApiKeysClient({ initialKeys }: { initialKeys: ApiKey[] }) {
   const [copied, setCopied] = React.useState(false);
   const [busyId, setBusyId] = React.useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = React.useState<string | null>(null);
+  const [copiedUrl, setCopiedUrl] = React.useState<string | null>(null);
+
+  const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
 
   const form = useForm<z.infer<typeof Schema>>({
     resolver: zodResolver(Schema) as never,
@@ -113,6 +123,12 @@ export function ApiKeysClient({ initialKeys }: { initialKeys: ApiKey[] }) {
     setTimeout(() => setCopied(false), 1500);
   };
 
+  const copyUrl = async (url: string, label: string) => {
+    await navigator.clipboard.writeText(url);
+    setCopiedUrl(label);
+    setTimeout(() => setCopiedUrl(null), 1500);
+  };
+
   return (
     <div className="flex flex-col gap-4">
       <Dialog open={Boolean(newKey)} onOpenChange={(v) => !v && setNewKey(null)}>
@@ -146,6 +162,53 @@ export function ApiKeysClient({ initialKeys }: { initialKeys: ApiKey[] }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm font-medium">Base URLs</CardTitle>
+          <CardDescription>
+            Point your client at one of these endpoints.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex items-center gap-2">
+            <span className="w-24 shrink-0 text-xs font-medium text-muted-foreground">OpenAI</span>
+            <code className="flex-1 truncate rounded bg-muted px-2 py-1.5 font-mono text-xs">
+              {baseUrl}/v1
+            </code>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="shrink-0"
+              onClick={() => copyUrl(`${baseUrl}/v1`, "openai")}
+            >
+              {copiedUrl === "openai" ? (
+                <><CheckIcon className="size-3.5 mr-1" /> Copied</>
+              ) : (
+                <><CopyIcon className="size-3.5 mr-1" /> Copy</>
+              )}
+            </Button>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="w-24 shrink-0 text-xs font-medium text-muted-foreground">Anthropic</span>
+            <code className="flex-1 truncate rounded bg-muted px-2 py-1.5 font-mono text-xs">
+              {baseUrl}/anthropic/v1
+            </code>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="shrink-0"
+              onClick={() => copyUrl(`${baseUrl}/anthropic/v1`, "anthropic")}
+            >
+              {copiedUrl === "anthropic" ? (
+                <><CheckIcon className="size-3.5 mr-1" /> Copied</>
+              ) : (
+                <><CopyIcon className="size-3.5 mr-1" /> Copy</>
+              )}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="flex justify-end">
         <Dialog open={open} onOpenChange={setOpen}>
