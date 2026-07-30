@@ -160,6 +160,8 @@ export function ModelFormDialog({
     }
   };
 
+  const modelType = form.watch("type");
+  const isTokenModel = modelType === "chat";
   const tagsStr = form.watch("tags").join(", ");
 
   return (
@@ -253,26 +255,31 @@ export function ModelFormDialog({
 
             <TabsContent value="pricing">
               <FieldGroup className="grid grid-cols-2 gap-4 mt-4">
-                <Field>
-                  <FieldLabel>Input ($/1M tokens)</FieldLabel>
-                  <Input type="number" step="0.0001" {...form.register("pricing.per1MInput")} />
-                </Field>
-                <Field>
-                  <FieldLabel>Output ($/1M tokens)</FieldLabel>
-                  <Input type="number" step="0.0001" {...form.register("pricing.per1MOutput")} />
-                </Field>
-                <Field>
-                  <FieldLabel>Cache read ($/1M tokens)</FieldLabel>
-                  <Input type="number" step="0.0001" {...form.register("pricing.per1MCacheRead")} />
-                </Field>
-                <Field>
-                  <FieldLabel>Cache write ($/1M tokens)</FieldLabel>
-                  <Input type="number" step="0.0001" {...form.register("pricing.per1MCacheWrite")} />
-                </Field>
-                <Field className="col-span-2">
-                  <FieldLabel>Per-unit price (image/TTS/embedding)</FieldLabel>
-                  <Input type="number" step="0.0001" {...form.register("pricing.perUnit")} />
-                </Field>
+                {isTokenModel ? (
+                  <>
+                    <Field>
+                      <FieldLabel>Input ($/1M tokens)</FieldLabel>
+                      <Input type="number" step="0.0001" {...form.register("pricing.per1MInput")} />
+                    </Field>
+                    <Field>
+                      <FieldLabel>Output ($/1M tokens)</FieldLabel>
+                      <Input type="number" step="0.0001" {...form.register("pricing.per1MOutput")} />
+                    </Field>
+                    <Field>
+                      <FieldLabel>Cache read ($/1M tokens)</FieldLabel>
+                      <Input type="number" step="0.0001" {...form.register("pricing.per1MCacheRead")} />
+                    </Field>
+                    <Field>
+                      <FieldLabel>Cache write ($/1M tokens)</FieldLabel>
+                      <Input type="number" step="0.0001" {...form.register("pricing.per1MCacheWrite")} />
+                    </Field>
+                  </>
+                ) : (
+                  <Field className="col-span-2">
+                    <FieldLabel>Per-unit price (per image/request/second)</FieldLabel>
+                    <Input type="number" step="0.0001" {...form.register("pricing.perUnit")} />
+                  </Field>
+                )}
               </FieldGroup>
             </TabsContent>
 

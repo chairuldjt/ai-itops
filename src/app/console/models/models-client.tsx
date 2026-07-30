@@ -172,7 +172,7 @@ export function ModelsClient({ models }: Props) {
                         </span>
                       </div>
                     )}
-                    {m.pricing.perUnit != null && (
+                    {m.type !== "chat" && m.pricing.perUnit != null && (
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Per Unit</span>
                         <span className="font-mono">

@@ -112,7 +112,7 @@ function ModelCard({ model }: { model: Model }) {
               /1M
             </span>
           )}
-          {pricing.perUnit != null && (
+          {model.type !== "chat" && pricing.perUnit != null && (
             <span>
               Unit:{" "}
               <span className="text-foreground">
@@ -122,7 +122,7 @@ function ModelCard({ model }: { model: Model }) {
           )}
           {pricing.per1MInput == null &&
             pricing.per1MOutput == null &&
-            pricing.perUnit == null && (
+            (model.type === "chat" || pricing.perUnit == null) && (
               <span className="italic">Pricing TBD</span>
             )}
         </div>

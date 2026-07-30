@@ -96,7 +96,7 @@ export function ModelsTable({ initialModels }: { initialModels: Model[] }) {
                 {p.per1MOutput != null && (
                   <div>out: ${p.per1MOutput.toFixed(2)}</div>
                 )}
-                {p.perUnit != null && <div>unit: ${p.perUnit.toFixed(4)}</div>}
+                {m.type !== "chat" && p.perUnit != null && <div>unit: ${p.perUnit.toFixed(4)}</div>}
               </TableCell>
               <TableCell className="text-xs">
                 <div className="flex flex-wrap gap-1">
