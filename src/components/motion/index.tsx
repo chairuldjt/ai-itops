@@ -7,6 +7,13 @@ const fadeUp: Variants = {
   visible: { opacity: 1, y: 0 },
 };
 
+/** Hook: returns true only after client-side hydration is complete */
+function useHasMounted() {
+  const [mounted, setMounted] = React.useState(false);
+  React.useEffect(() => setMounted(true), []);
+  return mounted;
+}
+
 export function FadeIn({
   children,
   className,
@@ -20,9 +27,12 @@ export function FadeIn({
   y?: number;
 }) {
   const prefersReduced = useReducedMotion();
-  if (prefersReduced) {
+  const mounted = useHasMounted();
+
+  if (prefersReduced || !mounted) {
     return <div className={className}>{children as React.ReactNode}</div>;
   }
+
   return (
     <motion.div
       initial={{ opacity: 0, y }}
@@ -44,9 +54,12 @@ export function FadeInStagger({
   ...props
 }: React.ComponentProps<typeof motion.div> & { stagger?: number }) {
   const prefersReduced = useReducedMotion();
-  if (prefersReduced) {
+  const mounted = useHasMounted();
+
+  if (prefersReduced || !mounted) {
     return <div className={className}>{children as React.ReactNode}</div>;
   }
+
   return (
     <motion.div
       initial="hidden"
@@ -67,9 +80,11 @@ export function FadeInItem({
   ...props
 }: React.ComponentProps<typeof motion.div>) {
   const prefersReduced = useReducedMotion();
+
   if (prefersReduced) {
     return <div className={className}>{children as React.ReactNode}</div>;
   }
+
   return (
     <motion.div variants={fadeUp} className={className} {...props}>
       {children}
@@ -88,9 +103,12 @@ export function SlideIn({
   delay?: number;
 }) {
   const prefersReduced = useReducedMotion();
-  if (prefersReduced) {
+  const mounted = useHasMounted();
+
+  if (prefersReduced || !mounted) {
     return <div className={className}>{children as React.ReactNode}</div>;
   }
+
   const dirs = {
     left: { x: -40, y: 0 },
     right: { x: 40, y: 0 },
@@ -118,9 +136,12 @@ export function ScaleIn({
   ...props
 }: React.ComponentProps<typeof motion.div> & { delay?: number }) {
   const prefersReduced = useReducedMotion();
-  if (prefersReduced) {
+  const mounted = useHasMounted();
+
+  if (prefersReduced || !mounted) {
     return <div className={className}>{children as React.ReactNode}</div>;
   }
+
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.92 }}
