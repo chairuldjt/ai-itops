@@ -368,7 +368,7 @@ function UniqueFeature() {
 
             <div className="border-t md:border-t-0 md:border-l bg-muted/30 p-6 md:p-8">
               <div className="text-xs text-muted-foreground mb-2 font-mono">
-                // opencode sends an image to a text-only model
+                {"// opencode sends an image to a text-only model"}
               </div>
               <pre className="overflow-x-auto rounded-xl bg-card p-4 text-[12px] leading-relaxed font-mono ring-1 ring-border">
 {`{
@@ -385,7 +385,7 @@ function UniqueFeature() {
 }`}
               </pre>
               <div className="mt-4 text-xs text-muted-foreground mb-2 font-mono">
-                // gateway strips the image, model replies:
+                {"// gateway strips the image, model replies:"}
               </div>
               <pre className="overflow-x-auto rounded-xl bg-card p-4 text-[12px] leading-relaxed font-mono ring-1 ring-border">
 {`{ "choices": [{

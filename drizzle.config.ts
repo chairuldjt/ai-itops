@@ -1,7 +1,7 @@
-// Patch BigInt so drizzle-kit's JSON.stringify can serialize it.
+// FIX #21: Serialize BigInt to string to avoid precision loss for values > 2^53.
 // @ts-expect-error extending global
 BigInt.prototype.toJSON = function () {
-  return Number(this);
+  return this.toString();
 };
 
 import "dotenv/config";

@@ -42,9 +42,11 @@ import {
 
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme();
-  const [mounted, setMounted] = React.useState(false);
-
-  React.useEffect(() => setMounted(true), []);
+  const mounted = React.useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
 
   // Prevent hydration mismatch — render empty until mounted
   if (!mounted) {
@@ -232,18 +234,20 @@ function GuestActions({ variant }: { variant: "desktop" | "mobile" }) {
 /*                    AUTHENTICATED ACTIONS (DESKTOP)                 */
 /* ------------------------------------------------------------------ */
 
-function AuthenticatedActions({ user }: { user: UserData }) {
+function AuthenticatedActions({ user, hideLinks = [] }: { user: UserData; hideLinks?: string[] }) {
   return (
     <div className="flex items-center gap-1">
-      <Link
-        href="/console/dashboard"
-        className={cn(
-          buttonVariants({ size: "sm" }),
-          "rounded-full px-4 text-xs"
-        )}
-      >
-        Console
-      </Link>
+      {!hideLinks.includes("Console") && (
+        <Link
+          href="/console/dashboard"
+          className={cn(
+            buttonVariants({ size: "sm" }),
+            "rounded-full px-4 text-xs"
+          )}
+        >
+          Console
+        </Link>
+      )}
       <UserDropdown user={user} side="bottom" />
     </div>
   );
@@ -262,10 +266,12 @@ function MobileMenu({
 }) {
   const [open, setOpen] = React.useState(false);
   const pathname = usePathname();
+  const [prevPathname, setPrevPathname] = React.useState(pathname);
 
-  React.useEffect(() => {
-    setOpen(false);
-  }, [pathname]);
+  if (prevPathname !== pathname) {
+    setPrevPathname(pathname);
+    if (open) setOpen(false);
+  }
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -334,20 +340,9 @@ function MobileMenu({
           </div>
 
           {/* Theme toggle in mobile */}
-          <div className="mt-4 border-t pt-4">
-            <button
-              type="button"
-              onClick={() => {
-                const current = document.documentElement.classList.contains("dark") ? "light" : "dark";
-                // Use next-themes via DOM as fallback
-                document.documentElement.classList.toggle("dark");
-              }}
-              className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-              aria-label="Toggle theme"
-            >
-              <ThemeToggle />
-              <span>Toggle theme</span>
-            </button>
+          <div className="mt-4 border-t pt-4 flex items-center gap-3 px-3 py-2 text-sm text-muted-foreground">
+            <ThemeToggle />
+            <span>Toggle theme</span>
           </div>
         </nav>
 
@@ -409,7 +404,7 @@ function MobileMenu({
 /*                         SITE TOP BAR                               */
 /* ------------------------------------------------------------------ */
 
-export function SiteTopBar() {
+export function SiteTopBar({ hideLinks = [] }: { hideLinks?: string[] } = {}) {
   const pathname = usePathname();
   const { data: session } = useSession();
 
@@ -441,18 +436,18 @@ export function SiteTopBar() {
       }
     : null;
 
-  // Build nav items — add Admin link for admin users
+  // Build nav items — add Admin link for admin users, filter by hideLinks
   const navItems: NavItem[] = React.useMemo(() => {
     const items = [...PUBLIC_NAV];
     if (user?.role === "admin") {
       items.push({ label: "Admin", href: "/admin" });
     }
-    return items;
-  }, [user?.role]);
+    return items.filter((item) => !hideLinks.includes(item.label));
+  }, [user?.role, hideLinks]);
 
   return (
     <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4">
+      <div className="flex h-16 w-full items-center justify-between px-4">
         {/* Left: Mobile hamburger + Logo */}
         <div className="flex items-center gap-4">
           <MobileMenu navItems={navItems} user={user} />
@@ -493,7 +488,7 @@ export function SiteTopBar() {
           {/* Auth section */}
           <div className="hidden md:flex">
             {user ? (
-              <AuthenticatedActions user={user} />
+              <AuthenticatedActions user={user} hideLinks={hideLinks} />
             ) : (
               <GuestActions variant="desktop" />
             )}

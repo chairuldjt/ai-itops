@@ -138,7 +138,7 @@ const components = {
     <strong className="font-semibold text-foreground" {...props}>{children}</strong>
   ),
   code: InlineCode,
-  pre: ({ children, ...props }: React.HTMLAttributes<HTMLPreElement>) => {
+  pre: ({ children }: React.HTMLAttributes<HTMLPreElement>) => {
     const el = children as React.ReactElement<{ children?: string; className?: string }>;
     const codeChild = el?.props?.children ?? "";
     const className = el?.props?.className ?? "";

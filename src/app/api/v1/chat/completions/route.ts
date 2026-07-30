@@ -8,7 +8,7 @@ import {
   type OpenAIChatBody,
 } from "@/lib/gateway/capability-enforcer";
 import { preflightCredit, recordUsageAndDeduct } from "@/lib/gateway/meter";
-import { callUpstream, callUpstreamStream, parseSSEStream } from "@/lib/gateway/openai";
+import { callUpstream, callUpstreamStream } from "@/lib/gateway/openai";
 import {
   buildCannedCompletionResponse,
   buildCannedCompletionStream,
@@ -54,39 +54,18 @@ export async function GET(request: NextRequest) {
 /* -------------------------------------------------------------------------- */
 
 export async function POST(request: NextRequest) {
-  const fs = require("node:fs") as typeof import("node:fs");
-  const logLine = (line: string) => {
-    try {
-      fs.appendFileSync(
-        "gateway-errors.log",
-        `[${new Date().toISOString()}] ${line}\n`,
-        "utf8",
-      );
-    } catch {}
-  };
-
-  logLine(">>> POST entry");
-
-  try {
-    const body = await request.clone().text();
-    logLine(`>>> body length=${body.length} preview=${body.slice(0, 80)}`);
-  } catch (err) {
-    logLine(`>>> body read FAIL: ${(err as Error).message}`);
-  }
-
   const startMs = Date.now();
   const clientIp = getClientIp(request);
 
+  // FIX #11: Wrap entire handler in try/catch to return proper OpenAI error JSON.
+  try {
   // 1) Auth
   const raw = extractApiKey(request);
   if (!raw) return openaiErrorResponse(401, "Missing API key");
-  logLine(">>> before authenticateApiKey");
   const auth = await authenticateApiKey(raw);
   if (!auth.ok) return openaiErrorResponse(auth.status, auth.message);
-  logLine(">>> after authenticateApiKey");
 
   // 2) Parse body
-  logLine(">>> before parseJsonBody");
   const parsed = await parseJsonBody<OpenAIChatBody>(request);
   if (!parsed.ok) return openaiErrorResponse(400, parsed.message);
   const body = parsed.body;
@@ -96,20 +75,17 @@ export async function POST(request: NextRequest) {
   }
 
   // 3) Resolve model
-  logLine(">>> before resolveModel");
   const resolved = await resolveModel(String(body.model));
   if (!resolved.ok) return openaiErrorResponse(resolved.status, resolved.message);
   const model = resolved.model;
 
   // 4) Capability enforcement
-  logLine(">>> before enforceCapabilities");
   const enforce = enforceCapabilities(body, model);
   if (enforce.kind === "rejected") {
     return openaiErrorResponse(enforce.status, enforce.message);
   }
 
   // 5) Preflight credit/budget check
-  logLine(">>> before preflightCredit");
   const pre = await preflightCredit(
     auth.user.id,
     auth.apiKey.id,
@@ -118,7 +94,6 @@ export async function POST(request: NextRequest) {
     auth.user.creditBalance,
   );
   if (!pre.ok) return openaiErrorResponse(pre.status, pre.message);
-  logLine(">>> past preflight, kind=" + enforce.kind);
 
   // 6a) Canned response short-circuit (no upstream call)
   if (enforce.kind === "canned") {
@@ -182,7 +157,6 @@ export async function POST(request: NextRequest) {
   };
 
   if (isStream) {
-    logLine(">>> calling handleStream");
     return await handleStream({
       request,
       auth,
@@ -192,7 +166,6 @@ export async function POST(request: NextRequest) {
       clientIp,
     });
   }
-  logLine(">>> calling handleNonStream");
   const resp = await handleNonStream({
     auth,
     model,
@@ -200,8 +173,12 @@ export async function POST(request: NextRequest) {
     startMs,
     clientIp,
   });
-  logLine(">>> handleNonStream returned status=" + resp.status);
   return resp;
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("[POST /v1/chat/completions]", msg);
+    return openaiErrorResponse(500, msg);
+  }
 }
 
 /* -------------------------------------------------------------------------- */
@@ -216,20 +193,7 @@ async function handleNonStream(params: {
   clientIp: string | null;
 }) {
   const { auth, model, body, startMs, clientIp } = params;
-  // DELIBERATE TEST: force catch path
-  if ((body as { _forceError?: boolean })._forceError) {
-    throw new Error("forced-test-error");
-  }
   try {
-    // Entry log for this function
-    try {
-      const fs = require("node:fs") as typeof import("node:fs");
-      fs.appendFileSync(
-        "handleNonStream-errors.log",
-        `[${new Date().toISOString()}] >>> handleNonStream entered\n`,
-        "utf8",
-      );
-    } catch {}
     const upstream = await callUpstream({
       path: "/chat/completions",
       body,
@@ -280,27 +244,8 @@ async function handleNonStream(params: {
     });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    const stack = err instanceof Error ? err.stack ?? "" : "";
-    // Use sync require (reliable in Node runtime) to write to log
-    try {
-      const fs = require("node:fs") as typeof import("node:fs");
-      fs.appendFileSync(
-        "handleNonStream-errors.log",
-        `[${new Date().toISOString()}] ${msg}\n${stack}\n---\n`,
-        "utf8",
-      );
-    } catch (logErr) {
-      try {
-        const fs = require("node:fs") as typeof import("node:fs");
-        fs.appendFileSync(
-          "handleNonStream-errors.log",
-          `[${new Date().toISOString()}] LOG-FAIL: ${(logErr as Error).message}\n`,
-          "utf8",
-        );
-      } catch {}
-    }
     console.error("[handleNonStream catch]", msg);
-    return openaiErrorResponse(500, msg);
+    return openaiErrorResponse(502, msg);
   }
 }
 
@@ -342,37 +287,48 @@ async function handleStream(params: {
   const reader = upstream.stream.getReader();
   const decoder = new TextDecoder();
   let sseBuffer = "";
+  let usageRecorded = false;
+
+  function recordFinalUsage() {
+    if (usageRecorded) return;
+    usageRecorded = true;
+    void recordUsageAndDeduct({
+      userId: auth.user.id,
+      apiKeyId: auth.apiKey.id,
+      modelId: model.id,
+      modelPublicId: model.publicId,
+      apiFormat: "openai",
+      endpoint: "chat.completions",
+      streamed: true,
+      promptTokens: finalUsage.promptTokens,
+      completionTokens: finalUsage.completionTokens,
+      cacheReadTokens: finalUsage.cacheReadTokens,
+      cacheWriteTokens: finalUsage.cacheWriteTokens,
+      status: "ok",
+      httpStatus: 200,
+      latencyMs: Date.now() - startMs,
+      clientIp,
+      model,
+    }).catch(() => {});
+  }
 
   const outputStream = new ReadableStream<Uint8Array>({
     async pull(controller) {
       try {
         const { value, done } = await reader.read();
         if (done) {
-          // Meter once the stream is fully delivered
-          void recordUsageAndDeduct({
-            userId: auth.user.id,
-            apiKeyId: auth.apiKey.id,
-            modelId: model.id,
-            modelPublicId: model.publicId,
-            apiFormat: "openai",
-            endpoint: "chat.completions",
-            streamed: true,
-            promptTokens: finalUsage.promptTokens,
-            completionTokens: finalUsage.completionTokens,
-            cacheReadTokens: finalUsage.cacheReadTokens,
-            cacheWriteTokens: finalUsage.cacheWriteTokens,
-            status: "ok",
-            httpStatus: 200,
-            latencyMs: Date.now() - startMs,
-            clientIp,
-            model,
-          }).catch(() => {});
+          recordFinalUsage();
           controller.close();
           return;
         }
 
         // Decode and parse the chunks so we can capture the final usage.
         sseBuffer += decoder.decode(value, { stream: true });
+
+        // FIX #16: Guard against unbounded buffer growth.
+        if (sseBuffer.length > 1_000_000) {
+          sseBuffer = sseBuffer.slice(-100_000);
+        }
 
         // Look for SSE events in the buffer without consuming them.
         const events = sseBuffer.split("\n\n");
@@ -413,10 +369,14 @@ async function handleStream(params: {
         // Forward the raw bytes as-is to the client (preserves upstream SSE format)
         controller.enqueue(value);
       } catch (err) {
+        // FIX #12: Record usage even on stream error.
+        recordFinalUsage();
         controller.error(err);
       }
     },
     cancel(reason) {
+      // FIX #12: Client disconnected — still record partial usage.
+      recordFinalUsage();
       return reader.cancel(reason);
     },
   });

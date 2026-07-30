@@ -1,6 +1,5 @@
 "use server";
 
-import crypto from "node:crypto";
 import { eq, and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -30,8 +29,9 @@ export async function listMyApiKeys() {
 
 const CreateSchema = z.object({
   name: z.string().min(1).max(100),
-  rpmLimit: z.number().int().positive().optional(),
-  monthlyBudgetUsd: z.number().min(0).optional(),
+  // FIX #24: .finite() prevents Infinity.
+  rpmLimit: z.number().int().positive().finite().optional(),
+  monthlyBudgetUsd: z.number().min(0).finite().optional(),
 });
 
 export async function createApiKey(input: z.infer<typeof CreateSchema>) {
@@ -61,6 +61,7 @@ export async function createApiKey(input: z.infer<typeof CreateSchema>) {
   });
 
   revalidatePath("/dashboard/keys");
+  revalidatePath("/console/api-keys");
   // Return the raw key ONCE — it can never be retrieved again.
   return { ok: true, id, key };
 }
@@ -75,6 +76,7 @@ export async function deleteApiKey(id: string) {
     .delete(apiKeys)
     .where(and(eq(apiKeys.id, id), eq(apiKeys.userId, session.user.id)));
   revalidatePath("/dashboard/keys");
+  revalidatePath("/console/api-keys");
   return { ok: true };
 }
 
@@ -82,13 +84,24 @@ export async function deleteApiKey(id: string) {
 /*                                    TOGGLE                                  */
 /* -------------------------------------------------------------------------- */
 
+const ToggleSchema = z.object({
+  id: z.string().min(1),
+  enabled: z.boolean(),
+});
+
 export async function toggleApiKeyEnabled(id: string, enabled: boolean) {
   const session = await requireSession();
+  // FIX #25: Validate inputs.
+  const parsed = ToggleSchema.safeParse({ id, enabled });
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.flatten().fieldErrors };
+  }
   await db
     .update(apiKeys)
-    .set({ enabled, updatedAt: new Date() })
-    .where(and(eq(apiKeys.id, id), eq(apiKeys.userId, session.user.id)));
+    .set({ enabled: parsed.data.enabled, updatedAt: new Date() })
+    .where(and(eq(apiKeys.id, parsed.data.id), eq(apiKeys.userId, session.user.id)));
   revalidatePath("/dashboard/keys");
+  revalidatePath("/console/api-keys");
   return { ok: true };
 }
 
@@ -96,12 +109,22 @@ export async function toggleApiKeyEnabled(id: string, enabled: boolean) {
 /*                                   RENAME                                   */
 /* -------------------------------------------------------------------------- */
 
+const RenameSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1).max(100),
+});
+
 export async function renameApiKey(id: string, name: string) {
   const session = await requireSession();
+  // FIX #25: Validate inputs.
+  const parsed = RenameSchema.safeParse({ id, name });
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.flatten().fieldErrors };
+  }
   await db
     .update(apiKeys)
-    .set({ name, updatedAt: new Date() })
-    .where(and(eq(apiKeys.id, id), eq(apiKeys.userId, session.user.id)));
+    .set({ name: parsed.data.name, updatedAt: new Date() })
+    .where(and(eq(apiKeys.id, parsed.data.id), eq(apiKeys.userId, session.user.id)));
   revalidatePath("/dashboard/keys");
   return { ok: true };
 }

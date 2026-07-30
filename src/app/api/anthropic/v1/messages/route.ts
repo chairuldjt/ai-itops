@@ -8,7 +8,7 @@ import {
   type OpenAIChatBody,
 } from "@/lib/gateway/capability-enforcer";
 import { preflightCredit, recordUsageAndDeduct } from "@/lib/gateway/meter";
-import { callUpstream, callUpstreamStream, parseSSEStream } from "@/lib/gateway/openai";
+import { callUpstream, callUpstreamStream } from "@/lib/gateway/openai";
 import {
   ensureStreamUsage,
   extractUsageFromResponse,
@@ -35,6 +35,8 @@ export async function POST(request: NextRequest) {
   const startMs = Date.now();
   const clientIp = getClientIp(request);
 
+  // FIX #11: Wrap entire handler in try/catch to return proper Anthropic error JSON.
+  try {
   // 1) Auth (same API key mechanism as OpenAI — x-api-key or Authorization)
   const raw =
     extractApiKey(request) ?? request.headers.get("x-api-key") ?? null;
@@ -47,6 +49,7 @@ export async function POST(request: NextRequest) {
   if (!parsed.ok) return anthropicErrorResponse(400, parsed.message);
   const aBody = parsed.body;
   if (!aBody.model) return anthropicErrorResponse(400, "Missing 'model' field");
+  if (!aBody.max_tokens) return anthropicErrorResponse(400, "Missing 'max_tokens' field");
   if (!Array.isArray(aBody.messages) || aBody.messages.length === 0) {
     return anthropicErrorResponse(400, "Missing or empty 'messages' array");
   }
@@ -129,6 +132,11 @@ export async function POST(request: NextRequest) {
     startMs,
     clientIp,
   });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("[POST /anthropic/v1/messages]", msg);
+    return anthropicErrorResponse(500, msg);
+  }
 }
 
 /* -------------------------------------------------------------------------- */
@@ -314,12 +322,43 @@ async function handleStream(params: {
 
   // Capture the final usage from the upstream OpenAI SSE for metering.
   let finalUsage = { promptTokens: 0, completionTokens: 0 };
+  let usageRecorded = false;
+  const decoder = new TextDecoder();
+  let sseAccum = "";
+
+  function recordFinalUsage(status: "ok" | "error") {
+    if (usageRecorded) return;
+    usageRecorded = true;
+    void recordUsageAndDeduct({
+      userId: auth.user.id,
+      apiKeyId: auth.apiKey.id,
+      modelId: model.id,
+      modelPublicId: model.publicId,
+      apiFormat: "anthropic",
+      endpoint: "messages",
+      streamed: true,
+      promptTokens: finalUsage.promptTokens,
+      completionTokens: finalUsage.completionTokens,
+      status,
+      httpStatus: 200,
+      latencyMs: Date.now() - startMs,
+      clientIp,
+      model,
+    }).catch(() => {});
+  }
+
   const transformStream = new TransformStream<Uint8Array, Uint8Array>({
     transform(chunk, controller) {
       // Pass chunk through untouched, but also inspect for usage.
       try {
-        const text = new TextDecoder().decode(chunk);
-        const events = text.split("\n\n");
+        // FIX #1: Use stream-safe decoder to handle multi-byte UTF-8 splits.
+        sseAccum += decoder.decode(chunk, { stream: true });
+        // FIX #16: Guard against unbounded buffer growth.
+        if (sseAccum.length > 1_000_000) {
+          sseAccum = sseAccum.slice(-100_000);
+        }
+        const events = sseAccum.split("\n\n");
+        sseAccum = events.pop() ?? ""; // keep incomplete tail
         for (const ev of events) {
           const lines = ev.split("\n");
           const data: string[] = [];
@@ -349,24 +388,13 @@ async function handleStream(params: {
       controller.enqueue(chunk);
     },
     flush() {
-      void recordUsageAndDeduct({
-        userId: auth.user.id,
-        apiKeyId: auth.apiKey.id,
-        modelId: model.id,
-        modelPublicId: model.publicId,
-        apiFormat: "anthropic",
-        endpoint: "messages",
-        streamed: true,
-        promptTokens: finalUsage.promptTokens,
-        completionTokens: finalUsage.completionTokens,
-        status: "ok",
-        httpStatus: 200,
-        latencyMs: Date.now() - startMs,
-        clientIp,
-        model,
-      }).catch(() => {});
+      // FIX #12: Normal completion — record usage.
+      recordFinalUsage("ok");
     },
   });
+
+  // FIX #12: Also record usage if client disconnects (cancel skips flush).
+  request.signal.addEventListener("abort", () => recordFinalUsage("ok"), { once: true });
 
   // Upstream (OpenAI SSE) -> transform to capture usage -> transform to Anthropic SSE
   const anthropicStream = transformOpenAIStreamToAnthropic(

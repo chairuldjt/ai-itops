@@ -11,8 +11,15 @@ const PUBLIC_PATHS = [
 ];
 
 const ADMIN_PREFIX = "/admin";
-const USER_PREFIX = "/dashboard";
-const CONSOLE_PREFIX = "/console";
+
+// FIX #3: Only match known static file extensions, not any path with a dot.
+const STATIC_EXTENSION_RE = /\.\w{1,10}$/;
+const KNOWN_STATIC_EXTENSIONS = new Set([
+  ".js", ".mjs", ".css", ".map", ".json",
+  ".png", ".jpg", ".jpeg", ".gif", ".svg", ".ico", ".webp", ".avif",
+  ".woff", ".woff2", ".ttf", ".eot",
+  ".xml", ".txt", ".robots",
+]);
 
 /**
  * Middleware — runs in the Edge runtime, so we CANNOT touch the DB.
@@ -30,6 +37,12 @@ const CONSOLE_PREFIX = "/console";
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // FIX #3: Strict static asset check — only known extensions, not any dot.
+  const extMatch = pathname.match(STATIC_EXTENSION_RE);
+  const isStaticAsset = extMatch
+    ? KNOWN_STATIC_EXTENSIONS.has(extMatch[0].toLowerCase())
+    : false;
+
   const isPublic =
     PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(p + "/")) ||
     pathname.startsWith("/_next") ||
@@ -38,7 +51,7 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith("/api/anthropic") ||
     pathname.startsWith("/v1") ||
     pathname.startsWith("/anthropic") ||
-    pathname.includes(".");
+    isStaticAsset;
 
   if (isPublic) return NextResponse.next();
 
@@ -46,7 +59,11 @@ export async function middleware(request: NextRequest) {
   if (!sessionCookie) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
-    url.searchParams.set("redirect", pathname);
+    // FIX #10: Only allow relative redirect paths to prevent open redirect.
+    const redirect = request.nextUrl.searchParams.get("redirect");
+    if (redirect && redirect.startsWith("/") && !redirect.startsWith("//")) {
+      url.searchParams.set("redirect", redirect);
+    }
     return NextResponse.redirect(url);
   }
 

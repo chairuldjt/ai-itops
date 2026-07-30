@@ -164,6 +164,12 @@ export function UsageClient({
     URL.revokeObjectURL(url);
   };
 
+  const getPageUrl = (page: number) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("page", page.toString());
+    return `/console/usage?${params.toString()}`;
+  };
+
   return (
     <div className="flex flex-col gap-4">
       <div>
@@ -176,28 +182,28 @@ export function UsageClient({
       <Card>
         <CardContent className="pt-6">
           <div className="flex flex-wrap items-end gap-3">
-            <div className="space-y-1">
+            <div className="space-y-1 w-full sm:w-auto">
               <label className="text-xs text-muted-foreground">From</label>
               <Input
                 type="date"
                 value={dateFrom}
                 onChange={(e) => setDateFrom(e.target.value)}
-                className="w-[160px]"
+                className="w-full sm:w-[160px]"
               />
             </div>
-            <div className="space-y-1">
+            <div className="space-y-1 w-full sm:w-auto">
               <label className="text-xs text-muted-foreground">To</label>
               <Input
                 type="date"
                 value={dateTo}
                 onChange={(e) => setDateTo(e.target.value)}
-                className="w-[160px]"
+                className="w-full sm:w-[160px]"
               />
             </div>
-            <div className="space-y-1">
+            <div className="space-y-1 w-full sm:w-auto">
               <label className="text-xs text-muted-foreground">Model</label>
               <Select value={modelFilter} onValueChange={(v) => v && setModelFilter(v)}>
-                <SelectTrigger className="w-[180px]">
+                <SelectTrigger className="w-full sm:w-[180px]">
                   <SelectValue placeholder="All Models" />
                 </SelectTrigger>
                 <SelectContent>
@@ -210,10 +216,10 @@ export function UsageClient({
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-1">
+            <div className="space-y-1 w-full sm:w-auto">
               <label className="text-xs text-muted-foreground">API Key</label>
               <Select value={keyFilter} onValueChange={(v) => v && setKeyFilter(v)}>
-                <SelectTrigger className="w-[180px]">
+                <SelectTrigger className="w-full sm:w-[180px]">
                   <SelectValue placeholder="All Keys" />
                 </SelectTrigger>
                 <SelectContent>
@@ -312,7 +318,7 @@ export function UsageClient({
                 <PaginationContent>
                   <PaginationItem>
                     <PaginationPrevious
-                      href={`/console/usage?page=${Math.max(1, currentPage - 1)}`}
+                      href={getPageUrl(Math.max(1, currentPage - 1))}
                       text="Prev"
                     />
                   </PaginationItem>
@@ -328,7 +334,7 @@ export function UsageClient({
                     return (
                       <PaginationItem key={pageNum}>
                         <PaginationLink
-                          href={`/console/usage?page=${pageNum}`}
+                          href={getPageUrl(pageNum)}
                           isActive={pageNum === currentPage}
                         >
                           {pageNum}
@@ -338,7 +344,7 @@ export function UsageClient({
                   })}
                   <PaginationItem>
                     <PaginationNext
-                      href={`/console/usage?page=${Math.min(totalPages, currentPage + 1)}`}
+                      href={getPageUrl(Math.min(totalPages, currentPage + 1))}
                       text="Next"
                     />
                   </PaginationItem>

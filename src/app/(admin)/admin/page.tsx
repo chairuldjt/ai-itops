@@ -31,7 +31,7 @@ export default async function AdminPage() {
       </div>
 
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
+        <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div>
             <CardTitle>Models</CardTitle>
             <CardDescription>

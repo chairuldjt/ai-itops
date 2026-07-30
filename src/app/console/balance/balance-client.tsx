@@ -215,7 +215,7 @@ export function BalanceClient({ creditBalance, transactions }: Props) {
                   description="Your top-up history will appear here."
                 />
               ) : (
-                <div className="rounded-xl border overflow-hidden">
+                <div className="rounded-xl border overflow-x-auto">
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -261,7 +261,7 @@ export function BalanceClient({ creditBalance, transactions }: Props) {
                   description="Voucher redemptions will appear here."
                 />
               ) : (
-                <div className="rounded-xl border overflow-hidden">
+                <div className="rounded-xl border overflow-x-auto">
                   <Table>
                     <TableHeader>
                       <TableRow>

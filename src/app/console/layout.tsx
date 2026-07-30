@@ -2,6 +2,9 @@ import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth/session";
 import { ConsoleLayoutClient } from "./console-layout-client";
+import { db } from "@/lib/db";
+import { users } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
 
 export const dynamic = "force-dynamic";
 
@@ -13,15 +16,16 @@ export default async function ConsoleLayout({
   const session = await getSession();
   if (!session?.user) redirect("/login");
 
-  const rawBalance = (session.user as Record<string, unknown>).creditBalance as bigint | number | string | undefined;
-  const creditBalanceUsd =
-    typeof rawBalance === "bigint"
-      ? Number(rawBalance) / 1_000_000
-      : Number(rawBalance ?? 0) / 1_000_000;
+  // Fetch credit balance directly from DB (better-auth session doesn't include custom fields)
+  const [userRow] = await db
+    .select({ creditBalance: users.creditBalance, image: users.image, role: users.role })
+    .from(users)
+    .where(eq(users.id, session.user.id))
+    .limit(1);
 
-  const u = session.user as Record<string, unknown>;
-  const image = (u.image as string) ?? "";
-  const role = (u.role as string) ?? "user";
+  const creditBalanceUsd = userRow
+    ? Number(userRow.creditBalance) / 1_000_000
+    : 0;
 
   return (
     <ConsoleLayoutClient
@@ -29,8 +33,8 @@ export default async function ConsoleLayout({
         id: session.user.id,
         name: session.user.name,
         email: session.user.email,
-        image,
-        role,
+        image: userRow?.image ?? "",
+        role: userRow?.role ?? "user",
         creditBalance: creditBalanceUsd,
       }}
     >

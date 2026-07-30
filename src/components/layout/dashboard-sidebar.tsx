@@ -8,7 +8,6 @@ import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
-  SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -17,7 +16,6 @@ import {
   SidebarGroupLabel,
   SidebarRail,
 } from "@/components/ui/sidebar";
-import { NavMain } from "@/components/nav-main";
 import { NavUser } from "@/components/nav-user";
 import {
   LayoutDashboardIcon,
@@ -28,7 +26,6 @@ import {
   UsersIcon,
   CreditCardIcon,
   BarChart3Icon,
-  WorkflowIcon,
 } from "lucide-react";
 
 export type SidebarMode = "dashboard" | "admin";
@@ -114,22 +111,6 @@ export function DashboardSidebar({
 
   return (
     <Sidebar variant="inset" {...props}>
-      <SidebarHeader>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton size="lg" render={<Link href="/" />}>
-              <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                <WorkflowIcon className="size-4" />
-              </div>
-              <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-medium">AI Gateway</span>
-                <span className="truncate text-xs">Unified AI API</span>
-              </div>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarHeader>
-
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel>{mode === "admin" ? "Admin" : "Dashboard"}</SidebarGroupLabel>

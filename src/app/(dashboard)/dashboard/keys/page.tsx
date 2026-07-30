@@ -27,10 +27,10 @@ export default async function KeysPage() {
           <CardTitle>Your keys</CardTitle>
           <CardDescription>
             Keys are shown once at creation — copy them immediately. Use them as{" "}
-            <code>Authorization: Bearer sk_live_...</code>
+            <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">Authorization: Bearer sk_live_...</code>
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-0">
           <ApiKeysClient initialKeys={keys} />
         </CardContent>
       </Card>

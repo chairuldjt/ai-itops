@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import { FadeIn } from "@/components/motion";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { ThemeToggle } from "@/components/layout/site-topbar";
 import {
@@ -35,7 +35,6 @@ import {
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
-  SidebarHeader,
   SidebarInset,
   SidebarMenu,
   SidebarMenuButton,
@@ -54,7 +53,6 @@ import {
   SettingsIcon,
   LogOutIcon,
   BellIcon,
-  BookOpenIcon,
   ChevronsUpDownIcon,
 } from "lucide-react";
 
@@ -69,7 +67,6 @@ const NAV_ITEMS = [
 ];
 
 const BREADCRUMB_MAP: Record<string, { label: string; href?: string }[]> = {
-  // Console routes
   "/console/dashboard": [{ label: "Console" }, { label: "Dashboard" }],
   "/console/models": [{ label: "Console" }, { label: "Models" }],
   "/console/chat": [{ label: "Console" }, { label: "Chat Playground" }],
@@ -77,13 +74,11 @@ const BREADCRUMB_MAP: Record<string, { label: string; href?: string }[]> = {
   "/console/usage": [{ label: "Console" }, { label: "Usage Logs" }],
   "/console/balance": [{ label: "Console" }, { label: "Billing" }],
   "/console/settings": [{ label: "Console" }, { label: "Settings" }],
-  // Dashboard routes
   "/dashboard": [{ label: "Dashboard" }, { label: "Overview" }],
   "/dashboard/keys": [{ label: "Dashboard", href: "/dashboard" }, { label: "API Keys" }],
   "/dashboard/models": [{ label: "Dashboard", href: "/dashboard" }, { label: "Models" }],
   "/dashboard/usage": [{ label: "Dashboard", href: "/dashboard" }, { label: "Usage" }],
   "/dashboard/settings": [{ label: "Dashboard", href: "/dashboard" }, { label: "Settings" }],
-  // Admin routes
   "/admin": [{ label: "Admin" }, { label: "Overview" }],
   "/admin/models": [{ label: "Admin", href: "/admin" }, { label: "Models" }],
   "/admin/users": [{ label: "Admin", href: "/admin" }, { label: "Users" }],
@@ -188,25 +183,6 @@ function ConsoleSidebarInner({
 
   return (
     <Sidebar variant="inset" collapsible="icon">
-      <SidebarHeader>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              size="lg"
-              render={<Link href="/" />}
-            >
-              <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                <BotIcon className="size-4" />
-              </div>
-              <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-medium">AI Gateway</span>
-                <span className="truncate text-xs">Console</span>
-              </div>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarHeader>
-
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel>Navigation</SidebarGroupLabel>
@@ -296,15 +272,15 @@ export function ConsoleTopBar({
           </Link>
           {user.role === "admin" && (
             <Link
-              href="/admin"
+              href={pathname.startsWith("/admin") ? "/console/dashboard" : "/admin"}
               className={cn(
                 "rounded-full px-3 py-1.5 text-sm transition-colors hover:bg-accent hover:text-foreground",
-                pathname.startsWith("/admin")
+                (pathname.startsWith("/admin") || pathname.startsWith("/console") || pathname.startsWith("/dashboard"))
                   ? "text-foreground font-medium"
                   : "text-muted-foreground"
               )}
             >
-              Admin
+              {pathname.startsWith("/admin") ? "Console" : "Admin"}
             </Link>
           )}
         </div>

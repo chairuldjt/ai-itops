@@ -3,7 +3,7 @@
 import { CheckIcon, XIcon, ZapIcon, CrownIcon, Building2Icon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/layout/page-header";
-import { FadeIn, FadeInStagger, FadeInItem } from "@/components/motion";
+import { FadeIn } from "@/components/motion";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -87,7 +87,7 @@ const TIERS: Tier[] = [
     period: "",
     description: "For orgs with high-scale or compliance needs",
     icon: Building2Icon,
-    cta: { label: "Contact sales", href: "/contact" },
+    cta: { label: "Contact sales", href: "/contact-us" },
     features: [
       { text: "Unlimited everything", included: true },
       { text: "Dedicated support", included: true },

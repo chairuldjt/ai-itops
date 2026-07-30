@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth/session";
 import { db } from "@/lib/db";
-import { usageLogs, apiKeys } from "@/lib/db/schema";
+import { usageLogs, apiKeys, users } from "@/lib/db/schema";
 import { eq, sql, and, gte } from "drizzle-orm";
 import { DashboardClient } from "./dashboard-client";
 
@@ -14,11 +14,18 @@ export default async function ConsoleDashboardPage() {
   if (!session?.user) redirect("/login");
 
   const userId = session.user.id;
-  const rawBalance = (session.user as { creditBalance?: bigint | number | string }).creditBalance;
+
+  // Fetch credit balance directly from DB (better-auth session doesn't include custom fields)
+  const [userRow] = await db
+    .select({ creditBalance: users.creditBalance })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+
   const creditBalanceUsd =
-    typeof rawBalance === "bigint"
-      ? Number(rawBalance) / 1_000_000
-      : Number(rawBalance ?? 0) / 1_000_000;
+    userRow
+      ? Number(userRow.creditBalance) / 1_000_000
+      : 0;
 
   const now = new Date();
   const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);

@@ -10,7 +10,8 @@ import { createId } from "@/lib/id";
 
 const Schema = z.object({
   userId: z.string().min(1),
-  amountUsd: z.number().positive(),
+  // FIX #24: .finite() prevents Infinity from reaching BigInt().
+  amountUsd: z.number().positive().finite(),
   note: z.string().max(500).optional(),
 });
 
@@ -32,6 +33,10 @@ export async function adminTopUp(input: z.infer<typeof Schema>) {
       })
       .where(eq(users.id, parsed.data.userId))
       .returning({ creditBalance: users.creditBalance });
+
+    if (!updated) {
+      throw new Error("User not found");
+    }
 
     await tx.insert(creditTransactions).values({
       id: txId,

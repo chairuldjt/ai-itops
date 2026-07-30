@@ -23,11 +23,15 @@ import { ModelFormDialog } from "./model-form-dialog";
 import { PencilIcon, Trash2Icon } from "lucide-react";
 
 export function ModelsTable({ initialModels }: { initialModels: Model[] }) {
+  const [prevModels, setPrevModels] = React.useState(initialModels);
   const [models, setModels] = React.useState(initialModels);
   const [busyId, setBusyId] = React.useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = React.useState<string | null>(null);
 
-  React.useEffect(() => setModels(initialModels), [initialModels]);
+  if (prevModels !== initialModels) {
+    setPrevModels(initialModels);
+    setModels(initialModels);
+  }
 
   const onToggle = async (id: string, enabled: boolean) => {
     setBusyId(id);
@@ -44,13 +48,24 @@ export function ModelsTable({ initialModels }: { initialModels: Model[] }) {
   const onDelete = async (id: string) => {
     setBusyId(id);
     try {
-      await deleteModel(id);
-      setModels((prev) => prev.filter((m) => m.id !== id));
-      toast.success("Model deleted");
-    } catch (e) {
+      const res = await deleteModel(id);
+      if (res?.ok === false) {
+        toast.error(res.error ?? "Failed to delete model");
+      } else if (res?.deleted === false) {
+        // FK constraint — model was disabled instead of deleted.
+        setModels((prev) =>
+          prev.map((m) => (m.id === id ? { ...m, enabled: false } : m)),
+        );
+        toast.warning("Model has usage logs — disabled instead of deleted.");
+      } else {
+        setModels((prev) => prev.filter((m) => m.id !== id));
+        toast.success("Model deleted");
+      }
+    } catch {
       toast.error("Failed to delete model");
     } finally {
       setBusyId(null);
+      setDeleteTarget(null);
     }
   };
 
@@ -141,6 +156,7 @@ export function ModelsTable({ initialModels }: { initialModels: Model[] }) {
                   <Button
                     variant="ghost"
                     size="icon-sm"
+                    className="hover:bg-destructive/10 hover:text-destructive"
                     onClick={() => setDeleteTarget(m.id)}
                     disabled={busyId === m.id}
                   >

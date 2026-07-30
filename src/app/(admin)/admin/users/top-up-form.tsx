@@ -88,7 +88,7 @@ export function TopUpForm({
               <Textarea {...form.register("note")} placeholder="Top-up for…" />
             </Field>
           </FieldGroup>
-          <Button type="submit">Top up</Button>
+          <Button type="submit" className="w-full">Top up</Button>
         </form>
       </CardContent>
     </Card>

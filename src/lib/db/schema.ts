@@ -30,7 +30,7 @@ export type ImageInputPolicy =
   | "reject_error";
 
 export interface ModelPricing {
-  // USD micro-units (1e-6 USD) per 1M tokens.
+  // Price per single token in USD (e.g. 0.000003 = $3/1M tokens).
   // For image/tts/stt/rerank, use perUnit / perImage / perMinute / perSecond as needed.
   per1MInput?: number;
   per1MOutput?: number;
@@ -118,6 +118,11 @@ export const accounts = pgTable(
   },
   (table) => ({
     providerIdx: index("account_provider_idx").on(table.providerId, table.accountId),
+    // FIX #27: Compound unique to prevent duplicate OAuth bindings.
+    providerAccountIdx: uniqueIndex("account_provider_account_idx").on(
+      table.providerId,
+      table.accountId,
+    ),
     userIdx: index("account_user_idx").on(table.userId),
   }),
 );
@@ -134,6 +139,8 @@ export const verifications = pgTable(
   },
   (table) => ({
     identifierIdx: index("verification_identifier_idx").on(table.identifier),
+    // FIX #19: Index on value for token verification lookups.
+    valueIdx: index("verification_value_idx").on(table.value),
   }),
 );
 
@@ -238,8 +245,7 @@ export const usageLogs = pgTable(
       .notNull()
       .references(() => apiKeys.id, { onDelete: "cascade" }),
     modelId: text("model_id")
-      .notNull()
-      .references(() => models.id, { onDelete: "restrict" }),
+      .references(() => models.id, { onDelete: "set null" }),
     // Public model name used in request (e.g. "my-gpt-4o")
     modelPublicId: text("model_public_id").notNull(),
     // Which API format was used (openai/anthropic/images/audio/embedding)
@@ -273,6 +279,8 @@ export const usageLogs = pgTable(
     keyIdx: index("usage_log_key_idx").on(table.apiKeyId),
     modelIdx: index("usage_log_model_idx").on(table.modelId),
     createdIdx: index("usage_log_created_idx").on(table.createdAt),
+    // FIX #20: Composite index for dashboard queries filtered by user + time range.
+    userCreatedIdx: index("usage_log_user_created_idx").on(table.userId, table.createdAt),
   }),
 );
 

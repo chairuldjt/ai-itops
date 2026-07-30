@@ -29,7 +29,8 @@ export async function signInAndSetRoleCookie(
   try {
     const me = await authClient.getSession();
     const role = (me.data?.user as { role?: string } | undefined)?.role ?? "user";
-    document.cookie = `ba_role=${role}; Path=/; SameSite=Lax; Max-Age=${60 * 60 * 24 * 7}`;
+    const secure = location.protocol === "https:" ? "; Secure" : "";
+    document.cookie = `ba_role=${role}; Path=/; SameSite=Lax; Max-Age=${60 * 60 * 24 * 7}${secure}`;
   } catch {
     // ignore — layout will still check server-side
   }

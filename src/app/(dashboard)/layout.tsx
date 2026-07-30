@@ -7,6 +7,10 @@ import {
 } from "@/components/ui/sidebar";
 import { DashboardSidebar } from "@/components/layout/dashboard-sidebar";
 import { ConsoleTopBar } from "@/app/console/console-layout-client";
+import { FadeIn } from "@/components/motion";
+import { db } from "@/lib/db";
+import { users } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
 
 export default async function DashboardLayout({
   children,
@@ -16,12 +20,15 @@ export default async function DashboardLayout({
   const session = await getSession();
   if (!session?.user) redirect("/login");
 
-  const u = session.user as Record<string, unknown>;
-  const rawBalance = u.creditBalance as bigint | number | string | undefined;
-  const creditBalanceUsd =
-    typeof rawBalance === "bigint"
-      ? Number(rawBalance) / 1_000_000
-      : Number(rawBalance ?? 0) / 1_000_000;
+  const [userRow] = await db
+    .select({ creditBalance: users.creditBalance, image: users.image, role: users.role })
+    .from(users)
+    .where(eq(users.id, session.user.id))
+    .limit(1);
+
+  const creditBalanceUsd = userRow
+    ? Number(userRow.creditBalance) / 1_000_000
+    : 0;
 
   return (
     <SidebarProvider>
@@ -31,12 +38,16 @@ export default async function DashboardLayout({
           user={{
             name: session.user.name,
             email: session.user.email,
-            image: (u.image as string) ?? "",
+            image: userRow?.image ?? "",
             creditBalance: creditBalanceUsd,
-            role: (u.role as string) ?? "user",
+            role: userRow?.role ?? "user",
           }}
         />
-        <main className="flex flex-1 flex-col gap-4 p-4">{children}</main>
+        <main className="flex flex-1 flex-col gap-4 p-4">
+          <FadeIn duration={0.3} y={12}>
+            {children}
+          </FadeIn>
+        </main>
       </SidebarInset>
     </SidebarProvider>
   );

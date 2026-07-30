@@ -2,6 +2,9 @@ import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { models, type Model } from "@/lib/db/schema";
 
+const modelCache = new Map<string, { model: Model; expiry: number }>();
+const CACHE_TTL_MS = 10_000; // 10s TTL
+
 /**
  * Resolve a public model id (e.g. "my-gpt-4o") to the full model row.
  * Only enabled models are returned.
@@ -12,6 +15,16 @@ export async function resolveModel(
   if (!publicId) {
     return { ok: false, status: 400, message: "Missing model" };
   }
+
+  const now = Date.now();
+  const cached = modelCache.get(publicId);
+  if (cached && cached.expiry > now) {
+    if (!cached.model.enabled) {
+      return { ok: false, status: 404, message: `Model '${publicId}' is currently unavailable` };
+    }
+    return { ok: true, model: cached.model };
+  }
+
   const rows = await db
     .select()
     .from(models)
@@ -22,6 +35,8 @@ export async function resolveModel(
     return { ok: false, status: 404, message: `Model '${publicId}' not found` };
   }
   const model = rows[0];
+  modelCache.set(publicId, { model, expiry: now + CACHE_TTL_MS });
+
   if (!model.enabled) {
     return {
       ok: false,

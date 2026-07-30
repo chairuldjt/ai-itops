@@ -77,7 +77,13 @@ export function anthropicToOpenAI(a: AnthropicBody): OpenAIChatBody {
 
   for (const m of a.messages) {
     if (m.role === "user") {
-      messages.push(convertUserMessage(m));
+      // FIX #7: convertUserMessage may return multiple messages (tool results).
+      const converted = convertUserMessage(m);
+      if (Array.isArray(converted)) {
+        messages.push(...converted);
+      } else {
+        messages.push(converted);
+      }
     } else if (m.role === "assistant") {
       messages.push(convertAssistantMessage(m));
     }
@@ -119,7 +125,12 @@ export function anthropicToOpenAI(a: AnthropicBody): OpenAIChatBody {
   return out;
 }
 
-function convertUserMessage(m: AnthropicMessage): OpenAIMessage {
+/**
+ * FIX #7: Convert Anthropic user message to OpenAI format.
+ * Returns multiple messages when tool results are present (OpenAI requires
+ * separate `tool` role messages for each tool result).
+ */
+export function convertUserMessage(m: AnthropicMessage): OpenAIMessage | OpenAIMessage[] {
   if (typeof m.content === "string") {
     return { role: "user", content: m.content };
   }
@@ -149,18 +160,24 @@ function convertUserMessage(m: AnthropicMessage): OpenAIMessage {
     }
   }
 
-  // If only tool results, return a single tool message (OpenAI wants them
-  // as separate messages but we collapse for simplicity when no user text).
+  // FIX #7: Return ALL tool results as separate messages, not just the first.
   if (textOrImageParts.length === 0 && toolResults.length > 0) {
-    // Return the first tool result as the message; the rest become
-    // additional messages at the call site by flattening. For now we'll
-    // emit one tool message. (A more correct implementation would flatten
-    // into the messages array — good enough for common cases.)
-    return {
-      role: "tool",
-      tool_call_id: toolResults[0].id,
-      content: toolResults[0].content,
-    };
+    return toolResults.map((tr) => ({
+      role: "tool" as const,
+      tool_call_id: tr.id,
+      content: tr.content,
+    }));
+  }
+
+  // Mixed: text/images + tool results → return user message + tool messages.
+  if (textOrImageParts.length > 0 && toolResults.length > 0) {
+    const messages: OpenAIMessage[] = [
+      { role: "user", content: textOrImageParts },
+    ];
+    for (const tr of toolResults) {
+      messages.push({ role: "tool", tool_call_id: tr.id, content: tr.content });
+    }
+    return messages;
   }
 
   return { role: "user", content: textOrImageParts };
@@ -256,6 +273,8 @@ export function openAIToAnthropic(
     }
   }
   if (choice?.finish_reason === "length") stop_reason = "max_tokens";
+  // FIX #8: Map OpenAI "tool_calls" finish reason to Anthropic "tool_use".
+  if (choice?.finish_reason === "tool_calls") stop_reason = "tool_use";
   if (choice?.finish_reason === "stop") {
     stop_reason = content.some((c) => c.type === "tool_use") ? "tool_use" : "end_turn";
   }
@@ -313,6 +332,7 @@ export function transformOpenAIStreamToAnthropic(
   let toolCallIndex = -1;
   let toolCallId: string | null = null;
   let started = false;
+  let streamClosed = false; // FIX #14: Prevent duplicate close events.
 
   const emit = (event: string, data: unknown): string =>
     `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
@@ -321,28 +341,32 @@ export function transformOpenAIStreamToAnthropic(
     async pull(controller) {
       try {
         const { value, done } = await reader.read();
-        if (done) {
-          // Finish up
-          if (currentBlockType != null) {
+        // FIX #14: Skip if stream already closed (e.g. by [DONE] event).
+        if (done || streamClosed) {
+          if (!streamClosed) {
+            streamClosed = true;
+            // Finish up — close any open block and emit final events.
+            if (currentBlockType != null) {
+              controller.enqueue(
+                encoder.encode(
+                  emit("content_block_stop", {
+                    type: "content_block_stop",
+                    index: blockIndex,
+                  }),
+                ),
+              );
+            }
             controller.enqueue(
               encoder.encode(
-                emit("content_block_stop", {
-                  type: "content_block_stop",
-                  index: blockIndex,
+                emit("message_delta", {
+                  type: "message_delta",
+                  delta: { stop_reason: "end_turn", stop_sequence: null },
+                  usage: { output_tokens: outputTokens },
                 }),
               ),
             );
+            controller.enqueue(encoder.encode(emit("message_stop", { type: "message_stop" })));
           }
-          controller.enqueue(
-            encoder.encode(
-              emit("message_delta", {
-                type: "message_delta",
-                delta: { stop_reason: "end_turn", stop_sequence: null },
-                usage: { output_tokens: outputTokens },
-              }),
-            ),
-          );
-          controller.enqueue(encoder.encode(emit("message_stop", { type: "message_stop" })));
           controller.close();
           return;
         }
@@ -360,19 +384,21 @@ export function transformOpenAIStreamToAnthropic(
           if (dataLines.length === 0) continue;
           const joined = dataLines.join("\n");
           if (joined === "[DONE]") {
-            // End of stream: we'll emit the final events on the next pull
-            // (or at close if nothing more comes).
-            controller.enqueue(
-              encoder.encode(
-                emit("message_delta", {
-                  type: "message_delta",
-                  delta: { stop_reason: "end_turn", stop_sequence: null },
-                  usage: { output_tokens: outputTokens },
-                }),
-              ),
-            );
-            controller.enqueue(encoder.encode(emit("message_stop", { type: "message_stop" })));
-            controller.close();
+            // FIX #14: Only emit close events once.
+            if (!streamClosed) {
+              streamClosed = true;
+              controller.enqueue(
+                encoder.encode(
+                  emit("message_delta", {
+                    type: "message_delta",
+                    delta: { stop_reason: "end_turn", stop_sequence: null },
+                    usage: { output_tokens: outputTokens },
+                  }),
+                ),
+              );
+              controller.enqueue(encoder.encode(emit("message_stop", { type: "message_stop" })));
+              controller.close();
+            }
             return;
           }
           let chunk: unknown;

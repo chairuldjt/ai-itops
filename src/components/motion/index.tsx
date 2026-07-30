@@ -9,9 +9,11 @@ const fadeUp: Variants = {
 
 /** Hook: returns true only after client-side hydration is complete */
 function useHasMounted() {
-  const [mounted, setMounted] = React.useState(false);
-  React.useEffect(() => setMounted(true), []);
-  return mounted;
+  return React.useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
 }
 
 export function FadeIn({

@@ -14,6 +14,14 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   Sheet,
   SheetContent,
   SheetDescription,
@@ -119,22 +127,48 @@ export function ApiKeysClient({ initialKeys, availableModels }: Props) {
     if (!newKeyName.trim()) return;
     setBusy(true);
 
+    const budget = !unlimitedQuota && quotaAmount ? Number(quotaAmount) : undefined;
+
     const results = await Promise.all(
       Array.from({ length: quantity }, () =>
-        createApiKey({ name: newKeyName.trim() })
+        createApiKey({
+          name: newKeyName.trim(),
+          monthlyBudgetUsd: budget,
+        })
       )
     );
 
-    const firstOk = results.find((r) => r.ok && "key" in r);
-    if (firstOk && "key" in firstOk) {
-      setCreatedKey(firstOk.key as string);
+    const createdKeys = results
+      .filter((r): r is { ok: true; id: string; key: string } => r.ok && "key" in r)
+      .map((r) => r.key);
+
+    if (createdKeys.length > 0) {
+      setCreatedKey(createdKeys.join("\n"));
+      // Add optimistic items to state
+      setKeys((prev) => [
+        ...results
+          .filter((r): r is { ok: true; id: string; key: string } => r.ok && "key" in r)
+          .map((r) => ({
+            id: r.id,
+            name: newKeyName.trim(),
+            keyHash: "",
+            keyPrefix: r.key.slice(0, 12),
+            rpmLimit: null,
+            monthlyBudget: budget ? Math.round(budget * 1_000_000) : null,
+            monthlySpent: 0,
+            enabled: true,
+            expiresAt: null,
+            lastUsedAt: null,
+            createdAt: new Date(),
+          })),
+        ...prev,
+      ]);
     }
 
     setSheetOpen(false);
     setNewKeyName("");
     setQuantity(1);
     setBusy(false);
-    window.location.reload();
   };
 
   const onDelete = async (id: string) => {
@@ -185,24 +219,29 @@ export function ApiKeysClient({ initialKeys, availableModels }: Props) {
         </p>
       </div>
 
-      {createdKey && (
-        <div className="rounded-lg border border-emerald-500/40 bg-emerald-500/10 p-4">
-          <div className="flex items-center gap-2 font-medium text-emerald-600 dark:text-emerald-400">
-            <CheckIcon className="size-4" /> Key created — copy it now
-          </div>
-          <div className="mt-2 flex items-center gap-2">
-            <code className="flex-1 break-all rounded bg-muted p-2 font-mono text-xs">
+      <Dialog open={Boolean(createdKey)} onOpenChange={(v) => !v && setCreatedKey(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
+              <CheckIcon className="size-5" /> Key created — copy it now
+            </DialogTitle>
+            <DialogDescription>
+              This key will never be shown again. Store it securely.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex items-center gap-2 my-2">
+            <code className="flex-1 break-all rounded bg-muted p-2 font-mono text-xs max-h-40 overflow-y-auto whitespace-pre-wrap select-all">
               {createdKey}
             </code>
-            <Button size="sm" onClick={() => copyKey(createdKey)}>
+            <Button size="sm" onClick={() => createdKey && copyKey(createdKey)}>
               <CopyIcon className="size-4 mr-1" /> Copy
             </Button>
           </div>
-          <p className="mt-2 text-xs text-muted-foreground">
-            This key will never be shown again.
-          </p>
-        </div>
-      )}
+          <DialogFooter>
+            <Button onClick={() => setCreatedKey(null)}>Done</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Card>
         <CardContent className="pt-6">
@@ -246,7 +285,7 @@ export function ApiKeysClient({ initialKeys, availableModels }: Props) {
             </div>
           </div>
 
-          <div className="mt-4 rounded-xl border overflow-hidden">
+          <div className="mt-4 rounded-xl border overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>

@@ -26,7 +26,6 @@ import {
 } from "@/components/ui/dialog";
 import {
   Field,
-  FieldDescription,
   FieldGroup,
   FieldLabel,
 } from "@/components/ui/field";
@@ -38,7 +37,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { PlusIcon, Trash2Icon, CopyIcon, CheckIcon, EyeIcon, EyeOffIcon } from "lucide-react";
+import { PlusIcon, Trash2Icon, CopyIcon, CheckIcon } from "lucide-react";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 const Schema = z.object({
@@ -67,8 +66,27 @@ export function ApiKeysClient({ initialKeys }: { initialKeys: ApiKey[] }) {
       setNewKey(res.key as string);
       setOpen(false);
       form.reset();
-      // refresh list
-      window.location.reload();
+      setKeys((prev) => [
+        {
+          id: res.id as string,
+          userId: "",
+          name: values.name,
+          keyHash: "",
+          keyPrefix: (res.key as string).slice(0, 12),
+          rpmLimit: values.rpmLimit ?? null,
+          monthlyBudget: values.monthlyBudgetUsd
+            ? BigInt(Math.round(values.monthlyBudgetUsd * 1_000_000))
+            : null,
+          monthlySpent: 0n,
+          monthStartedAt: null,
+          enabled: true,
+          expiresAt: null,
+          lastUsedAt: null,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+        ...prev,
+      ]);
     } else {
       toast.error("Failed: " + JSON.stringify((res as { error?: unknown }).error));
     }
@@ -97,16 +115,21 @@ export function ApiKeysClient({ initialKeys }: { initialKeys: ApiKey[] }) {
 
   return (
     <div className="flex flex-col gap-4">
-      {newKey && (
-        <div className="rounded-lg border border-emerald-500/40 bg-emerald-500/10 p-4">
-          <div className="flex items-center gap-2 font-medium text-emerald-600 dark:text-emerald-400">
-            <CheckIcon className="size-4" /> Key created — copy it now
-          </div>
-          <div className="mt-2 flex items-center gap-2">
-            <code className="flex-1 break-all rounded bg-muted p-2 font-mono text-xs">
+      <Dialog open={Boolean(newKey)} onOpenChange={(v) => !v && setNewKey(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
+              <CheckIcon className="size-5" /> Key created — copy it now
+            </DialogTitle>
+            <DialogDescription>
+              This key will never be shown again. Store it securely.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex items-center gap-2 my-2">
+            <code className="flex-1 break-all rounded bg-muted p-2 font-mono text-xs select-all">
               {newKey}
             </code>
-            <Button size="sm" onClick={() => copy(newKey)}>
+            <Button size="sm" onClick={() => newKey && copy(newKey)}>
               {copied ? (
                 <>
                   <CheckIcon className="size-4 mr-1" /> Copied
@@ -118,11 +141,11 @@ export function ApiKeysClient({ initialKeys }: { initialKeys: ApiKey[] }) {
               )}
             </Button>
           </div>
-          <p className="mt-2 text-xs text-muted-foreground">
-            This key will never be shown again. Store it securely.
-          </p>
-        </div>
-      )}
+          <DialogFooter>
+            <Button onClick={() => setNewKey(null)}>Done</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <div className="flex justify-end">
         <Dialog open={open} onOpenChange={setOpen}>
@@ -212,6 +235,7 @@ export function ApiKeysClient({ initialKeys }: { initialKeys: ApiKey[] }) {
                 <Button
                   variant="ghost"
                   size="icon-sm"
+                  className="hover:bg-destructive/10 hover:text-destructive"
                   onClick={() => setDeleteTarget(k.id)}
                   disabled={busyId === k.id}
                 >

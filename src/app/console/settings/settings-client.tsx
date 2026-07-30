@@ -43,10 +43,12 @@ export function SettingsClient({ user }: Props) {
   const [newPassword, setNewPassword] = React.useState("");
   const [confirmPassword, setConfirmPassword] = React.useState("");
   const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
-  const [theme, setTheme] = React.useState<"light" | "dark" | "system">(() => {
-    if (typeof window === "undefined") return "system";
-    return (localStorage.getItem("theme") as "light" | "dark" | null) ?? "system";
-  });
+  const [theme, setTheme] = React.useState<"light" | "dark" | "system">("system");
+
+  React.useEffect(() => {
+    const saved = localStorage.getItem("theme") as "light" | "dark" | null;
+    if (saved) setTheme(saved);
+  }, []);
 
   const initials = (user.name || "?")
     .split(/\s+/)

@@ -90,19 +90,27 @@ export async function callUpstreamStream(
 ): Promise<UpstreamStreamResponse> {
   const { base, key, timeout } = getUpstreamConfig();
   const controller = new AbortController();
+  // FIX #6: Timeout is for time-to-first-byte, not the full stream.
   const timer = setTimeout(() => controller.abort(), timeout);
   const mergedSignal = mergeSignals(controller.signal, req.signal);
 
-  const res = await fetch(`${base}${req.path}`, {
-    method: req.method ?? "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...(key ? { Authorization: `Bearer ${key}` } : {}),
-      Accept: "text/event-stream",
-    },
-    body: JSON.stringify(req.body),
-    signal: mergedSignal,
-  });
+  // FIX #13: Wrap in try/catch to clear timer if fetch throws before response.
+  let res: Response;
+  try {
+    res = await fetch(`${base}${req.path}`, {
+      method: req.method ?? "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(key ? { Authorization: `Bearer ${key}` } : {}),
+        Accept: "text/event-stream",
+      },
+      body: JSON.stringify(req.body),
+      signal: mergedSignal,
+    });
+  } catch (err) {
+    clearTimeout(timer);
+    throw err;
+  }
 
   if (!res.ok || !res.body) {
     clearTimeout(timer);
@@ -110,9 +118,11 @@ export async function callUpstreamStream(
     throw new UpstreamError(res.status, text || res.statusText);
   }
 
-  // Wrap the body so that we cancel the upstream timeout timer when the
-  // client finishes reading.
-  const wrapped = wrapStream(res.body, () => clearTimeout(timer));
+  // FIX #6: Clear TTFB timeout now that we have response headers.
+  // Long-running streams won't be killed by the TTFB timer.
+  clearTimeout(timer);
+
+  const wrapped = wrapStream(res.body, () => {});
   return { status: res.status, headers: res.headers, stream: wrapped };
 }
 

@@ -5,7 +5,6 @@ import { buttonVariants } from "@/components/ui/button";
 import { AlertTriangleIcon, ArrowLeftIcon } from "lucide-react";
 
 export default function GlobalError({
-  error,
   reset,
 }: {
   error: Error & { digest?: string };

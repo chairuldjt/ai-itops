@@ -26,11 +26,13 @@ import {
   PaperclipIcon,
   CopyIcon,
   Loader2Icon,
+  XIcon,
 } from "lucide-react";
 
 type Message = {
   role: "user" | "assistant" | "system";
   content: string;
+  image?: string; // base64 data URL for attached image
 };
 
 type ModelOption = {
@@ -47,6 +49,9 @@ export function ChatClient({
   userApiKeyPrefix: string | null;
   models: ModelOption[];
 }) {
+  const [apiKey, setApiKey] = React.useState("");
+  const [attachedImage, setAttachedImage] = React.useState<string | null>(null);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [selectedModel, setSelectedModel] = React.useState(
     modelOptions[0]?.id ?? ""
   );
@@ -70,21 +75,59 @@ export function ChatClient({
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const sendMessage = async () => {
-    if (!input.trim() || isGenerating) return;
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) return;
+    const reader = new FileReader();
+    reader.onload = () => setAttachedImage(reader.result as string);
+    reader.readAsDataURL(file);
+    // reset so re-selecting same file triggers change
+    e.target.value = "";
+  };
 
-    const userMessage: Message = { role: "user", content: input.trim() };
-    const allMessages: Message[] = [
+  const sendMessage = async () => {
+    if (!input.trim() || isGenerating || !apiKey.trim()) return;
+
+    const userMessage: Message = {
+      role: "user",
+      content: input.trim(),
+      image: attachedImage ?? undefined,
+    };
+
+    // Build OpenAI messages — include image_url part if attached
+    const apiMessages = [
       ...(systemPrompt
         ? [{ role: "system" as const, content: systemPrompt }]
         : []),
-      ...messages,
-      userMessage,
+      ...messages.map((m) => ({
+        role: m.role,
+        content: m.content,
+      })),
+      {
+        role: "user" as const,
+        content: attachedImage
+          ? [
+              { type: "text" as const, text: input.trim() },
+              { type: "image_url" as const, image_url: { url: attachedImage } },
+            ]
+          : input.trim(),
+      },
     ];
 
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
+    setAttachedImage(null);
     setIsGenerating(true);
+
+    if (!apiKey.trim()) {
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: "Please paste your API key in the configuration panel first." },
+      ]);
+      setIsGenerating(false);
+      return;
+    }
 
     try {
       if (stream) {
@@ -92,11 +135,11 @@ export function ChatClient({
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${userApiKeyPrefix ?? "sk_live_demo"}`,
+            Authorization: `Bearer ${apiKey}`,
           },
           body: JSON.stringify({
             model: selectedModel,
-            messages: allMessages,
+            messages: apiMessages,
             temperature,
             max_tokens: maxTokens,
             stream: true,
@@ -164,11 +207,11 @@ export function ChatClient({
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${userApiKeyPrefix ?? "sk_live_demo"}`,
+            Authorization: `Bearer ${apiKey}`,
           },
           body: JSON.stringify({
             model: selectedModel,
-            messages: allMessages,
+            messages: apiMessages,
             temperature,
             max_tokens: maxTokens,
             stream: false,
@@ -201,7 +244,7 @@ export function ChatClient({
   };
 
   return (
-    <div className="flex flex-col gap-4 h-[calc(100vh-8rem)]">
+    <div className="flex flex-col gap-4 h-[calc(100vh-8rem)] min-h-[500px]">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">
           Chat Playground
@@ -211,9 +254,9 @@ export function ChatClient({
         </p>
       </div>
 
-      <div className="flex flex-1 gap-4 min-h-0">
+      <div className="flex flex-1 flex-col lg:flex-row gap-4 min-h-0">
         {/* Left config panel */}
-        <Card className="w-80 shrink-0 flex flex-col">
+        <Card className="w-full lg:w-80 shrink-0 flex flex-col">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm">Configuration</CardTitle>
           </CardHeader>
@@ -289,14 +332,21 @@ export function ChatClient({
               />
             </div>
 
-            {userApiKeyPrefix && (
-              <div className="pt-2">
-                <Label className="text-xs">API Key</Label>
-                <p className="text-xs text-muted-foreground font-mono mt-1">
-                  {userApiKeyPrefix}…
+            <div className="pt-2 space-y-2">
+              <Label className="text-xs">API Key</Label>
+              <Input
+                type="password"
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+                placeholder={userApiKeyPrefix ? `sk_live_...` : "Paste your API key"}
+                className="font-mono text-xs h-8"
+              />
+              {!apiKey && userApiKeyPrefix && (
+                <p className="text-xs text-muted-foreground">
+                  Key <span className="font-mono">{userApiKeyPrefix}…</span> — paste full key to chat
                 </p>
-              </div>
-            )}
+              )}
+            </div>
           </CardContent>
         </Card>
 
@@ -336,6 +386,13 @@ export function ChatClient({
                           : "bg-muted"
                       }`}
                     >
+                      {msg.image && (
+                        <img
+                          src={msg.image}
+                          alt="Attached"
+                          className="mb-2 max-h-48 rounded-lg object-cover"
+                        />
+                      )}
                       <pre className="whitespace-pre-wrap font-sans">
                         {msg.content}
                       </pre>
@@ -352,8 +409,36 @@ export function ChatClient({
             </ScrollArea>
 
             <div className="border-t p-4">
+              {attachedImage && (
+                <div className="mb-2 flex items-center gap-2">
+                  <img
+                    src={attachedImage}
+                    alt="Attached"
+                    className="h-16 w-16 rounded-lg object-cover border"
+                  />
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    onClick={() => setAttachedImage(null)}
+                  >
+                    <XIcon className="size-4" />
+                  </Button>
+                </div>
+              )}
               <div className="flex gap-2">
-                <Button variant="outline" size="icon-sm" className="shrink-0">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleImageSelect}
+                />
+                <Button
+                  variant="outline"
+                  size="icon-sm"
+                  className="shrink-0"
+                  onClick={() => fileInputRef.current?.click()}
+                >
                   <PaperclipIcon className="size-4" />
                 </Button>
                 <textarea
@@ -373,7 +458,7 @@ export function ChatClient({
                 <Button
                   size="icon-sm"
                   onClick={sendMessage}
-                  disabled={!input.trim() || isGenerating}
+                  disabled={!input.trim() || !apiKey.trim() || isGenerating}
                 >
                   {isGenerating ? (
                     <Loader2Icon className="size-4 animate-spin" />
@@ -397,7 +482,7 @@ export function ChatClient({
         </Card>
 
         {/* Right JSON inspector */}
-        <Card className="w-60 shrink-0 flex flex-col">
+        <Card className="hidden lg:flex w-60 shrink-0 flex-col">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <CardTitle className="text-sm">Raw Response</CardTitle>

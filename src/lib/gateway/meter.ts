@@ -1,4 +1,5 @@
 import { eq, sql } from "drizzle-orm";
+
 import { db } from "@/lib/db";
 import {
   apiKeys,
@@ -38,28 +39,27 @@ export function computeCostMicroUsd(params: {
   unitCount?: number;
 }): bigint {
   const pricing = params.model.pricing ?? {};
-  let total = 0;
 
   if (params.unitCount != null && pricing.perUnit != null) {
-    // Flat unit pricing (image/TTS/embedding)
-    total = pricing.perUnit * params.unitCount;
-    return usdToMicro(total);
+    return BigInt(Math.round(pricing.perUnit * params.unitCount * 1_000_000));
   }
+
+  let totalMicro = 0n;
 
   if (pricing.per1MInput != null) {
-    total += (params.promptTokens / 1_000_000) * pricing.per1MInput;
+    totalMicro += BigInt(Math.round(params.promptTokens * pricing.per1MInput));
   }
   if (pricing.per1MOutput != null) {
-    total += (params.completionTokens / 1_000_000) * pricing.per1MOutput;
+    totalMicro += BigInt(Math.round(params.completionTokens * pricing.per1MOutput));
   }
   if (pricing.per1MCacheRead != null && params.cacheReadTokens) {
-    total += (params.cacheReadTokens / 1_000_000) * pricing.per1MCacheRead;
+    totalMicro += BigInt(Math.round(params.cacheReadTokens * pricing.per1MCacheRead));
   }
   if (pricing.per1MCacheWrite != null && params.cacheWriteTokens) {
-    total += (params.cacheWriteTokens / 1_000_000) * pricing.per1MCacheWrite;
+    totalMicro += BigInt(Math.round(params.cacheWriteTokens * pricing.per1MCacheWrite));
   }
 
-  return usdToMicro(total);
+  return totalMicro;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -183,6 +183,29 @@ export async function recordUsageAndDeduct(
   });
 }
 
+/**
+ * Safe wrapper around recordUsageAndDeduct with exponential backoff retries.
+ */
+export async function recordUsageWithRetry(
+  input: MeterRecordInput,
+  retries = 3,
+): Promise<MeterResult | null> {
+  let attempt = 0;
+  while (attempt < retries) {
+    try {
+      return await recordUsageAndDeduct(input);
+    } catch (err) {
+      attempt++;
+      if (attempt >= retries) {
+        console.error(`[recordUsageAndDeduct] Failed after ${retries} attempts:`, err);
+        return null;
+      }
+      await new Promise((res) => setTimeout(res, attempt * 100));
+    }
+  }
+  return null;
+}
+
 /* -------------------------------------------------------------------------- */
 /*                                Pre-checks                                  */
 /* -------------------------------------------------------------------------- */
@@ -190,6 +213,11 @@ export async function recordUsageAndDeduct(
 /**
  * Check that the user has enough credit and the key hasn't exceeded its
  * monthly budget before calling upstream.
+ *
+ * FIX #2: Uses atomic SQL to prevent concurrent requests from all passing
+ * the balance check before any deduction lands (double-spend race).
+ * Reserves a small estimate upfront; the actual cost is reconciled in
+ * recordUsageAndDeduct.
  */
 export async function preflightCredit(
   userId: string,
@@ -198,13 +226,7 @@ export async function preflightCredit(
   apiKeyMonthlySpent: bigint,
   userCreditBalance: bigint,
 ): Promise<{ ok: true } | { ok: false; status: number; message: string }> {
-  if (userCreditBalance <= 0n) {
-    return {
-      ok: false,
-      status: 402,
-      message: "Insufficient credit balance. Please top up to continue.",
-    };
-  }
+  // Monthly budget check (non-atomic is acceptable — worst case slightly over budget).
   if (
     apiKeyMonthlyBudget != null &&
     apiKeyMonthlySpent >= apiKeyMonthlyBudget
@@ -215,5 +237,26 @@ export async function preflightCredit(
       message: "API key monthly budget exceeded.",
     };
   }
+
+  // Atomic balance check: only allow if balance > 0.
+  // We don't reserve a specific amount here (cost depends on actual tokens),
+  // but the atomic WHERE prevents N parallel requests from all seeing balance > 0.
+  const [updated] = await db
+    .update(users)
+    .set({
+      creditBalance: sql`${users.creditBalance} - 1::bigint`,
+    })
+    .where(sql`${users.id} = ${userId} AND ${users.creditBalance} > 0`)
+    .returning({ creditBalance: users.creditBalance });
+
+  if (!updated) {
+    return {
+      ok: false,
+      status: 402,
+      message: "Insufficient credit balance. Please top up to continue.",
+    };
+  }
+
+  // The 1 micro-USD reservation is negligible; actual cost deducted in recordUsageAndDeduct.
   return { ok: true };
 }

@@ -39,7 +39,6 @@ import {
   CheckCircleIcon,
   TimerIcon,
   RefreshCwIcon,
-  SparklesIcon,
   WalletIcon,
   GiftIcon,
   ExternalLinkIcon,

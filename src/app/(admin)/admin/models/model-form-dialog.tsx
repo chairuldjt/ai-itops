@@ -194,7 +194,7 @@ export function ModelFormDialog({
             </TabsList>
 
             <TabsContent value="basic">
-              <FieldGroup className="grid grid-cols-2 gap-4 mt-4">
+              <FieldGroup className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
                 <Field>
                   <FieldLabel>Public ID (what users see)</FieldLabel>
                   <Input {...form.register("publicId")} placeholder="my-gpt-4o" />
@@ -254,7 +254,7 @@ export function ModelFormDialog({
             </TabsContent>
 
             <TabsContent value="pricing">
-              <FieldGroup className="grid grid-cols-2 gap-4 mt-4">
+              <FieldGroup className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
                 {isTokenModel ? (
                   <>
                     <Field>
@@ -284,7 +284,7 @@ export function ModelFormDialog({
             </TabsContent>
 
             <TabsContent value="capabilities">
-              <FieldGroup className="grid grid-cols-2 gap-4 mt-4">
+              <FieldGroup className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
                 {[
                   ["supportsImageInput", "Vision (image input)"],
                   ["supportsAudioInput", "Audio input"],
@@ -309,7 +309,32 @@ export function ModelFormDialog({
                 ))}
                 <Field className="col-span-2">
                   <FieldLabel>Max context tokens</FieldLabel>
-                  <Input type="number" {...form.register("capabilities.maxContextTokens")} />
+                  <Select
+                    value={String(form.watch("capabilities.maxContextTokens") ?? 0)}
+                    onValueChange={(v) =>
+                      form.setValue("capabilities.maxContextTokens", Number(v))
+                    }
+                  >
+                    <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
+                    <SelectContent>
+                      {[
+                        { value: "0", label: "Not set" },
+                        { value: "8192", label: "8K" },
+                        { value: "16384", label: "16K" },
+                        { value: "32768", label: "32K" },
+                        { value: "65536", label: "64K" },
+                        { value: "131072", label: "128K" },
+                        { value: "200000", label: "200K" },
+                        { value: "500000", label: "500K" },
+                        { value: "1000000", label: "1M" },
+                        { value: "2000000", label: "2M" },
+                      ].map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </Field>
               </FieldGroup>
             </TabsContent>

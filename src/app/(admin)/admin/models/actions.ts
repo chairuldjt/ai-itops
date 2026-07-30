@@ -64,7 +64,10 @@ export async function listAllModels() {
 
 export async function getModel(id: string) {
   await requireAdmin();
-  const rows = await db.select().from(models).where(eq(models.id, id)).limit(1);
+  // FIX #25: Validate id input.
+  const validId = z.string().min(1).safeParse(id);
+  if (!validId.success) return null;
+  const rows = await db.select().from(models).where(eq(models.id, validId.data)).limit(1);
   return rows[0] ?? null;
 }
 
@@ -142,23 +145,64 @@ export async function updateModel(id: string, input: ModelFormInput) {
 
 export async function deleteModel(id: string) {
   await requireAdmin();
-  await db.delete(models).where(eq(models.id, id));
+  // FIX #25: Validate id input.
+  const validId = z.string().min(1).safeParse(id);
+  if (!validId.success) {
+    return { ok: false, error: "Invalid model ID" };
+  }
+  try {
+    await db.delete(models).where(eq(models.id, validId.data));
+  } catch (err) {
+    // Only fallback to disable on FK constraint violation, not on connection errors.
+    // Drizzle wraps Postgres errors in err.cause — check both.
+    const cause = err instanceof Error ? err.cause : undefined;
+    const allMsg = [
+      err instanceof Error ? err.message : "",
+      cause instanceof Error ? cause.message : "",
+      String(cause ?? ""),
+    ].join(" ");
+    const causeCode = (cause as { code?: string } | undefined)?.code;
+    const isFkViolation =
+      allMsg.includes("foreign key") ||
+      allMsg.includes("23503") ||
+      causeCode === "23503";
+    if (!isFkViolation) throw err;
+    // FK reference exists — disable instead of delete.
+    await db
+      .update(models)
+      .set({ enabled: false, updatedAt: new Date() })
+      .where(eq(models.id, validId.data));
+    revalidatePath("/admin/models");
+    revalidatePath("/dashboard/models");
+    revalidatePath("/models");
+    return { ok: true, deleted: false, reason: "has_usage_logs" };
+  }
   revalidatePath("/admin/models");
   revalidatePath("/dashboard/models");
   revalidatePath("/models");
-  return { ok: true };
+  return { ok: true, deleted: true };
 }
 
 /* -------------------------------------------------------------------------- */
 /*                                    TOGGLE                                  */
 /* -------------------------------------------------------------------------- */
 
+const ToggleModelSchema = z.object({
+  id: z.string().min(1),
+  enabled: z.boolean(),
+});
+
 export async function toggleModelEnabled(id: string, enabled: boolean) {
   await requireAdmin();
+  // FIX #25: Validate inputs.
+  const parsed = ToggleModelSchema.safeParse({ id, enabled });
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.flatten().fieldErrors };
+  }
   await db
     .update(models)
-    .set({ enabled, updatedAt: new Date() })
-    .where(eq(models.id, id));
+    .set({ enabled: parsed.data.enabled, updatedAt: new Date() })
+    .where(eq(models.id, parsed.data.id));
   revalidatePath("/admin/models");
   return { ok: true };
 }

@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { NewspaperIcon, ArrowRightIcon } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
