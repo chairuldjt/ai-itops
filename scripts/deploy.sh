@@ -84,6 +84,11 @@ echo "   ✅ Database ready"
 echo ""
 echo "🔨 Building application..."
 pnpm build
+
+# Copy static assets for standalone output
+echo "   Copying static assets..."
+cp -r .next/static .next/standalone/.next/static
+cp -r public .next/standalone/public
 echo "   ✅ Build complete"
 
 # --------------------------------------------------

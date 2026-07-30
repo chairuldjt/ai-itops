@@ -11,8 +11,8 @@ module.exports = {
   apps: [
     {
       name: "ai-gateway",
-      script: "node_modules/next/dist/bin/next",
-      args: "start",
+      script: ".next/standalone/server.js",
+      args: "",
       cwd: __dirname,
       instances: 1,
       exec_mode: "fork",
