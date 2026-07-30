@@ -341,6 +341,7 @@ export function transformOpenAIStreamToAnthropic(
     async pull(controller) {
       try {
         const { value, done } = await reader.read();
+        console.log("[anthropic-transform] pull:", done ? "DONE" : `${value?.length} bytes`);
         // FIX #14: Skip if stream already closed (e.g. by [DONE] event).
         if (done || streamClosed) {
           if (!streamClosed) {
