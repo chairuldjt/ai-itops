@@ -1,0 +1,102 @@
+export const metadata = {
+  title: "OpenAI Compatible Setup",
+  description: "Configure opencode, Cursor, or any OpenAI SDK to use AI Gateway.",
+  order: 3,
+}
+
+# OpenAI Compatible Setup
+
+The gateway exposes a full **OpenAI-compatible** API. Any tool that speaks the OpenAI wire protocol works out of the box.
+
+## Base URL
+
+```
+https://your-domain.com/v1
+```
+
+## Authentication
+
+Pass your API key in the `Authorization` header:
+
+```
+Authorization: Bearer sk_live_YOUR_KEY
+```
+
+## opencode (CLI)
+
+Create or edit `~/.config/opencode/config.json`:
+
+```json
+{
+  "providers": {
+    "aigateway": {
+      "type": "openai",
+      "baseURL": "https://your-domain.com/v1",
+      "apiKey": "sk_live_YOUR_KEY"
+    }
+  }
+}
+```
+
+Then use it:
+
+```bash
+opencode --provider aigateway
+```
+
+## Cursor
+
+1. Open **Cursor Settings → Models**
+2. Click **+ Add model**
+3. Enter the model name (e.g. `gpt-4o`)
+4. Set **API Base URL** to `https://your-domain.com/v1`
+5. Paste your API key
+6. Set as default
+
+## Python (OpenAI SDK)
+
+```python
+from openai import OpenAI
+
+client = OpenAI(
+    base_url="https://your-domain.com/v1",
+    api_key="sk_live_YOUR_KEY"
+)
+
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[{"role": "user", "content": "Hello!"}]
+)
+print(response.choices[0].message.content)
+```
+
+## Node.js (OpenAI SDK)
+
+```javascript
+import OpenAI from "openai";
+
+const client = new OpenAI({
+  baseURL: "https://your-domain.com/v1",
+  apiKey: "sk_live_YOUR_KEY",
+});
+
+const response = await client.chat.completions.create({
+  model: "gpt-4o",
+  messages: [{ role: "user", content: "Hello!" }],
+});
+
+console.log(response.choices[0].message.content);
+```
+
+## Supported endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/v1/chat/completions` | POST | Chat completions (streaming + non-streaming) |
+| `/v1/models` | GET | List available models |
+| `/v1/images/generations` | POST | Image generation (if supported) |
+
+## Next steps
+
+- [Anthropic Setup](/docs/anthropic-setup) — configure the Anthropic SDK
+- [Claude Code Setup](/docs/claude-code-setup) — set up Claude Code

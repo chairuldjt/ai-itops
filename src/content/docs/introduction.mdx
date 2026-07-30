@@ -1,0 +1,55 @@
+export const metadata = {
+  title: "Introduction",
+  description: "What is AI Gateway and how it works.",
+  order: 1,
+}
+
+# Introduction
+
+AI Gateway is a **unified AI model hub** that converts leading LLMs into OpenAI and Anthropic compatible APIs. One API key unlocks your entire model catalog.
+
+## What it does
+
+| Feature | Description |
+|---------|-------------|
+| Unified API | OpenAI `/v1` and Anthropic `/anthropic/v1` endpoints |
+| One key | Single API key for every model in your catalog |
+| Capability handling | Non-vision models receive images gracefully — no crashes |
+| Usage tracking | Per-request token metering, credit balance, audit logs |
+| Admin control | Map model names, set pricing, declare capabilities |
+
+## How it works
+
+```
+Client (opencode / Claude Code / SDK)
+        │
+        ▼
+   AI Gateway
+   ┌─────────────────────────────┐
+   │  Auth  │ Translate │ Meter  │
+   └─────────────────────────────┘
+        │
+        ▼
+   9router upstream (OpenAI-compatible)
+```
+
+1. Your client sends a request to the gateway
+2. The gateway authenticates your API key
+3. It translates the request to the upstream model format
+4. Capability enforcement runs (e.g., image stripping for text-only models)
+5. The response streams back through the gateway
+6. Tokens are metered and credits deducted
+
+## Key concepts
+
+- **API Key** — issued from the dashboard, maps to a user with a credit balance
+- **Model** — a public name (e.g. `gpt-4o`) mapped to an upstream model ID
+- **Capability** — declared per model: vision, streaming, tool use, etc.
+- **Image policy** — what happens when a non-vision model receives an image
+- **Credit** — micro-USD balance, deducted per request based on token usage
+
+## Next steps
+
+- [Quickstart](/docs/quickstart) — get running in 5 minutes
+- [OpenAI Setup](/docs/openai-setup) — configure OpenAI-compatible tools
+- [Models](/docs/image-models) — browse the model catalog

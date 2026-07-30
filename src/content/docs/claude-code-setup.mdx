@@ -1,0 +1,84 @@
+export const metadata = {
+  title: "Claude Code Setup",
+  description: "Step-by-step guide to configure Claude Code with AI Gateway.",
+  order: 5,
+}
+
+# Claude Code Setup
+
+Claude Code is Anthropic's CLI coding assistant. Point it at AI Gateway with two environment variables.
+
+## Quick setup
+
+```bash
+export ANTHROPIC_BASE_URL=https://your-domain.com/anthropic/v1
+export ANTHROPIC_API_KEY=sk_live_YOUR_KEY
+claude
+```
+
+## Step-by-step
+
+### 1. Get your API key
+
+From the dashboard, generate an API key under **Dashboard → Keys**.
+
+### 2. Set environment variables
+
+Add these to your shell profile (`~/.zshrc`, `~/.bashrc`, or equivalent):
+
+```bash
+export ANTHROPIC_BASE_URL="https://your-domain.com/anthropic/v1"
+export ANTHROPIC_API_KEY="sk_live_YOUR_KEY"
+```
+
+Reload your shell:
+
+```bash
+source ~/.zshrc
+```
+
+### 3. Start Claude Code
+
+```bash
+claude
+```
+
+That's it. Claude Code now routes through AI Gateway.
+
+## Verify it works
+
+In Claude Code, run:
+
+```
+/help
+```
+
+If you see the help menu without errors, the connection is working.
+
+## Model selection
+
+Claude Code may request specific models. The gateway maps them to configured upstream models. Check your admin panel to ensure the models you need are mapped.
+
+## Troubleshooting
+
+| Problem | Solution |
+|---------|----------|
+| `401 Unauthorized` | Check `ANTHROPIC_API_KEY` is set correctly |
+| `404 Not Found` | Verify `ANTHROPIC_BASE_URL` includes `/anthropic/v1` |
+| Connection refused | Ensure the gateway is running and reachable |
+| Model not found | Add the model in the admin panel |
+
+## Alternative: use a config file
+
+You can set the variables in a `.env` file in your project root:
+
+```bash
+# .env
+ANTHROPIC_BASE_URL=https://your-domain.com/anthropic/v1
+ANTHROPIC_API_KEY=sk_live_YOUR_KEY
+```
+
+## Next steps
+
+- [Capability Handling](/docs/capability-handling) — understand image policies
+- [Rate Limits](/docs/rate-limits) — check your quotas

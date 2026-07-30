@@ -1,0 +1,11 @@
+{
+  "$schema": "https://opencode.ai/mcp.json",
+  "mcpServers": {
+    "shadcn": {
+      "command": "npx",
+      "args": ["-y", "shadcn@latest", "mcp"],
+      "type": "stdio",
+      "enabled": true
+    }
+  }
+}

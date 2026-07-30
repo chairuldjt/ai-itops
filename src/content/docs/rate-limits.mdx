@@ -1,0 +1,89 @@
+export const metadata = {
+  title: "Rate Limits",
+  description: "Rate limiting, RPM, quotas, and budget caps.",
+  order: 9,
+}
+
+# Rate Limits
+
+AI Gateway enforces rate limits to protect upstream providers and ensure fair usage.
+
+## Rate limit types
+
+### Requests per minute (RPM)
+
+Each API key has a configurable RPM limit:
+
+| Tier | Default RPM | Max RPM |
+|------|:-----------:|:-------:|
+| Free | 60 | 120 |
+| Pro | 300 | 1,000 |
+| Enterprise | Custom | Custom |
+
+### Tokens per minute (TPM)
+
+A secondary limit on token throughput:
+
+| Tier | Default TPM |
+|------|:-----------:|
+| Free | 40,000 |
+| Pro | 200,000 |
+| Enterprise | Custom |
+
+### Budget caps
+
+Per-user credit limits prevent runaway costs:
+
+```
+User balance: $10.00
+Monthly budget: $50.00
+```
+
+When the balance or budget is exhausted, requests return `429 Too Many Requests`.
+
+## Error response
+
+```json
+{
+  "error": {
+    "message": "Rate limit exceeded. Please wait before retrying.",
+    "type": "rate_limit_exceeded",
+    "code": "rate_limit_exceeded",
+    "retry_after": 30
+  }
+}
+```
+
+The `retry_after` field indicates seconds until the limit resets.
+
+## Headers
+
+Rate limit info is included in response headers:
+
+```
+X-RateLimit-Limit: 300
+X-RateLimit-Remaining: 287
+X-RateLimit-Reset: 1700000060
+```
+
+## Best practices
+
+- **Implement exponential backoff** — respect the `retry_after` value
+- **Cache responses** — reduce unnecessary API calls
+- **Use streaming** — better for long responses, lower timeout risk
+- **Monitor usage** — check the dashboard for real-time usage stats
+
+## Checking your limits
+
+```bash
+curl https://your-domain.com/v1/models \
+  -H "Authorization: Bearer sk_live_YOUR_KEY" \
+  -D -
+```
+
+Headers in the response show your current rate limit status.
+
+## Next steps
+
+- [Management API](/docs/management-api) — adjust limits programmatically
+- [FAQ](/docs/faq) — common rate limit questions

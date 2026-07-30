@@ -1,0 +1,2585 @@
+
+> ai-gateway@0.1.0 dev E:\project\web\ai-gateway
+> next dev --turbopack
+
+▲ Next.js 16.2.12 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://10.252.45.209:3000
+- Environments: .env
+✓ Ready in 384ms
+⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+- Experiments (use with caution):
+  · serverActions
+
+ GET /login 200 in 700ms (next.js: 318ms, proxy.ts: 88ms, application-code: 294ms)
+[2m2026-07-28T16:18:44.344Z[0m [31mERROR[0m [1m[Better Auth]:[0m Error Error: Invalid password hash
+    at ignore-listed frames
+# SERVER_ERROR:  Error: Invalid password hash
+    at ignore-listed frames
+ POST /api/auth/sign-in/email 500 in 1129ms (next.js: 860ms, proxy.ts: 6ms, application-code: 263ms)
+[2m2026-07-28T16:20:27.206Z[0m [33mWARN[0m [1m[Better Auth]:[0m User not found
+ POST /api/auth/sign-in/email 401 in 134ms (next.js: 16ms, proxy.ts: 5ms, application-code: 113ms)
+ GET /login 200 in 85ms (next.js: 3ms, proxy.ts: 3ms, application-code: 79ms)
+ GET /login 200 in 52ms (next.js: 3ms, proxy.ts: 3ms, application-code: 46ms)
+ GET / 200 in 143ms (next.js: 33ms, proxy.ts: 8ms, application-code: 101ms)
+ GET /login 200 in 30ms (next.js: 4ms, proxy.ts: 5ms, application-code: 21ms)
+ GET /signup 200 in 49ms (next.js: 20ms, proxy.ts: 3ms, application-code: 26ms)
+ GET / 200 in 12ms (next.js: 3ms, proxy.ts: 3ms, application-code: 6ms)
+ GET / 200 in 52ms (next.js: 4ms, proxy.ts: 3ms, application-code: 46ms)
+ GET /models 200 in 120ms (next.js: 36ms, proxy.ts: 2ms, application-code: 82ms)
+[browser] In HTML, <li> cannot be a descendant of <li>.
+This will cause a hydration error.
+
+  ...
+    <RedirectErrorBoundary router={{...}}>
+      <InnerLayoutRouter url="/models" tree={[...]} params={{}} cacheNode={{rsc:<Fragment>, ...}} segmentPath={[...]} ...>
+        <SegmentViewNode type="page" pagePath="models/pag...">
+          <SegmentTrieNode>
+          <ModelsPage>
+            <ModelsCatalog models={[...]}>
+              <main className="mx-auto ma...">
+                <PageHeader title="Models" description="Browse and..." breadcrumb={[...]}>
+                  <div className="flex flex-...">
+                    <div className="min-w-0">
+                      <Breadcrumb className="mb-2">
+                        <nav aria-label="breadcrumb" data-slot="breadcrumb" className="mb-2">
+                          <BreadcrumbList>
+                            <ol data-slot="breadcrumb..." className="flex flex-...">
+                              <BreadcrumbItem>
+                              <BreadcrumbItem>
+>                               <li data-slot="breadcrumb-item" className="inline-flex items-center gap-1.5">
+                                  <BreadcrumbSeparator>
+>                                   <li
+>                                     data-slot="breadcrumb-separator"
+>                                     role="presentation"
+>                                     aria-hidden="true"
+>                                     className={"[&>svg]:size-3.5"}
+>                                   >
+                                  ...
+                      ...
+                ...
+        ...
+      ...
+ 
+[browser] <li> cannot contain a nested <li>.
+See this log for the ancestor stack trace. 
+ GET /models 200 in 36ms (next.js: 3ms, proxy.ts: 3ms, application-code: 30ms)
+ GET /docs 200 in 1062ms (next.js: 654ms, proxy.ts: 2ms, application-code: 406ms)
+ GET /docs 200 in 76ms (next.js: 17ms, proxy.ts: 3ms, application-code: 56ms)
+ GET /models 200 in 61ms (next.js: 3ms, proxy.ts: 3ms, application-code: 55ms)
+ GET /models 200 in 29ms (next.js: 3ms, proxy.ts: 2ms, application-code: 24ms)
+ GET /docs 200 in 60ms (next.js: 13ms, proxy.ts: 2ms, application-code: 45ms)
+ POST /api/auth/sign-in/email 200 in 156ms (next.js: 14ms, proxy.ts: 2ms, application-code: 139ms)
+ GET /models 200 in 33ms (next.js: 3ms, proxy.ts: 4ms, application-code: 26ms)
+ GET /docs 200 in 61ms (next.js: 13ms, proxy.ts: 2ms, application-code: 45ms)
+ GET /docs/anthropic-setup 200 in 67ms (next.js: 14ms, proxy.ts: 4ms, application-code: 49ms)
+ GET /docs/claude-code-setup 200 in 54ms (next.js: 4ms, proxy.ts: 3ms, application-code: 46ms)
+ GET /docs/introduction 200 in 61ms (next.js: 14ms, proxy.ts: 2ms, application-code: 45ms)
+ GET /docs/quickstart 200 in 62ms (next.js: 13ms, proxy.ts: 2ms, application-code: 47ms)
+ GET /docs/management-api 200 in 68ms (next.js: 11ms, proxy.ts: 2ms, application-code: 55ms)
+ GET /docs/rate-limits 200 in 58ms (next.js: 12ms, proxy.ts: 2ms, application-code: 43ms)
+ GET / 200 in 54ms (next.js: 3ms, proxy.ts: 3ms, application-code: 48ms)
+ GET /docs 200 in 55ms (next.js: 14ms, proxy.ts: 1967µs, application-code: 40ms)
+ GET /docs 200 in 64ms (next.js: 13ms, proxy.ts: 2ms, application-code: 49ms)
+ GET /models 200 in 58ms (next.js: 2ms, proxy.ts: 2ms, application-code: 53ms)
+ GET /login?redirect=%2Fdashboard 200 in 22ms (next.js: 2ms, proxy.ts: 1987µs, application-code: 18ms)
+ GET / 200 in 49ms (next.js: 3ms, proxy.ts: 2ms, application-code: 44ms)
+ GET /models 200 in 24ms (next.js: 3ms, proxy.ts: 2ms, application-code: 20ms)
+ GET / 200 in 288ms (next.js: 3ms, proxy.ts: 2ms, application-code: 283ms)
+ GET /login 200 in 25ms (next.js: 3ms, proxy.ts: 3ms, application-code: 19ms)
+ POST /api/auth/sign-in/email 200 in 131ms (next.js: 15ms, proxy.ts: 3ms, application-code: 113ms)
+ GET /api/auth/get-session 200 in 14ms (next.js: 4ms, proxy.ts: 2ms, application-code: 8ms)
+ GET /dashboard 200 in 2.3s (next.js: 1969ms, proxy.ts: 2ms, application-code: 348ms)
+ GET /dashboard 200 in 462ms (next.js: 100ms, proxy.ts: 62ms, application-code: 300ms)
+ GET /dashboard 200 in 225ms (next.js: 7ms, proxy.ts: 6ms, application-code: 212ms)
+ GET /dashboard 200 in 223ms (next.js: 12ms, proxy.ts: 7ms, application-code: 203ms)
+ GET /dashboard 200 in 222ms (next.js: 37ms, proxy.ts: 7ms, application-code: 178ms)
+ GET /dashboard 200 in 222ms (next.js: 67ms, proxy.ts: 7ms, application-code: 148ms)
+ GET /dashboard 200 in 222ms (next.js: 87ms, proxy.ts: 11ms, application-code: 124ms)
+ GET /dashboard 200 in 265ms (next.js: 5ms, proxy.ts: 14ms, application-code: 246ms)
+ GET /dashboard 200 in 223ms (next.js: 7ms, proxy.ts: 7ms, application-code: 209ms)
+ GET /dashboard 200 in 217ms (next.js: 43ms, proxy.ts: 7ms, application-code: 168ms)
+ GET /dashboard 200 in 217ms (next.js: 68ms, proxy.ts: 7ms, application-code: 142ms)
+ GET /dashboard 200 in 217ms (next.js: 98ms, proxy.ts: 11ms, application-code: 108ms)
+ GET /dashboard 200 in 221ms (next.js: 20ms, proxy.ts: 6ms, application-code: 195ms)
+ GET /dashboard 200 in 258ms (next.js: 5ms, proxy.ts: 3ms, application-code: 251ms)
+ GET /dashboard 200 in 233ms (next.js: 13ms, proxy.ts: 7ms, application-code: 213ms)
+ GET /dashboard 200 in 230ms (next.js: 25ms, proxy.ts: 7ms, application-code: 197ms)
+ GET /dashboard 200 in 230ms (next.js: 48ms, proxy.ts: 7ms, application-code: 174ms)
+ GET /dashboard 200 in 229ms (next.js: 70ms, proxy.ts: 8ms, application-code: 151ms)
+ GET /dashboard 200 in 228ms (next.js: 101ms, proxy.ts: 18ms, application-code: 110ms)
+ GET /dashboard 200 in 55ms (next.js: 5ms, proxy.ts: 4ms, application-code: 45ms)
+ GET /api/auth/get-session 200 in 210ms (next.js: 169ms, proxy.ts: 2ms, application-code: 39ms)
+ GET /dashboard/models 404 in 265ms (next.js: 246ms, proxy.ts: 2ms, application-code: 17ms)
+ GET /dashboard/models 404 in 62ms (next.js: 5ms, proxy.ts: 2ms, application-code: 55ms)
+ GET /api/auth/get-session 200 in 27ms (next.js: 17ms, proxy.ts: 3ms, application-code: 8ms)
+ GET /dashboard/keys 200 in 1031ms (next.js: 941ms, proxy.ts: 2ms, application-code: 88ms)
+ GET /dashboard/models 404 in 26ms (next.js: 6ms, proxy.ts: 3ms, application-code: 17ms)
+ GET /dashboard/models 404 in 38ms (next.js: 5ms, proxy.ts: 2ms, application-code: 30ms)
+ GET /api/auth/get-session 200 in 29ms (next.js: 16ms, proxy.ts: 3ms, application-code: 9ms)
+ GET /dashboard/usage 404 in 22ms (next.js: 4ms, proxy.ts: 2ms, application-code: 16ms)
+ GET /dashboard/usage 404 in 37ms (next.js: 5ms, proxy.ts: 2ms, application-code: 30ms)
+ GET /dashboard/settings 404 in 21ms (next.js: 4ms, proxy.ts: 2ms, application-code: 15ms)
+ GET /dashboard/settings 404 in 38ms (next.js: 4ms, proxy.ts: 3ms, application-code: 31ms)
+ GET /admin 200 in 1278ms (next.js: 1206ms, proxy.ts: 2ms, application-code: 70ms)
+ GET /admin/models 200 in 800ms (next.js: 741ms, proxy.ts: 3ms, application-code: 57ms)
+ GET /dashboard/settings 404 in 32ms (next.js: 7ms, proxy.ts: 3ms, application-code: 22ms)
+ GET /dashboard/settings 404 in 48ms (next.js: 5ms, proxy.ts: 5ms, application-code: 38ms)
+ GET /api/auth/get-session 200 in 35ms (next.js: 21ms, proxy.ts: 4ms, application-code: 10ms)
+ GET /admin/models 200 in 51ms (next.js: 3ms, proxy.ts: 2ms, application-code: 46ms)
+ GET /admin 200 in 37ms (next.js: 3ms, proxy.ts: 1986µs, application-code: 33ms)
+ GET /admin 200 in 38ms (next.js: 3ms, proxy.ts: 2ms, application-code: 33ms)
+ GET /dashboard/keys 200 in 42ms (next.js: 3ms, proxy.ts: 1969µs, application-code: 37ms)
+ GET /dashboard 200 in 25ms (next.js: 3ms, proxy.ts: 2ms, application-code: 20ms)
+ GET /api/auth/get-session 200 in 26ms (next.js: 17ms, proxy.ts: 2ms, application-code: 6ms)
+ GET / 200 in 71ms (next.js: 14ms, proxy.ts: 2ms, application-code: 54ms)
+✓ Compiled in 379ms
+✓ Compiled in 286ms
+✓ Compiled in 258ms
+ GET / 200 in 2.2s (next.js: 1071ms, proxy.ts: 4ms, application-code: 1088ms)
+ GET / 200 in 820ms (next.js: 63ms, proxy.ts: 333ms, application-code: 424ms)
+ GET / 200 in 334ms (next.js: 10ms, proxy.ts: 5ms, application-code: 318ms)
+ GET / 200 in 334ms (next.js: 55ms, proxy.ts: 6ms, application-code: 273ms)
+ GET / 200 in 332ms (next.js: 162ms, proxy.ts: 7ms, application-code: 162ms)
+ GET / 200 in 334ms (next.js: 109ms, proxy.ts: 6ms, application-code: 219ms)
+ GET / 200 in 432ms (next.js: 5ms, proxy.ts: 3ms, application-code: 424ms)
+ GET / 200 in 800ms (next.js: 7ms, proxy.ts: 2ms, application-code: 791ms)
+ GET / 200 in 739ms (next.js: 59ms, proxy.ts: 5ms, application-code: 676ms)
+ GET / 200 in 743ms (next.js: 9ms, proxy.ts: 5ms, application-code: 729ms)
+ GET / 200 in 741ms (next.js: 128ms, proxy.ts: 4ms, application-code: 609ms)
+ GET / 200 in 749ms (next.js: 182ms, proxy.ts: 3ms, application-code: 564ms)
+ GET / 200 in 102ms (next.js: 33ms, proxy.ts: 5ms, application-code: 64ms)
+ GET / 200 in 584ms (next.js: 6ms, proxy.ts: 4ms, application-code: 574ms)
+ GET /api/auth/get-session 200 in 285ms (next.js: 207ms, proxy.ts: 4ms, application-code: 74ms)
+✓ Compiled in 226ms
+ GET / 200 in 307ms (next.js: 63ms, proxy.ts: 25ms, application-code: 219ms)
+ GET / 200 in 106ms (next.js: 4ms, proxy.ts: 3ms, application-code: 99ms)
+✓ Compiled in 247ms
+⨯ ReferenceError: Nav is not defined
+    at HomePage (src\app\(public)\page.tsx:469:8)
+  467 |   return (
+  468 |     <main className="flex min-h-svh flex-col">
+> 469 |       <Nav />
+      |        ^
+  470 |       <Hero />
+  471 |       <Features />
+  472 |       <HowItWorks /> {
+  digest: '14683766'
+}
+⨯ ReferenceError: Nav is not defined
+    at HomePage (src\app\(public)\page.tsx:469:8)
+  467 |   return (
+  468 |     <main className="flex min-h-svh flex-col">
+> 469 |       <Nav />
+      |        ^
+  470 |       <Hero />
+  471 |       <Features />
+  472 |       <HowItWorks /> {
+  digest: '14683766'
+}
+ GET / 200 in 208ms (next.js: 75ms, proxy.ts: 21ms, application-code: 112ms)
+ GET / 200 in 42ms (next.js: 4ms, proxy.ts: 4ms, application-code: 35ms)
+✓ Compiled in 268ms
+ GET / 200 in 557ms (next.js: 61ms, proxy.ts: 25ms, application-code: 471ms)
+ GET /api/auth/get-session 200 in 256ms (next.js: 225ms, proxy.ts: 4ms, application-code: 26ms)
+ GET / 200 in 346ms (next.js: 54ms, proxy.ts: 24ms, application-code: 268ms)
+ GET / 200 in 167ms (next.js: 3ms, proxy.ts: 2ms, application-code: 162ms)
+ GET / 200 in 113ms (next.js: 5ms, proxy.ts: 4ms, application-code: 104ms)
+ GET / 200 in 273ms (next.js: 50ms, proxy.ts: 20ms, application-code: 203ms)
+ GET / 200 in 124ms (next.js: 3ms, proxy.ts: 2ms, application-code: 118ms)
+ GET / 200 in 75ms (next.js: 3ms, proxy.ts: 3ms, application-code: 69ms)
+✓ Compiled in 409ms
+ GET / 200 in 699ms (next.js: 5ms, proxy.ts: 3ms, application-code: 690ms)
+ GET / 200 in 495ms (next.js: 74ms, proxy.ts: 27ms, application-code: 393ms)
+ GET / 200 in 301ms (next.js: 8ms, proxy.ts: 8ms, application-code: 285ms)
+ GET / 200 in 300ms (next.js: 68ms, proxy.ts: 8ms, application-code: 225ms)
+ GET / 200 in 297ms (next.js: 202ms, proxy.ts: 7ms, application-code: 89ms)
+ GET / 200 in 299ms (next.js: 139ms, proxy.ts: 7ms, application-code: 154ms)
+ GET / 200 in 185ms (next.js: 61ms, proxy.ts: 27ms, application-code: 97ms)
+✓ Compiled in 251ms
+ GET / 200 in 274ms (next.js: 61ms, proxy.ts: 24ms, application-code: 190ms)
+ GET / 200 in 89ms (next.js: 4ms, proxy.ts: 3ms, application-code: 83ms)
+✓ Compiled in 340ms
+ GET / 200 in 465ms (next.js: 50ms, proxy.ts: 20ms, application-code: 395ms)
+ GET / 200 in 302ms (next.js: 3ms, proxy.ts: 4ms, application-code: 294ms)
+ GET / 200 in 190ms (next.js: 8ms, proxy.ts: 5ms, application-code: 178ms)
+ GET / 200 in 190ms (next.js: 58ms, proxy.ts: 5ms, application-code: 127ms)
+ GET / 200 in 190ms (next.js: 101ms, proxy.ts: 6ms, application-code: 83ms)
+✓ Compiled in 291ms
+ GET / 200 in 462ms (next.js: 127ms, proxy.ts: 4ms, application-code: 332ms)
+ GET / 200 in 249ms (next.js: 3ms, proxy.ts: 20ms, application-code: 225ms)
+ GET / 200 in 178ms (next.js: 50ms, proxy.ts: 5ms, application-code: 123ms)
+ GET / 200 in 177ms (next.js: 94ms, proxy.ts: 5ms, application-code: 79ms)
+ GET / 200 in 181ms (next.js: 6ms, proxy.ts: 5ms, application-code: 171ms)
+✓ Compiled in 336ms
+ GET / 200 in 635ms (next.js: 4ms, proxy.ts: 5ms, application-code: 626ms)
+ GET / 200 in 442ms (next.js: 52ms, proxy.ts: 20ms, application-code: 370ms)
+ GET / 200 in 351ms (next.js: 160ms, proxy.ts: 7ms, application-code: 184ms)
+ GET / 200 in 354ms (next.js: 11ms, proxy.ts: 6ms, application-code: 337ms)
+ GET / 200 in 352ms (next.js: 202ms, proxy.ts: 8ms, application-code: 141ms)
+ GET / 200 in 354ms (next.js: 117ms, proxy.ts: 6ms, application-code: 232ms)
+ GET / 200 in 201ms (next.js: 5ms, proxy.ts: 2ms, application-code: 193ms)
+ GET / 200 in 133ms (next.js: 8ms, proxy.ts: 4ms, application-code: 121ms)
+ GET / 200 in 69ms (next.js: 3ms, proxy.ts: 3ms, application-code: 63ms)
+✓ Compiled in 478ms
+ GET / 200 in 895ms (next.js: 7ms, proxy.ts: 4ms, application-code: 884ms)
+ GET / 200 in 514ms (next.js: 68ms, proxy.ts: 32ms, application-code: 414ms)
+ GET / 200 in 358ms (next.js: 10ms, proxy.ts: 8ms, application-code: 341ms)
+ GET / 200 in 357ms (next.js: 77ms, proxy.ts: 8ms, application-code: 272ms)
+ GET / 200 in 425ms (next.js: 135ms, proxy.ts: 8ms, application-code: 282ms)
+ GET / 200 in 425ms (next.js: 197ms, proxy.ts: 8ms, application-code: 220ms)
+ GET / 200 in 345ms (next.js: 4ms, proxy.ts: 2ms, application-code: 339ms)
+ GET / 200 in 287ms (next.js: 17ms, proxy.ts: 3ms, application-code: 267ms)
+ GET / 200 in 200ms (next.js: 60ms, proxy.ts: 5ms, application-code: 135ms)
+ GET / 200 in 204ms (next.js: 8ms, proxy.ts: 7ms, application-code: 189ms)
+ GET / 200 in 196ms (next.js: 115ms, proxy.ts: 2ms, application-code: 78ms)
+✓ Compiled in 277ms
+ GET / 200 in 303ms (next.js: 67ms, proxy.ts: 28ms, application-code: 208ms)
+ GET / 200 in 81ms (next.js: 3ms, proxy.ts: 3ms, application-code: 75ms)
+[browser] Base UI: A component that acts as a button expected a native <button> because the `nativeButton` prop is true. Rendering a non-<button> removes native button semantics, which can impact forms and accessibility. Use a real <button> in the `render` prop, or set `nativeButton` to `false`.
+    at Button (http://localhost:3000/_next/static/chunks/src_1qo63p4._.js:113:325)
+    at UserNav (http://localhost:3000/_next/static/chunks/src_1qo63p4._.js:1163:326)
+    at SiteTopBar (http://localhost:3000/_next/static/chunks/src_1qo63p4._.js:1703:359)
+    at PublicLayout (about://React/Server/E:%5Cproject%5Cweb%5Cai-gateway%5C.next%5Cdev%5Cserver%5Cchunks%5Cssr%5C_0vn81qq._.js?70:358:375) 
+ GET /api/auth/get-session 200 in 339ms (next.js: 227ms, proxy.ts: 8ms, application-code: 104ms)
+ GET /docs 200 in 172ms (next.js: 67ms, proxy.ts: 2ms, application-code: 102ms)
+[browser] Base UI: A component that acts as a button expected a native <button> because the `nativeButton` prop is true. Rendering a non-<button> removes native button semantics, which can impact forms and accessibility. Use a real <button> in the `render` prop, or set `nativeButton` to `false`.
+    at Button (http://localhost:3000/_next/static/chunks/src_1qo63p4._.js:113:325)
+    at UserNav (http://localhost:3000/_next/static/chunks/src_1qo63p4._.js?id=%255Bproject%255D%252Fsrc%252Fcomponents%252Flayout%252Fsite-topbar.tsx+%255Bapp-client%255D+%2528ecmascript%2529:323:326)
+    at SiteTopBar (http://localhost:3000/_next/static/chunks/src_1qo63p4._.js?id=%255Bproject%255D%252Fsrc%252Fcomponents%252Flayout%252Fsite-topbar.tsx+%255Bapp-client%255D+%2528ecmascript%2529:863:359)
+    at DocsLayout (about://React/Server/E:%5Cproject%5Cweb%5Cai-gateway%5C.next%5Cdev%5Cserver%5Cchunks%5Cssr%5C_0ul7i7j._.js?224:396:375) 
+ GET /docs 200 in 57ms (next.js: 13ms, proxy.ts: 1971µs, application-code: 42ms)
+ GET / 200 in 57ms (next.js: 2ms, proxy.ts: 2ms, application-code: 52ms)
+[browser] Base UI: A component that acts as a button expected a native <button> because the `nativeButton` prop is true. Rendering a non-<button> removes native button semantics, which can impact forms and accessibility. Use a real <button> in the `render` prop, or set `nativeButton` to `false`.
+    at Button (http://localhost:3000/_next/static/chunks/src_1qo63p4._.js:113:325)
+    at UserNav (http://localhost:3000/_next/static/chunks/src_1qo63p4._.js?id=%255Bproject%255D%252Fsrc%252Fcomponents%252Flayout%252Fsite-topbar.tsx+%255Bapp-client%255D+%2528ecmascript%2529:323:326)
+    at SiteTopBar (http://localhost:3000/_next/static/chunks/src_1qo63p4._.js?id=%255Bproject%255D%252Fsrc%252Fcomponents%252Flayout%252Fsite-topbar.tsx+%255Bapp-client%255D+%2528ecmascript%2529:863:359)
+    at PublicLayout (about://React/Server/E:%5Cproject%5Cweb%5Cai-gateway%5C.next%5Cdev%5Cserver%5Cchunks%5Cssr%5C_0vn81qq._.js?70:358:375) 
+ GET /docs 200 in 59ms (next.js: 12ms, proxy.ts: 2ms, application-code: 45ms)
+ GET /docs 200 in 49ms (next.js: 11ms, proxy.ts: 2ms, application-code: 36ms)
+ GET /console/dashboard 200 in 3.3s (next.js: 2.5s, proxy.ts: 3ms, application-code: 829ms)
+ GET /console/dashboard 200 in 579ms (next.js: 163ms, proxy.ts: 38ms, application-code: 378ms)
+ GET /console/dashboard 200 in 285ms (next.js: 8ms, proxy.ts: 21ms, application-code: 257ms)
+ GET /console/dashboard 200 in 289ms (next.js: 16ms, proxy.ts: 8ms, application-code: 265ms)
+ GET /console/dashboard 200 in 289ms (next.js: 62ms, proxy.ts: 8ms, application-code: 220ms)
+ GET /console/dashboard 200 in 291ms (next.js: 40ms, proxy.ts: 8ms, application-code: 243ms)
+[browser] In HTML, <li> cannot be a descendant of <li>.
+This will cause a hydration error.
+
+  ...
+    <SegmentViewNode type="layout" pagePath="console/la...">
+      <SegmentTrieNode>
+      <script>
+      <script>
+      <script>
+      <script>
+      <script>
+      <script>
+      <script>
+      <script>
+      <script>
+      <script>
+      <script>
+      <script>
+      <script>
+      <script>
+      <ConsoleLayout>
+        <ConsoleLayoutClient user={{id:"user_m...", ...}}>
+          <SidebarProvider>
+            <div data-slot="sidebar-wr..." style={{...}} className="group/side...">
+              <ConsoleSidebarInner>
+              <SidebarInset>
+                <main data-slot="sidebar-inset" className="relative f...">
+                  <ConsoleTopBar user={{id:"user_m...", ...}}>
+                    <header className="flex h-14 ...">
+                      <SidebarTrigger>
+                      <Separator>
+                      <Breadcrumb className="flex-1">
+                        <nav aria-label="breadcrumb" data-slot="breadcrumb" className="flex-1">
+                          <BreadcrumbList>
+                            <ol data-slot="breadcrumb..." className="flex flex-...">
+                              <BreadcrumbItem>
+                              <BreadcrumbItem>
+>                               <li data-slot="breadcrumb-item" className="inline-flex items-center gap-1.5">
+                                  <BreadcrumbSeparator>
+>                                   <li
+>                                     data-slot="breadcrumb-separator"
+>                                     role="presentation"
+>                                     aria-hidden="true"
+>                                     className={"[&>svg]:size-3.5"}
+>                                   >
+                                  ...
+                      ...
+                  ...
+ 
+[browser] <li> cannot contain a nested <li>.
+See this log for the ancestor stack trace. 
+[browser] Base UI: A component that acts as a button expected a native <button> because the `nativeButton` prop is true. Rendering a non-<button> removes native button semantics, which can impact forms and accessibility. Use a real <button> in the `render` prop, or set `nativeButton` to `false`.
+    at ConsoleLayout (about://React/Server/E:%5Cproject%5Cweb%5Cai-gateway%5C.next%5Cdev%5Cserver%5Cchunks%5Cssr%5C%5Broot-of-the-server%5D__1rftpor._.js?282:644:374) 
+[browser] Base UI: A component that acts as a button expected a native <button> because the `nativeButton` prop is true. Rendering a non-<button> removes native button semantics, which can impact forms and accessibility. Use a real <button> in the `render` prop, or set `nativeButton` to `false`.
+    at ConsoleDashboardPage (about://React/Server/E:%5Cproject%5Cweb%5Cai-gateway%5C.next%5Cdev%5Cserver%5Cchunks%5Cssr%5C%5Broot-of-the-server%5D__1zc32b4._.js?307:123:374) 
+ GET /console/dashboard 200 in 692ms (next.js: 6ms, proxy.ts: 4ms, application-code: 682ms)
+[browser] In HTML, <li> cannot be a descendant of <li>.
+This will cause a hydration error.
+
+  ...
+    <SegmentViewNode type="layout" pagePath="console/la...">
+      <SegmentTrieNode>
+      <script>
+      <script>
+      <script>
+      <script>
+      <script>
+      <script>
+      <script>
+      <script>
+      <script>
+      <script>
+      <script>
+      <script>
+      <script>
+      <script>
+      <ConsoleLayout>
+        <ConsoleLayoutClient user={{id:"user_m...", ...}}>
+          <SidebarProvider>
+            <div data-slot="sidebar-wr..." style={{...}} className="group/side...">
+              <ConsoleSidebarInner>
+              <SidebarInset>
+                <main data-slot="sidebar-inset" className="relative f...">
+                  <ConsoleTopBar user={{id:"user_m...", ...}}>
+                    <header className="flex h-14 ...">
+                      <SidebarTrigger>
+                      <Separator>
+                      <Breadcrumb className="flex-1">
+                        <nav aria-label="breadcrumb" data-slot="breadcrumb" className="flex-1">
+                          <BreadcrumbList>
+                            <ol data-slot="breadcrumb..." className="flex flex-...">
+                              <BreadcrumbItem>
+                              <BreadcrumbItem>
+>                               <li data-slot="breadcrumb-item" className="inline-flex items-center gap-1.5">
+                                  <BreadcrumbSeparator>
+>                                   <li
+>                                     data-slot="breadcrumb-separator"
+>                                     role="presentation"
+>                                     aria-hidden="true"
+>                                     className={"[&>svg]:size-3.5"}
+>                                   >
+                                  ...
+                      ...
+                  ...
+ 
+[browser] <li> cannot contain a nested <li>.
+See this log for the ancestor stack trace. 
+[browser] Encountered a script tag while rendering React component. Scripts inside React components are never executed when rendering on the client. Consider using template tag instead (https://developer.mozilla.org/en-US/docs/Web/HTML/Element/template). 
+[browser] Uncaught Error: Hydration failed because the server rendered HTML didn't match the client. As a result this tree will be regenerated on the client. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+    at <unknown> (https://react.dev/link/hydration-mismatch)
+    at li (<anonymous>)
+    at BreadcrumbSeparator (src/components/ui/breadcrumb.tsx:81:5)
+    at <unknown> (src/app/console/console-layout-client.tsx:245:25)
+    at Array.map (<anonymous>)
+    at ConsoleTopBar (src/app/console/console-layout-client.tsx:243:19)
+    at ConsoleLayoutClient (src/app/console/console-layout-client.tsx:292:9)
+    at ConsoleLayout (src\app\console\layout.tsx:27:5)
+  79 | }: React.ComponentProps<"li">) {
+  80 |   return (
+> 81 |     <li
+     |     ^
+  82 |       data-slot="breadcrumb-separator"
+  83 |       role="presentation"
+  84 |       aria-hidden="true"
+[browser] Base UI: A component that acts as a button expected a native <button> because the `nativeButton` prop is true. Rendering a non-<button> removes native button semantics, which can impact forms and accessibility. Use a real <button> in the `render` prop, or set `nativeButton` to `false`.
+    at Button (http://localhost:3000/_next/static/chunks/src_1uwejb6._.js:511:325)
+    at ConsoleTopBar (http://localhost:3000/_next/static/chunks/src_1uwejb6._.js:2904:334)
+    at ConsoleLayoutClient (http://localhost:3000/_next/static/chunks/src_1uwejb6._.js:2989:334)
+    at ConsoleLayout (about://React/Server/E:%5Cproject%5Cweb%5Cai-gateway%5C.next%5Cdev%5Cserver%5Cchunks%5Cssr%5C%5Broot-of-the-server%5D__1rftpor._.js?36:644:374) 
+[browser] Base UI: A component that acts as a button expected a native <button> because the `nativeButton` prop is true. Rendering a non-<button> removes native button semantics, which can impact forms and accessibility. Use a real <button> in the `render` prop, or set `nativeButton` to `false`.
+    at Button (http://localhost:3000/_next/static/chunks/src_1uwejb6._.js:511:325)
+    at DashboardClient (http://localhost:3000/_next/static/chunks/src_19373yp._.js:845:350)
+    at ConsoleDashboardPage (about://React/Server/E:%5Cproject%5Cweb%5Cai-gateway%5C.next%5Cdev%5Cserver%5Cchunks%5Cssr%5C%5Broot-of-the-server%5D__1zc32b4._.js?37:123:374) 
+ GET /console/dashboard 200 in 20ms (next.js: 6ms, proxy.ts: 6ms, application-code: 8ms)
+ GET /console/dashboard 200 in 105ms (next.js: 4ms, proxy.ts: 3ms, application-code: 98ms)
+ GET /console/models 200 in 1224ms (next.js: 1167ms, proxy.ts: 3ms, application-code: 54ms)
+ GET /console/chat 200 in 1002ms (next.js: 944ms, proxy.ts: 2ms, application-code: 56ms)
+ GET /console/api-keys 200 in 911ms (next.js: 864ms, proxy.ts: 2ms, application-code: 46ms)
+ GET /console/usage 200 in 838ms (next.js: 776ms, proxy.ts: 2ms, application-code: 59ms)
+ GET /console/balance 200 in 753ms (next.js: 702ms, proxy.ts: 2ms, application-code: 50ms)
+ GET /console/settings 200 in 747ms (next.js: 701ms, proxy.ts: 2ms, application-code: 44ms)
+ GET /console/dashboard 200 in 49ms (next.js: 4ms, proxy.ts: 3ms, application-code: 43ms)
+ GET /docs 200 in 123ms (next.js: 30ms, proxy.ts: 3ms, application-code: 90ms)
+ GET /api/auth/get-session 200 in 289ms (next.js: 185ms, proxy.ts: 1952µs, application-code: 102ms)
+[browser] Base UI: A component that acts as a button expected a native <button> because the `nativeButton` prop is true. Rendering a non-<button> removes native button semantics, which can impact forms and accessibility. Use a real <button> in the `render` prop, or set `nativeButton` to `false`.
+    at Button (http://localhost:3000/_next/static/chunks/src_1uwejb6._.js:511:325)
+    at UserNav (http://localhost:3000/_next/static/chunks/src_0-ywu35._.js:1455:326)
+    at SiteTopBar (http://localhost:3000/_next/static/chunks/src_0-ywu35._.js:1995:359)
+    at DocsLayout (about://React/Server/E:%5Cproject%5Cweb%5Cai-gateway%5C.next%5Cdev%5Cserver%5Cchunks%5Cssr%5C_0ul7i7j._.js?106:396:375) 
+ GET /docs 200 in 69ms (next.js: 15ms, proxy.ts: 3ms, application-code: 50ms)
+ GET /release-notes 200 in 698ms (next.js: 662ms, proxy.ts: 2ms, application-code: 34ms)
+[browser] Base UI: A component that acts as a button expected a native <button> because the `nativeButton` prop is true. Rendering a non-<button> removes native button semantics, which can impact forms and accessibility. Use a real <button> in the `render` prop, or set `nativeButton` to `false`.
+    at Button (http://localhost:3000/_next/static/chunks/src_1uwejb6._.js:511:325)
+    at UserNav (http://localhost:3000/_next/static/chunks/src_0-ywu35._.js:1455:326)
+    at SiteTopBar (http://localhost:3000/_next/static/chunks/src_0-ywu35._.js:1995:359)
+    at PublicLayout (about://React/Server/E:%5Cproject%5Cweb%5Cai-gateway%5C.next%5Cdev%5Cserver%5Cchunks%5Cssr%5C_0vn81qq._.js?158:358:375) 
+✓ Compiled in 345ms
+ GET /release-notes 200 in 228ms (next.js: 84ms, proxy.ts: 63ms, application-code: 80ms)
+✓ Compiled in 214ms
+ GET /release-notes 200 in 220ms (next.js: 74ms, proxy.ts: 27ms, application-code: 119ms)
+✓ Compiled in 238ms
+ GET /release-notes 200 in 177ms (next.js: 55ms, proxy.ts: 22ms, application-code: 100ms)
+ GET /release-notes 200 in 133ms (next.js: 53ms, proxy.ts: 21ms, application-code: 59ms)
+✓ Compiled in 197ms
+ GET /release-notes 200 in 217ms (next.js: 66ms, proxy.ts: 24ms, application-code: 127ms)
+ GET /release-notes 200 in 34ms (next.js: 3ms, proxy.ts: 3ms, application-code: 27ms)
+✓ Compiled in 221ms
+ GET /release-notes 200 in 204ms (next.js: 73ms, proxy.ts: 23ms, application-code: 108ms)
+ GET /release-notes 200 in 42ms (next.js: 3ms, proxy.ts: 3ms, application-code: 36ms)
+✓ Compiled in 253ms
+ GET /release-notes 200 in 364ms (next.js: 67ms, proxy.ts: 26ms, application-code: 272ms)
+ GET /release-notes 200 in 230ms (next.js: 4ms, proxy.ts: 3ms, application-code: 223ms)
+ GET /release-notes 200 in 199ms (next.js: 10ms, proxy.ts: 6ms, application-code: 183ms)
+ GET /release-notes 200 in 230ms (next.js: 105ms, proxy.ts: 7ms, application-code: 118ms)
+ GET /release-notes 200 in 232ms (next.js: 69ms, proxy.ts: 7ms, application-code: 157ms)
+ GET /release-notes 200 in 248ms (next.js: 38ms, proxy.ts: 6ms, application-code: 203ms)
+ GET /release-notes 200 in 171ms (next.js: 5ms, proxy.ts: 3ms, application-code: 162ms)
+ GET /release-notes 200 in 134ms (next.js: 5ms, proxy.ts: 2ms, application-code: 127ms)
+ GET /release-notes 200 in 94ms (next.js: 7ms, proxy.ts: 16ms, application-code: 71ms)
+ GET /release-notes 200 in 78ms (next.js: 33ms, proxy.ts: 3ms, application-code: 42ms)
+ GET / 200 in 134ms (next.js: 58ms, proxy.ts: 2ms, application-code: 74ms)
+ GET /models 200 in 531ms (next.js: 450ms, proxy.ts: 2ms, application-code: 79ms)
+ GET /release-notes 200 in 36ms (next.js: 3ms, proxy.ts: 4ms, application-code: 30ms)
+ GET /docs 200 in 192ms (next.js: 89ms, proxy.ts: 1931µs, application-code: 101ms)
+ GET / 200 in 69ms (next.js: 5ms, proxy.ts: 3ms, application-code: 60ms)
+ GET / 200 in 394ms (next.js: 2ms, proxy.ts: 2ms, application-code: 390ms)
+[browser] A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <ErrorBoundary errorComponent={undefined} errorStyles={undefined} errorScripts={undefined}>
+      <LoadingBoundary name="(public)/" loading={null}>
+        <HTTPAccessFallbackBoundary notFound={{...}} forbidden={undefined} unauthorized={undefined}>
+          <HTTPAccessFallbackErrorBoundary pathname="/" notFound={{...}} forbidden={undefined} unauthorized={undefined} ...>
+            <RedirectBoundary>
+              <RedirectErrorBoundary router={{...}}>
+                <InnerLayoutRouter url="/" tree={[...]} params={{}} cacheNode={{rsc:{...}, ...}} segmentPath={[...]} ...>
+                  <SegmentViewNode type="page" pagePath="(public)/p...">
+                    <SegmentTrieNode>
+                    <HomePage>
+                      <Hero>
+                        <section className="relative o...">
+                          <div>
+                          <div className="mx-auto ma...">
+                            <FadeIn>
+                              <motion.div initial={false} whileInView={{opacity:1,y:0}} viewport={{once:true, ...}} ...>
+                                <div
+                                  className={undefined}
+                                  style={{
+-                                   opacity: "0"
+-                                   transform: "translateY(24px)"
+                                  }}
+                                  ref={function useMotionRef.useCallback}
+                                >
+                            <FadeIn delay={0.1}>
+                              <motion.div initial={false} whileInView={{opacity:1,y:0}} viewport={{once:true, ...}} ...>
+                                <div
+                                  className={undefined}
+                                  style={{
+-                                   opacity: "0"
+-                                   transform: "translateY(24px)"
+                                  }}
+                                  ref={function useMotionRef.useCallback}
+                                >
+                            <FadeIn delay={0.2}>
+                              <motion.div initial={false} whileInView={{opacity:1,y:0}} viewport={{once:true, ...}} ...>
+                                <div
+                                  className={undefined}
+                                  style={{
+-                                   opacity: "0"
+-                                   transform: "translateY(24px)"
+                                  }}
+                                  ref={function useMotionRef.useCallback}
+                                >
+                            <FadeIn delay={0.3}>
+                              <motion.div initial={false} whileInView={{opacity:1,y:0}} viewport={{once:true, ...}} ...>
+                                <div
+                                  className={undefined}
+                                  style={{
+-                                   opacity: "0"
+-                                   transform: "translateY(24px)"
+                                  }}
+                                  ref={function useMotionRef.useCallback}
+                                >
+                            <ScaleIn delay={0.4}>
+                              <motion.div initial={false} whileInView={{opacity:1,scale:1}} viewport={{once:true, ...}} ...>
+                                <div
+                                  className={undefined}
++                                 style={{}}
+-                                 style={{opacity:"0",transform:"scale(0.92)"}}
+                                  ref={function useMotionRef.useCallback}
+                                >
+                      <Features>
+                        <section id="features" className="mx-auto ma...">
+                          <FadeIn>
+                            <motion.div initial={false} whileInView={{opacity:1,y:0}} viewport={{once:true, ...}} ...>
+                              <div
+                                className={undefined}
+                                style={{
+-                                 opacity: "0"
+-                                 transform: "translateY(24px)"
+                                }}
+                                ref={function useMotionRef.useCallback}
+                              >
+                          ...
+                            <div className="mt-14 grid..." style={{}} ref={function useMotionRef.useCallback}>
+                              <FadeInItem>
+                                <motion.div variants={undefined} className={undefined}>
+                                  <div
+                                    className={undefined}
+                                    style={{
+-                                     opacity: "0"
+-                                     transform: "translateY(24px)"
+                                    }}
+                                    ref={function useMotionRef.useCallback}
+                                  >
+                              <FadeInItem>
+                                <motion.div variants={undefined} className={undefined}>
+                                  <div
+                                    className={undefined}
+                                    style={{
+-                                     opacity: "0"
+-                                     transform: "translateY(24px)"
+                                    }}
+                                    ref={function useMotionRef.useCallback}
+                                  >
+                              <FadeInItem>
+                                <motion.div variants={undefined} className={undefined}>
+                                  <div
+                                    className={undefined}
+                                    style={{
+-                                     opacity: "0"
+-                                     transform: "translateY(24px)"
+                                    }}
+                                    ref={function useMotionRef.useCallback}
+                                  >
+                              <FadeInItem>
+                                <motion.div variants={undefined} className={undefined}>
+                                  <div
+                                    className={undefined}
+                                    style={{
+-                                     opacity: "0"
+-                                     transform: "translateY(24px)"
+                                    }}
+                                    ref={function useMotionRef.useCallback}
+                                  >
+                              <FadeInItem>
+                                <motion.div variants={undefined} className={undefined}>
+                                  <div
+                                    className={undefined}
+                                    style={{
+-                                     opacity: "0"
+-                                     transform: "translateY(24px)"
+                                    }}
+                                    ref={function useMotionRef.useCallback}
+                                  >
+                              <FadeInItem>
+                                <motion.div variants={undefined} className={undefined}>
+                                  <div
+                                    className={undefined}
+                                    style={{
+-                                     opacity: "0"
+-                                     transform: "translateY(24px)"
+                                    }}
+                                    ref={function useMotionRef.useCallback}
+                                  >
+                      <HowItWorks>
+                        <section id="how" className="bg-muted/4...">
+                          <div className="mx-auto ma...">
+                            <FadeIn>
+                              <motion.div initial={false} whileInView={{opacity:1,y:0}} viewport={{once:true, ...}} ...>
+                                <div
+                                  className={undefined}
+                                  style={{
+-                                   opacity: "0"
+-                                   transform: "translateY(24px)"
+                                  }}
+                                  ref={function useMotionRef.useCallback}
+                                >
+                            ...
+                              <div className="mt-14 grid..." style={{}} ref={function useMotionRef.useCallback}>
+                                <FadeInItem>
+                                  <motion.div variants={undefined} className={undefined}>
+                                    <div
+                                      className={undefined}
+                                      style={{
+-                                       opacity: "0"
+-                                       transform: "translateY(24px)"
+                                      }}
+                                      ref={function useMotionRef.useCallback}
+                                    >
+                                <FadeInItem>
+                                  <motion.div variants={undefined} className={undefined}>
+                                    <div
+                                      className={undefined}
+                                      style={{
+-                                       opacity: "0"
+-                                       transform: "translateY(24px)"
+                                      }}
+                                      ref={function useMotionRef.useCallback}
+                                    >
+                                <FadeInItem>
+                                  <motion.div variants={undefined} className={undefined}>
+                                    <div
+                                      className={undefined}
+                                      style={{
+-                                       opacity: "0"
+-                                       transform: "translateY(24px)"
+                                      }}
+                                      ref={function useMotionRef.useCallback}
+                                    >
+                      ...
+                  ...
+                ...
+ 
+ GET /api/auth/get-session 200 in 319ms (next.js: 218ms, proxy.ts: 4ms, application-code: 98ms)
+ GET / 200 in 178ms (next.js: 4ms, proxy.ts: 2ms, application-code: 172ms)
+ GET /api/auth/get-session 200 in 34ms (next.js: 18ms, proxy.ts: 3ms, application-code: 13ms)
+[browser] A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <ErrorBoundary errorComponent={undefined} errorStyles={undefined} errorScripts={undefined}>
+      <LoadingBoundary name="(public)/" loading={null}>
+        <HTTPAccessFallbackBoundary notFound={{...}} forbidden={undefined} unauthorized={undefined}>
+          <HTTPAccessFallbackErrorBoundary pathname="/" notFound={{...}} forbidden={undefined} unauthorized={undefined} ...>
+            <RedirectBoundary>
+              <RedirectErrorBoundary router={{...}}>
+                <InnerLayoutRouter url="/" tree={[...]} params={{}} cacheNode={{rsc:{...}, ...}} segmentPath={[...]} ...>
+                  <SegmentViewNode type="page" pagePath="(public)/p...">
+                    <SegmentTrieNode>
+                    <HomePage>
+                      <Hero>
+                        <section className="relative o...">
+                          <div>
+                          <div className="mx-auto ma...">
+                            <FadeIn>
+                              <motion.div initial={false} whileInView={{opacity:1,y:0}} viewport={{once:true, ...}} ...>
+                                <div
+                                  className={undefined}
+                                  style={{
+-                                   opacity: "0"
+-                                   transform: "translateY(24px)"
+                                  }}
+                                  ref={function useMotionRef.useCallback}
+                                >
+                            <FadeIn delay={0.1}>
+                              <motion.div initial={false} whileInView={{opacity:1,y:0}} viewport={{once:true, ...}} ...>
+                                <div
+                                  className={undefined}
+                                  style={{
+-                                   opacity: "0"
+-                                   transform: "translateY(24px)"
+                                  }}
+                                  ref={function useMotionRef.useCallback}
+                                >
+                            <FadeIn delay={0.2}>
+                              <motion.div initial={false} whileInView={{opacity:1,y:0}} viewport={{once:true, ...}} ...>
+                                <div
+                                  className={undefined}
+                                  style={{
+-                                   opacity: "0"
+-                                   transform: "translateY(24px)"
+                                  }}
+                                  ref={function useMotionRef.useCallback}
+                                >
+                            <FadeIn delay={0.3}>
+                              <motion.div initial={false} whileInView={{opacity:1,y:0}} viewport={{once:true, ...}} ...>
+                                <div
+                                  className={undefined}
+                                  style={{
+-                                   opacity: "0"
+-                                   transform: "translateY(24px)"
+                                  }}
+                                  ref={function useMotionRef.useCallback}
+                                >
+                            <ScaleIn delay={0.4}>
+                              <motion.div initial={false} whileInView={{opacity:1,scale:1}} viewport={{once:true, ...}} ...>
+                                <div
+                                  className={undefined}
++                                 style={{}}
+-                                 style={{opacity:"0",transform:"scale(0.92)"}}
+                                  ref={function useMotionRef.useCallback}
+                                >
+                      <Features>
+                        <section id="features" className="mx-auto ma...">
+                          <FadeIn>
+                            <motion.div initial={false} whileInView={{opacity:1,y:0}} viewport={{once:true, ...}} ...>
+                              <div
+                                className={undefined}
+                                style={{
+-                                 opacity: "0"
+-                                 transform: "translateY(24px)"
+                                }}
+                                ref={function useMotionRef.useCallback}
+                              >
+                          ...
+                            <div className="mt-14 grid..." style={{}} ref={function useMotionRef.useCallback}>
+                              <FadeInItem>
+                                <motion.div variants={undefined} className={undefined}>
+                                  <div
+                                    className={undefined}
+                                    style={{
+-                                     opacity: "0"
+-                                     transform: "translateY(24px)"
+                                    }}
+                                    ref={function useMotionRef.useCallback}
+                                  >
+                              <FadeInItem>
+                                <motion.div variants={undefined} className={undefined}>
+                                  <div
+                                    className={undefined}
+                                    style={{
+-                                     opacity: "0"
+-                                     transform: "translateY(24px)"
+                                    }}
+                                    ref={function useMotionRef.useCallback}
+                                  >
+                              <FadeInItem>
+                                <motion.div variants={undefined} className={undefined}>
+                                  <div
+                                    className={undefined}
+                                    style={{
+-                                     opacity: "0"
+-                                     transform: "translateY(24px)"
+                                    }}
+                                    ref={function useMotionRef.useCallback}
+                                  >
+                              <FadeInItem>
+                                <motion.div variants={undefined} className={undefined}>
+                                  <div
+                                    className={undefined}
+                                    style={{
+-                                     opacity: "0"
+-                                     transform: "translateY(24px)"
+                                    }}
+                                    ref={function useMotionRef.useCallback}
+                                  >
+                              <FadeInItem>
+                                <motion.div variants={undefined} className={undefined}>
+                                  <div
+                                    className={undefined}
+                                    style={{
+-                                     opacity: "0"
+-                                     transform: "translateY(24px)"
+                                    }}
+                                    ref={function useMotionRef.useCallback}
+                                  >
+                              <FadeInItem>
+                                <motion.div variants={undefined} className={undefined}>
+                                  <div
+                                    className={undefined}
+                                    style={{
+-                                     opacity: "0"
+-                                     transform: "translateY(24px)"
+                                    }}
+                                    ref={function useMotionRef.useCallback}
+                                  >
+                      <HowItWorks>
+                        <section id="how" className="bg-muted/4...">
+                          <div className="mx-auto ma...">
+                            <FadeIn>
+                              <motion.div initial={false} whileInView={{opacity:1,y:0}} viewport={{once:true, ...}} ...>
+                                <div
+                                  className={undefined}
+                                  style={{
+-                                   opacity: "0"
+-                                   transform: "translateY(24px)"
+                                  }}
+                                  ref={function useMotionRef.useCallback}
+                                >
+                            ...
+                              <div className="mt-14 grid..." style={{}} ref={function useMotionRef.useCallback}>
+                                <FadeInItem>
+                                  <motion.div variants={undefined} className={undefined}>
+                                    <div
+                                      className={undefined}
+                                      style={{
+-                                       opacity: "0"
+-                                       transform: "translateY(24px)"
+                                      }}
+                                      ref={function useMotionRef.useCallback}
+                                    >
+                                <FadeInItem>
+                                  <motion.div variants={undefined} className={undefined}>
+                                    <div
+                                      className={undefined}
+                                      style={{
+-                                       opacity: "0"
+-                                       transform: "translateY(24px)"
+                                      }}
+                                      ref={function useMotionRef.useCallback}
+                                    >
+                                <FadeInItem>
+                                  <motion.div variants={undefined} className={undefined}>
+                                    <div
+                                      className={undefined}
+                                      style={{
+-                                       opacity: "0"
+-                                       transform: "translateY(24px)"
+                                      }}
+                                      ref={function useMotionRef.useCallback}
+                                    >
+                      ...
+                  ...
+                ...
+ 
+✓ Compiled in 676ms
+ GET / 200 in 666ms (next.js: 124ms, proxy.ts: 40ms, application-code: 503ms)
+ GET / 200 in 393ms (next.js: 4ms, proxy.ts: 9ms, application-code: 380ms)
+ GET / 200 in 394ms (next.js: 12ms, proxy.ts: 8ms, application-code: 374ms)
+ GET / 200 in 390ms (next.js: 223ms, proxy.ts: 10ms, application-code: 158ms)
+ GET / 200 in 392ms (next.js: 172ms, proxy.ts: 8ms, application-code: 212ms)
+ GET / 200 in 394ms (next.js: 124ms, proxy.ts: 8ms, application-code: 262ms)
+ GET / 200 in 407ms (next.js: 5ms, proxy.ts: 3ms, application-code: 399ms)
+ GET / 200 in 392ms (next.js: 6ms, proxy.ts: 3ms, application-code: 384ms)
+ GET / 200 in 334ms (next.js: 7ms, proxy.ts: 6ms, application-code: 321ms)
+ GET / 200 in 332ms (next.js: 123ms, proxy.ts: 5ms, application-code: 204ms)
+ GET / 200 in 334ms (next.js: 58ms, proxy.ts: 5ms, application-code: 271ms)
+ GET / 200 in 334ms (next.js: 173ms, proxy.ts: 5ms, application-code: 156ms)
+ GET / 200 in 411ms (next.js: 5ms, proxy.ts: 3ms, application-code: 403ms)
+ GET / 200 in 415ms (next.js: 15ms, proxy.ts: 3ms, application-code: 396ms)
+ GET / 200 in 410ms (next.js: 118ms, proxy.ts: 5ms, application-code: 286ms)
+ GET / 200 in 410ms (next.js: 176ms, proxy.ts: 6ms, application-code: 228ms)
+ GET / 200 in 412ms (next.js: 66ms, proxy.ts: 5ms, application-code: 341ms)
+ GET / 200 in 407ms (next.js: 196ms, proxy.ts: 57ms, application-code: 153ms)
+ GET / 200 in 148ms (next.js: 5ms, proxy.ts: 1983µs, application-code: 141ms)
+ GET / 200 in 78ms (next.js: 5ms, proxy.ts: 5ms, application-code: 68ms)
+✓ Compiled in 471ms
+ GET / 200 in 635ms (next.js: 112ms, proxy.ts: 34ms, application-code: 489ms)
+ GET / 200 in 83ms (next.js: 14ms, proxy.ts: 5ms, application-code: 64ms)
+ GET / 200 in 703ms (next.js: 235ms, proxy.ts: 3ms, application-code: 465ms)
+ GET /api/auth/get-session 200 in 339ms (next.js: 252ms, proxy.ts: 3ms, application-code: 83ms)
+✓ Compiled in 231ms
+⚠ Fast Refresh had to perform a full reload when ./src/components/layout/site-topbar.tsx changed. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ GET / 200 in 688ms (next.js: 111ms, proxy.ts: 28ms, application-code: 549ms)
+ GET / 200 in 79ms (next.js: 11ms, proxy.ts: 5ms, application-code: 63ms)
+ GET / 200 in 784ms (next.js: 227ms, proxy.ts: 3ms, application-code: 554ms)
+ GET /api/auth/get-session 200 in 301ms (next.js: 270ms, proxy.ts: 3ms, application-code: 28ms)
+ GET / 200 in 267ms (next.js: 102ms, proxy.ts: 31ms, application-code: 134ms)
+✓ Compiled in 524ms
+ GET / 200 in 558ms (next.js: 98ms, proxy.ts: 23ms, application-code: 437ms)
+ GET / 200 in 339ms (next.js: 4ms, proxy.ts: 4ms, application-code: 332ms)
+ GET / 200 in 437ms (next.js: 8ms, proxy.ts: 7ms, application-code: 423ms)
+ GET / 200 in 437ms (next.js: 60ms, proxy.ts: 7ms, application-code: 370ms)
+ GET / 200 in 436ms (next.js: 115ms, proxy.ts: 6ms, application-code: 315ms)
+ GET / 200 in 498ms (next.js: 171ms, proxy.ts: 6ms, application-code: 321ms)
+ GET / 200 in 405ms (next.js: 8ms, proxy.ts: 4ms, application-code: 392ms)
+ GET / 200 in 317ms (next.js: 81ms, proxy.ts: 4ms, application-code: 232ms)
+ GET / 200 in 177ms (next.js: 6ms, proxy.ts: 6ms, application-code: 164ms)
+ GET / 200 in 175ms (next.js: 105ms, proxy.ts: 6ms, application-code: 64ms)
+ GET / 200 in 176ms (next.js: 56ms, proxy.ts: 5ms, application-code: 115ms)
+[browser] You have Reduced Motion enabled on your device. Animations may not appear as expected.. For more information and steps for solving, visit https://motion.dev/troubleshooting/reduced-motion-disabled (src/components/motion/index.tsx:21:42)
+[browser] A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <ScrollAndMaybeFocusHandler cacheNode={{rsc:{...}, ...}}>
+      <InnerScrollAndFocusHandlerOld focusAndScrollRef={{scrollRef:null, ...}} cacheNode={{rsc:{...}, ...}}>
+        <ErrorBoundary errorComponent={undefined} errorStyles={undefined} errorScripts={undefined}>
+          <LoadingBoundary name="(public)/" loading={null}>
+            <HTTPAccessFallbackBoundary notFound={{...}} forbidden={undefined} unauthorized={undefined}>
+              <HTTPAccessFallbackErrorBoundary pathname="/" notFound={{...}} forbidden={undefined} ...>
+                <RedirectBoundary>
+                  <RedirectErrorBoundary router={{...}}>
+                    <InnerLayoutRouter url="/" tree={[...]} params={{}} cacheNode={{rsc:{...}, ...}} segmentPath={[...]} ...>
+                      <SegmentViewNode type="page" pagePath="(public)/p...">
+                        <SegmentTrieNode>
+                        <HomePage>
+                          <Hero>
+                            <section className="relative o...">
+                              <div>
+                              <div className="mx-auto ma...">
+                                <FadeIn>
+                                  <div
+                                    className={undefined}
+-                                   style={{opacity:"0",transform:"translateY..."}}
+                                  >
+                                <FadeIn delay={0.1}>
+                                  <div
+                                    className={undefined}
+-                                   style={{opacity:"0",transform:"translateY..."}}
+                                  >
+                                <FadeIn delay={0.2}>
+                                  <div
+                                    className={undefined}
+-                                   style={{opacity:"0",transform:"translateY..."}}
+                                  >
+                                <FadeIn delay={0.3}>
+                                  <div
+                                    className={undefined}
+-                                   style={{opacity:"0",transform:"translateY..."}}
+                                  >
+                                <ScaleIn delay={0.4}>
+                                  <div
+                                    className={undefined}
+-                                   style={{opacity:"0",transform:"scale(0.92)"}}
+                                  >
+                          <Features>
+                            <section id="features" className="mx-auto ma...">
+                              <FadeIn>
+                                <div
+                                  className={undefined}
+-                                 style={{opacity:"0",transform:"translateY..."}}
+                                >
+                              <FadeInStagger stagger={0.08} className="mt-14 grid...">
+                                <div className="mt-14 grid...">
+                                  <FadeInItem>
+                                    <div
+                                      className={undefined}
+-                                     style={{opacity:"0",transform:"translateY..."}}
+                                    >
+                                  <FadeInItem>
+                                    <div
+                                      className={undefined}
+-                                     style={{opacity:"0",transform:"translateY..."}}
+                                    >
+                                  <FadeInItem>
+                                    <div
+                                      className={undefined}
+-                                     style={{opacity:"0",transform:"translateY..."}}
+                                    >
+                                  <FadeInItem>
+                                    <div
+                                      className={undefined}
+-                                     style={{opacity:"0",transform:"translateY..."}}
+                                    >
+                                  <FadeInItem>
+                                    <div
+                                      className={undefined}
+-                                     style={{opacity:"0",transform:"translateY..."}}
+                                    >
+                                  <FadeInItem>
+                                    <div
+                                      className={undefined}
+-                                     style={{opacity:"0",transform:"translateY..."}}
+                                    >
+                          <HowItWorks>
+                            <section id="how" className="bg-muted/4...">
+                              <div className="mx-auto ma...">
+                                <FadeIn>
+                                  <div
+                                    className={undefined}
+-                                   style={{opacity:"0",transform:"translateY..."}}
+                                  >
+                                <FadeInStagger stagger={0.12} className="mt-14 grid...">
+                                  <div className="mt-14 grid...">
+                                    <FadeInItem>
+                                      <div
+                                        className={undefined}
+-                                       style={{opacity:"0",transform:"translateY..."}}
+                                      >
+                                    <FadeInItem>
+                                      <div
+                                        className={undefined}
+-                                       style={{opacity:"0",transform:"translateY..."}}
+                                      >
+                                    <FadeInItem>
+                                      <div
+                                        className={undefined}
+-                                       style={{opacity:"0",transform:"translateY..."}}
+                                      >
+                          ...
+                      ...
+                    ...
+        ...
+ 
+ GET /api/auth/get-session 200 in 563ms (next.js: 524ms, proxy.ts: 4ms, application-code: 36ms)
+ GET / 200 in 87ms (next.js: 29ms, proxy.ts: 4ms, application-code: 54ms)
+ GET / 200 in 226ms (next.js: 50ms, proxy.ts: 3ms, application-code: 173ms)
+ GET / 200 in 839ms (next.js: 73ms, proxy.ts: 37ms, application-code: 730ms)
+[browser] You have Reduced Motion enabled on your device. Animations may not appear as expected.. For more information and steps for solving, visit https://motion.dev/troubleshooting/reduced-motion-disabled (src/components/motion/index.tsx:21:42)
+ GET /api/auth/get-session 200 in 38ms (next.js: 22ms, proxy.ts: 4ms, application-code: 13ms)
+[browser] A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <ScrollAndMaybeFocusHandler cacheNode={{rsc:{...}, ...}}>
+      <InnerScrollAndFocusHandlerOld focusAndScrollRef={{scrollRef:null, ...}} cacheNode={{rsc:{...}, ...}}>
+        <ErrorBoundary errorComponent={undefined} errorStyles={undefined} errorScripts={undefined}>
+          <LoadingBoundary name="(public)/" loading={null}>
+            <HTTPAccessFallbackBoundary notFound={{...}} forbidden={undefined} unauthorized={undefined}>
+              <HTTPAccessFallbackErrorBoundary pathname="/" notFound={{...}} forbidden={undefined} ...>
+                <RedirectBoundary>
+                  <RedirectErrorBoundary router={{...}}>
+                    <InnerLayoutRouter url="/" tree={[...]} params={{}} cacheNode={{rsc:{...}, ...}} segmentPath={[...]} ...>
+                      <SegmentViewNode type="page" pagePath="(public)/p...">
+                        <SegmentTrieNode>
+                        <HomePage>
+                          <Hero>
+                            <section className="relative o...">
+                              <div>
+                              <div className="mx-auto ma...">
+                                <FadeIn>
+                                  <div
+                                    className={undefined}
+-                                   style={{opacity:"0",transform:"translateY..."}}
+                                  >
+                                <FadeIn delay={0.1}>
+                                  <div
+                                    className={undefined}
+-                                   style={{opacity:"0",transform:"translateY..."}}
+                                  >
+                                <FadeIn delay={0.2}>
+                                  <div
+                                    className={undefined}
+-                                   style={{opacity:"0",transform:"translateY..."}}
+                                  >
+                                <FadeIn delay={0.3}>
+                                  <div
+                                    className={undefined}
+-                                   style={{opacity:"0",transform:"translateY..."}}
+                                  >
+                                <ScaleIn delay={0.4}>
+                                  <div
+                                    className={undefined}
+-                                   style={{opacity:"0",transform:"scale(0.92)"}}
+                                  >
+                          <Features>
+                            <section id="features" className="mx-auto ma...">
+                              <FadeIn>
+                                <div
+                                  className={undefined}
+-                                 style={{opacity:"0",transform:"translateY..."}}
+                                >
+                              <FadeInStagger stagger={0.08} className="mt-14 grid...">
+                                <div className="mt-14 grid...">
+                                  <FadeInItem>
+                                    <div
+                                      className={undefined}
+-                                     style={{opacity:"0",transform:"translateY..."}}
+                                    >
+                                  <FadeInItem>
+                                    <div
+                                      className={undefined}
+-                                     style={{opacity:"0",transform:"translateY..."}}
+                                    >
+                                  <FadeInItem>
+                                    <div
+                                      className={undefined}
+-                                     style={{opacity:"0",transform:"translateY..."}}
+                                    >
+                                  <FadeInItem>
+                                    <div
+                                      className={undefined}
+-                                     style={{opacity:"0",transform:"translateY..."}}
+                                    >
+                                  <FadeInItem>
+                                    <div
+                                      className={undefined}
+-                                     style={{opacity:"0",transform:"translateY..."}}
+                                    >
+                                  <FadeInItem>
+                                    <div
+                                      className={undefined}
+-                                     style={{opacity:"0",transform:"translateY..."}}
+                                    >
+                          <HowItWorks>
+                            <section id="how" className="bg-muted/4...">
+                              <div className="mx-auto ma...">
+                                <FadeIn>
+                                  <div
+                                    className={undefined}
+-                                   style={{opacity:"0",transform:"translateY..."}}
+                                  >
+                                <FadeInStagger stagger={0.12} className="mt-14 grid...">
+                                  <div className="mt-14 grid...">
+                                    <FadeInItem>
+                                      <div
+                                        className={undefined}
+-                                       style={{opacity:"0",transform:"translateY..."}}
+                                      >
+                                    <FadeInItem>
+                                      <div
+                                        className={undefined}
+-                                       style={{opacity:"0",transform:"translateY..."}}
+                                      >
+                                    <FadeInItem>
+                                      <div
+                                        className={undefined}
+-                                       style={{opacity:"0",transform:"translateY..."}}
+                                      >
+                          ...
+                      ...
+                    ...
+        ...
+ 
+ GET /console/dashboard 200 in 716ms (next.js: 360ms, proxy.ts: 3ms, application-code: 353ms)
+ GET /console/models 200 in 425ms (next.js: 235ms, proxy.ts: 7ms, application-code: 183ms)
+ GET /console/dashboard 200 in 41ms (next.js: 4ms, proxy.ts: 2ms, application-code: 34ms)
+ GET /release-notes 200 in 132ms (next.js: 84ms, proxy.ts: 1986µs, application-code: 45ms)
+ GET /api/auth/get-session 200 in 47ms (next.js: 17ms, proxy.ts: 5ms, application-code: 25ms)
+✓ Compiled in 402ms
+ GET /release-notes 200 in 492ms (next.js: 96ms, proxy.ts: 27ms, application-code: 369ms)
+ GET /release-notes 200 in 300ms (next.js: 7ms, proxy.ts: 23ms, application-code: 270ms)
+ GET /release-notes 200 in 223ms (next.js: 58ms, proxy.ts: 7ms, application-code: 158ms)
+ GET /release-notes 200 in 226ms (next.js: 12ms, proxy.ts: 7ms, application-code: 208ms)
+ GET /models 200 in 272ms (next.js: 158ms, proxy.ts: 4ms, application-code: 111ms)
+ GET /pricing 200 in 1117ms (next.js: 1086ms, proxy.ts: 3ms, application-code: 28ms)
+ GET /api/auth/get-session 200 in 268ms (next.js: 240ms, proxy.ts: 3ms, application-code: 25ms)
+ GET /docs 200 in 229ms (next.js: 100ms, proxy.ts: 2ms, application-code: 127ms)
+ GET /blog 200 in 818ms (next.js: 737ms, proxy.ts: 2ms, application-code: 79ms)
+ GET /pricing 200 in 64ms (next.js: 3ms, proxy.ts: 2ms, application-code: 59ms)
+ GET /models 200 in 34ms (next.js: 3ms, proxy.ts: 3ms, application-code: 28ms)
+ GET / 200 in 160ms (next.js: 86ms, proxy.ts: 2ms, application-code: 71ms)
+ GET / 200 in 300ms (next.js: 2ms, proxy.ts: 2ms, application-code: 295ms)
+[browser] You have Reduced Motion enabled on your device. Animations may not appear as expected.. For more information and steps for solving, visit https://motion.dev/troubleshooting/reduced-motion-disabled (src/components/motion/index.tsx:21:42)
+ GET /api/auth/get-session 200 in 35ms (next.js: 14ms, proxy.ts: 3ms, application-code: 18ms)
+[browser] A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <ScrollAndMaybeFocusHandler cacheNode={{rsc:{...}, ...}}>
+      <InnerScrollAndFocusHandlerOld focusAndScrollRef={{scrollRef:null, ...}} cacheNode={{rsc:{...}, ...}}>
+        <ErrorBoundary errorComponent={undefined} errorStyles={undefined} errorScripts={undefined}>
+          <LoadingBoundary name="(public)/" loading={null}>
+            <HTTPAccessFallbackBoundary notFound={{...}} forbidden={undefined} unauthorized={undefined}>
+              <HTTPAccessFallbackErrorBoundary pathname="/" notFound={{...}} forbidden={undefined} ...>
+                <RedirectBoundary>
+                  <RedirectErrorBoundary router={{...}}>
+                    <InnerLayoutRouter url="/" tree={[...]} params={{}} cacheNode={{rsc:{...}, ...}} segmentPath={[...]} ...>
+                      <SegmentViewNode type="page" pagePath="(public)/p...">
+                        <SegmentTrieNode>
+                        <HomePage>
+                          <Hero>
+                            <section className="relative o...">
+                              <div>
+                              <div className="mx-auto ma...">
+                                <FadeIn>
+                                  <div
+                                    className={undefined}
+-                                   style={{opacity:"0",transform:"translateY..."}}
+                                  >
+                                <FadeIn delay={0.1}>
+                                  <div
+                                    className={undefined}
+-                                   style={{opacity:"0",transform:"translateY..."}}
+                                  >
+                                <FadeIn delay={0.2}>
+                                  <div
+                                    className={undefined}
+-                                   style={{opacity:"0",transform:"translateY..."}}
+                                  >
+                                <FadeIn delay={0.3}>
+                                  <div
+                                    className={undefined}
+-                                   style={{opacity:"0",transform:"translateY..."}}
+                                  >
+                                <ScaleIn delay={0.4}>
+                                  <div
+                                    className={undefined}
+-                                   style={{opacity:"0",transform:"scale(0.92)"}}
+                                  >
+                          <Features>
+                            <section id="features" className="mx-auto ma...">
+                              <FadeIn>
+                                <div
+                                  className={undefined}
+-                                 style={{opacity:"0",transform:"translateY..."}}
+                                >
+                              <FadeInStagger stagger={0.08} className="mt-14 grid...">
+                                <div className="mt-14 grid...">
+                                  <FadeInItem>
+                                    <div
+                                      className={undefined}
+-                                     style={{opacity:"0",transform:"translateY..."}}
+                                    >
+                                  <FadeInItem>
+                                    <div
+                                      className={undefined}
+-                                     style={{opacity:"0",transform:"translateY..."}}
+                                    >
+                                  <FadeInItem>
+                                    <div
+                                      className={undefined}
+-                                     style={{opacity:"0",transform:"translateY..."}}
+                                    >
+                                  <FadeInItem>
+                                    <div
+                                      className={undefined}
+-                                     style={{opacity:"0",transform:"translateY..."}}
+                                    >
+                                  <FadeInItem>
+                                    <div
+                                      className={undefined}
+-                                     style={{opacity:"0",transform:"translateY..."}}
+                                    >
+                                  <FadeInItem>
+                                    <div
+                                      className={undefined}
+-                                     style={{opacity:"0",transform:"translateY..."}}
+                                    >
+                          <HowItWorks>
+                            <section id="how" className="bg-muted/4...">
+                              <div className="mx-auto ma...">
+                                <FadeIn>
+                                  <div
+                                    className={undefined}
+-                                   style={{opacity:"0",transform:"translateY..."}}
+                                  >
+                                <FadeInStagger stagger={0.12} className="mt-14 grid...">
+                                  <div className="mt-14 grid...">
+                                    <FadeInItem>
+                                      <div
+                                        className={undefined}
+-                                       style={{opacity:"0",transform:"translateY..."}}
+                                      >
+                                    <FadeInItem>
+                                      <div
+                                        className={undefined}
+-                                       style={{opacity:"0",transform:"translateY..."}}
+                                      >
+                                    <FadeInItem>
+                                      <div
+                                        className={undefined}
+-                                       style={{opacity:"0",transform:"translateY..."}}
+                                      >
+                          ...
+                      ...
+                    ...
+        ...
+ 
+ GET /api/auth/get-session 200 in 48ms (next.js: 31ms, proxy.ts: 6ms, application-code: 11ms)
+ GET / 200 in 16ms (next.js: 4ms, proxy.ts: 2ms, application-code: 9ms)
+ GET / 200 in 58ms (next.js: 3ms, proxy.ts: 3ms, application-code: 52ms)
+ GET / 200 in 176ms (next.js: 3ms, proxy.ts: 3ms, application-code: 171ms)
+[browser] You have Reduced Motion enabled on your device. Animations may not appear as expected.. For more information and steps for solving, visit https://motion.dev/troubleshooting/reduced-motion-disabled (src/components/motion/index.tsx:21:42)
+ GET /api/auth/get-session 200 in 28ms (next.js: 15ms, proxy.ts: 3ms, application-code: 10ms)
+[browser] A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <ScrollAndMaybeFocusHandler cacheNode={{rsc:{...}, ...}}>
+      <InnerScrollAndFocusHandlerOld focusAndScrollRef={{scrollRef:null, ...}} cacheNode={{rsc:{...}, ...}}>
+        <ErrorBoundary errorComponent={undefined} errorStyles={undefined} errorScripts={undefined}>
+          <LoadingBoundary name="(public)/" loading={null}>
+            <HTTPAccessFallbackBoundary notFound={{...}} forbidden={undefined} unauthorized={undefined}>
+              <HTTPAccessFallbackErrorBoundary pathname="/" notFound={{...}} forbidden={undefined} ...>
+                <RedirectBoundary>
+                  <RedirectErrorBoundary router={{...}}>
+                    <InnerLayoutRouter url="/" tree={[...]} params={{}} cacheNode={{rsc:{...}, ...}} segmentPath={[...]} ...>
+                      <SegmentViewNode type="page" pagePath="(public)/p...">
+                        <SegmentTrieNode>
+                        <HomePage>
+                          <Hero>
+                            <section className="relative o...">
+                              <div>
+                              <div className="mx-auto ma...">
+                                <FadeIn>
+                                  <div
+                                    className={undefined}
+-                                   style={{opacity:"0",transform:"translateY..."}}
+                                  >
+                                <FadeIn delay={0.1}>
+                                  <div
+                                    className={undefined}
+-                                   style={{opacity:"0",transform:"translateY..."}}
+                                  >
+                                <FadeIn delay={0.2}>
+                                  <div
+                                    className={undefined}
+-                                   style={{opacity:"0",transform:"translateY..."}}
+                                  >
+                                <FadeIn delay={0.3}>
+                                  <div
+                                    className={undefined}
+-                                   style={{opacity:"0",transform:"translateY..."}}
+                                  >
+                                <ScaleIn delay={0.4}>
+                                  <div
+                                    className={undefined}
+-                                   style={{opacity:"0",transform:"scale(0.92)"}}
+                                  >
+                          <Features>
+                            <section id="features" className="mx-auto ma...">
+                              <FadeIn>
+                                <div
+                                  className={undefined}
+-                                 style={{opacity:"0",transform:"translateY..."}}
+                                >
+                              <FadeInStagger stagger={0.08} className="mt-14 grid...">
+                                <div className="mt-14 grid...">
+                                  <FadeInItem>
+                                    <div
+                                      className={undefined}
+-                                     style={{opacity:"0",transform:"translateY..."}}
+                                    >
+                                  <FadeInItem>
+                                    <div
+                                      className={undefined}
+-                                     style={{opacity:"0",transform:"translateY..."}}
+                                    >
+                                  <FadeInItem>
+                                    <div
+                                      className={undefined}
+-                                     style={{opacity:"0",transform:"translateY..."}}
+                                    >
+                                  <FadeInItem>
+                                    <div
+                                      className={undefined}
+-                                     style={{opacity:"0",transform:"translateY..."}}
+                                    >
+                                  <FadeInItem>
+                                    <div
+                                      className={undefined}
+-                                     style={{opacity:"0",transform:"translateY..."}}
+                                    >
+                                  <FadeInItem>
+                                    <div
+                                      className={undefined}
+-                                     style={{opacity:"0",transform:"translateY..."}}
+                                    >
+                          <HowItWorks>
+                            <section id="how" className="bg-muted/4...">
+                              <div className="mx-auto ma...">
+                                <FadeIn>
+                                  <div
+                                    className={undefined}
+-                                   style={{opacity:"0",transform:"translateY..."}}
+                                  >
+                                <FadeInStagger stagger={0.12} className="mt-14 grid...">
+                                  <div className="mt-14 grid...">
+                                    <FadeInItem>
+                                      <div
+                                        className={undefined}
+-                                       style={{opacity:"0",transform:"translateY..."}}
+                                      >
+                                    <FadeInItem>
+                                      <div
+                                        className={undefined}
+-                                       style={{opacity:"0",transform:"translateY..."}}
+                                      >
+                                    <FadeInItem>
+                                      <div
+                                        className={undefined}
+-                                       style={{opacity:"0",transform:"translateY..."}}
+                                      >
+                          ...
+                      ...
+                    ...
+        ...
+ 
+ GET /models 200 in 77ms (next.js: 4ms, proxy.ts: 3ms, application-code: 69ms)
+ GET /pricing 200 in 27ms (next.js: 4ms, proxy.ts: 2ms, application-code: 21ms)
+ GET /models 200 in 32ms (next.js: 3ms, proxy.ts: 2ms, application-code: 26ms)
+ GET / 200 in 45ms (next.js: 3ms, proxy.ts: 2ms, application-code: 40ms)
+✓ Compiled in 269ms
+ GET / 200 in 585ms (next.js: 148ms, proxy.ts: 29ms, application-code: 408ms)
+ GET / 200 in 315ms (next.js: 4ms, proxy.ts: 6ms, application-code: 305ms)
+ GET / 200 in 229ms (next.js: 6ms, proxy.ts: 4ms, application-code: 219ms)
+ GET / 200 in 256ms (next.js: 95ms, proxy.ts: 25ms, application-code: 137ms)
+ GET /api/auth/get-session 200 in 307ms (next.js: 234ms, proxy.ts: 3ms, application-code: 70ms)
+ GET /console/dashboard 200 in 479ms (next.js: 233ms, proxy.ts: 3ms, application-code: 243ms)
+ GET / 200 in 50ms (next.js: 3ms, proxy.ts: 2ms, application-code: 45ms)
+ GET /console/dashboard 200 in 47ms (next.js: 3ms, proxy.ts: 3ms, application-code: 41ms)
+ GET /docs 200 in 197ms (next.js: 93ms, proxy.ts: 2ms, application-code: 101ms)
+ GET /api/auth/get-session 200 in 31ms (next.js: 16ms, proxy.ts: 2ms, application-code: 12ms)
+ GET / 200 in 54ms (next.js: 2ms, proxy.ts: 1912µs, application-code: 50ms)
+ GET /console/dashboard 200 in 45ms (next.js: 3ms, proxy.ts: 2ms, application-code: 40ms)
+ GET /release-notes 200 in 124ms (next.js: 80ms, proxy.ts: 2ms, application-code: 41ms)
+ GET /console/settings 200 in 319ms (next.js: 207ms, proxy.ts: 3ms, application-code: 109ms)
+ GET / 200 in 48ms (next.js: 2ms, proxy.ts: 2ms, application-code: 43ms)
+ GET /api/auth/get-session 200 in 23ms (next.js: 14ms, proxy.ts: 2ms, application-code: 7ms)
+ GET /console/dashboard 200 in 97ms (next.js: 3ms, proxy.ts: 2ms, application-code: 92ms)
+ GET /console/api-keys 200 in 388ms (next.js: 229ms, proxy.ts: 1938µs, application-code: 157ms)
+ GET /console/settings 200 in 32ms (next.js: 3ms, proxy.ts: 2ms, application-code: 27ms)
+ GET /console/settings 200 in 27ms (next.js: 3ms, proxy.ts: 2ms, application-code: 22ms)
+ GET /console/balance 200 in 400ms (next.js: 218ms, proxy.ts: 3ms, application-code: 179ms)
+ GET /console/dashboard 200 in 83ms (next.js: 3ms, proxy.ts: 2ms, application-code: 78ms)
+ GET /console/settings 200 in 28ms (next.js: 3ms, proxy.ts: 2ms, application-code: 23ms)
+ GET /console/balance 200 in 61ms (next.js: 3ms, proxy.ts: 2ms, application-code: 56ms)
+✓ Compiled in 590ms
+ GET /console/balance 200 in 739ms (next.js: 278ms, proxy.ts: 26ms, application-code: 436ms)
+ GET /console/balance 200 in 306ms (next.js: 8ms, proxy.ts: 33ms, application-code: 264ms)
+ GET /console/balance 200 in 217ms (next.js: 15ms, proxy.ts: 9ms, application-code: 193ms)
+✓ Compiled in 266ms
+ GET /console/balance 200 in 772ms (next.js: 400ms, proxy.ts: 52ms, application-code: 319ms)
+ GET /console/balance 200 in 458ms (next.js: 6ms, proxy.ts: 5ms, application-code: 448ms)
+[browser] A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <RedirectBoundary>
+      <RedirectErrorBoundary router={{...}}>
+        <InnerLayoutRouter url="/console/b..." tree={[...]} params={{}} cacheNode={{rsc:{...}, ...}} segmentPath={[...]} ...>
+          <SegmentViewNode type="layout" pagePath="console/la...">
+            <SegmentTrieNode>
+            <script>
+            <script>
+            <script>
+            <script>
+            <script>
+            <script>
+            <script>
+            <script>
+            <script>
+            <script>
+            <script>
+            <script>
+            <script>
+            <script>
+            <ConsoleLayout>
+              <ConsoleLayoutClient user={{id:"user_m...", ...}}>
+                <SidebarProvider>
+                  <div data-slot="sidebar-wr..." style={{...}} className="group/side...">
+                    <ConsoleSidebarInner>
+                    <SidebarInset>
+                      <main data-slot="sidebar-inset" className="relative f...">
+                        <ConsoleTopBar>
+                        <main className="flex flex-...">
+                          <FadeIn duration={0.3} y={12}>
+                            <div
+                              className={undefined}
+-                             style={{opacity:"0",transform:"translateY..."}}
+                            >
+                              ...
+                                <div className="flex flex-...">
+                                  <div>
+                                  <div>
+                                  <FadeInStagger className="grid gap-4...">
+                                    <div className="grid gap-4...">
+                                      <FadeInItem>
+                                        <div
+                                          className={undefined}
+-                                         style={{opacity:"0",transform:"translateY..."}}
+                                        >
+                                      <FadeInItem>
+                                        <div
+                                          className={undefined}
+-                                         style={{opacity:"0",transform:"translateY..."}}
+                                        >
+                                          ...
+                                            <Input placeholder="Enter vouc..." value="" onChange={function onChange} ...>
+                                              <Input type={undefined} data-slot="input" className="h-8 w-full..." ...>
+                                                <FieldControl ref={null} type={undefined} data-slot="input" ...>
+                                                  <input
++                                                   id="base-ui-_R_qjinebnaitmlb_"
+-                                                   id="base-ui-_R_1laeatpetaitmlb_"
+                                                    disabled={false}
+                                                    name={undefined}
+                                                    ref={function}
+                                                    aria-labelledby={undefined}
+                                                    autoFocus={false}
+                                                    value=""
+                                                    onChange={function}
+                                                    onFocus={function}
+                                                    onBlur={function}
+                                                    onKeyDown={function}
+                                                    type={undefined}
+                                                    data-slot="input"
+                                                    placeholder="Enter voucher code"
+                                                    className="h-8 w-full min-w-0 rounded-2xl border border-transparen..."
+                                                  >
+                                  ...
+                                    <Switch checked={false} onCheckedChange={function bound dispatchSetState} size="sm">
+                                      <SwitchRoot data-slot="switch" data-size="sm" className="peer group..." ...>
+                                        <span
+                                          data-unchecked=""
+                                          onClick={function}
+                                          onMouseDown={function}
+                                          onKeyDown={function}
+                                          onKeyUp={function}
+                                          onPointerDown={function}
+                                          role="switch"
+                                          tabIndex={0}
++                                         id="base-ui-_R_2kinebnaitmlb_"
+-                                         id="base-ui-_R_aiatpetaitmlb_"
+                                          aria-checked={false}
+                                          aria-readonly={undefined}
+                                          aria-required={undefined}
+                                          aria-labelledby={undefined}
+                                          onFocus={function}
+                                          onBlur={function}
+                                          data-slot="switch"
+                                          data-size="sm"
+                                          ref={function}
+                                          className="peer group/switch relative inline-flex shrink-0 items-center roun..."
+                                        >
+                                        ...
+                                  ...
+                                    <div data-orientation="horizontal" data-activation-direction="none" data-slot="tabs" ...>
+                                      ...
+                                        <div data-orientation="horizontal" data-activation-direction="none" ...>
+                                          <TabsTrigger value="topup">
+                                            <TabsTab data-slot="tabs-trigger" className={"relative..."} value="topup">
+                                              <button
+                                                type="button"
+                                                data-active=""
+                                                data-orientation="horizontal"
+                                                data-activation-direction="none"
+                                                onClick={function}
+                                                onMouseDown={function}
+                                                onKeyDown={function}
+                                                onKeyUp={function}
+                                                onPointerDown={function}
+                                                aria-disabled={false}
+                                                tabIndex={-1}
+                                                onFocus={function}
+                                                onMouseMove={function}
+                                                role="tab"
+                                                aria-controls={undefined}
+                                                aria-selected={true}
++                                               id="base-ui-_R_1dinebnaitmlb_"
+-                                               id="base-ui-_R_5matpetaitmlb_"
+                                                data-composite-item-active=""
+                                                onKeyDownCapture={function}
+                                                data-slot="tabs-trigger"
+                                                ref={function}
+                                                className={"relative inline-flex h-[calc(100%-1px)] flex-1 items-cent..."}
+                                              >
++                                               Top-up History
+                                          <TabsTrigger value="voucher">
+                                            <TabsTab data-slot="tabs-trigger" className={"relative..."} value="voucher">
+                                              <button
+                                                type="button"
+                                                data-orientation="horizontal"
+                                                data-activation-direction="none"
+                                                onClick={function}
+                                                onMouseDown={function}
+                                                onKeyDown={function}
+                                                onKeyUp={function}
+                                                onPointerDown={function}
+                                                aria-disabled={false}
+                                                tabIndex={-1}
+                                                onFocus={function}
+                                                onMouseMove={function}
+                                                role="tab"
+                                                aria-controls={undefined}
+                                                aria-selected={false}
++                                               id="base-ui-_R_2dinebnaitmlb_"
+-                                               id="base-ui-_R_9matpetaitmlb_"
+                                                data-composite-item-active={undefined}
+                                                onKeyDownCapture={function}
+                                                data-slot="tabs-trigger"
+                                                ref={function}
+                                                className={"relative inline-flex h-[calc(100%-1px)] flex-1 items-cent..."}
+                                              >
++                                               Voucher History
+                                      <TabsContent value="topup" className="pt-4">
+                                        <TabsPanel data-slot="tabs-content" className="flex-1 tex..." value="topup">
+                                          <div
+                                            data-orientation="horizontal"
+                                            data-activation-direction="none"
+                                            aria-labelledby={undefined}
+                                            hidden={false}
++                                           id="base-ui-_R_linebnaitmlb_"
+-                                           id="base-ui-_R_2matpetaitmlb_"
+                                            role="tabpanel"
+                                            tabIndex={0}
+                                            inert={false}
+                                            data-index={-1}
+                                            data-slot="tabs-content"
+                                            ref={function}
+                                            className="flex-1 text-sm outline-none pt-4"
+                                          >
+                                      ...
+        ...
+ 
+[browser] You have Reduced Motion enabled on your device. Animations may not appear as expected.. For more information and steps for solving, visit https://motion.dev/troubleshooting/reduced-motion-disabled (src/components/motion/index.tsx:22:42)
+ GET /console/dashboard 200 in 503ms (next.js: 237ms, proxy.ts: 3ms, application-code: 264ms)
+ GET /console/dashboard 200 in 44ms (next.js: 3ms, proxy.ts: 3ms, application-code: 39ms)
+ GET /console/dashboard 200 in 375ms (next.js: -500µs, proxy.ts: 5ms, application-code: 371ms)
+[browser] You have Reduced Motion enabled on your device. Animations may not appear as expected.. For more information and steps for solving, visit https://motion.dev/troubleshooting/reduced-motion-disabled (src/components/motion/index.tsx:22:42)
+[browser] A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <RedirectBoundary>
+      <RedirectErrorBoundary router={{...}}>
+        <InnerLayoutRouter url="/console/d..." tree={[...]} params={{}} cacheNode={{rsc:{...}, ...}} segmentPath={[...]} ...>
+          <SegmentViewNode type="layout" pagePath="console/la...">
+            <SegmentTrieNode>
+            <script>
+            <script>
+            <script>
+            <script>
+            <script>
+            <script>
+            <script>
+            <script>
+            <script>
+            <script>
+            <script>
+            <script>
+            <script>
+            <script>
+            <ConsoleLayout>
+              <ConsoleLayoutClient user={{id:"user_m...", ...}}>
+                <SidebarProvider>
+                  <div data-slot="sidebar-wr..." style={{...}} className="group/side...">
+                    <ConsoleSidebarInner>
+                    <SidebarInset>
+                      <main data-slot="sidebar-inset" className="relative f...">
+                        <ConsoleTopBar>
+                        <main className="flex flex-...">
+                          <FadeIn duration={0.3} y={12}>
+                            <div
+                              className={undefined}
+-                             style={{opacity:"0",transform:"translateY..."}}
+                            >
+                              ...
+                                <div data-orientation="horizontal" data-activation-direction="none" data-slot="tabs" ...>
+                                  ...
+                                    <div data-orientation="horizontal" data-activation-direction="none" ref={function} ...>
+                                      <TabsTrigger value="consumption">
+                                        <TabsTab data-slot="tabs-trigger" className={"relative..."} value="consumption">
+                                          <button
+                                            type="button"
+                                            data-active=""
+                                            data-orientation="horizontal"
+                                            data-activation-direction="none"
+                                            onClick={function}
+                                            onMouseDown={function}
+                                            onKeyDown={function}
+                                            onKeyUp={function}
+                                            onPointerDown={function}
+                                            aria-disabled={false}
+                                            tabIndex={-1}
+                                            onFocus={function}
+                                            onMouseMove={function}
+                                            role="tab"
+                                            aria-controls={undefined}
+                                            aria-selected={true}
++                                           id="base-ui-_R_4rinebnaitmlb_"
+-                                           id="base-ui-_R_jeatpetaitmlb_"
+                                            data-composite-item-active=""
+                                            onKeyDownCapture={function}
+                                            data-slot="tabs-trigger"
+                                            ref={function}
+                                            className={"relative inline-flex h-[calc(100%-1px)] flex-1 items-center j..."}
+                                          >
++                                           Consumption Distribution
+                                      <TabsTrigger value="trend">
+                                        <TabsTab data-slot="tabs-trigger" className={"relative..."} value="trend">
+                                          <button
+                                            type="button"
+                                            data-orientation="horizontal"
+                                            data-activation-direction="none"
+                                            onClick={function}
+                                            onMouseDown={function}
+                                            onKeyDown={function}
+                                            onKeyUp={function}
+                                            onPointerDown={function}
+                                            aria-disabled={false}
+                                            tabIndex={-1}
+                                            onFocus={function}
+                                            onMouseMove={function}
+                                            role="tab"
+                                            aria-controls={undefined}
+                                            aria-selected={false}
++                                           id="base-ui-_R_8rinebnaitmlb_"
+-                                           id="base-ui-_R_13eatpetaitmlb_"
+                                            data-composite-item-active={undefined}
+                                            onKeyDownCapture={function}
+                                            data-slot="tabs-trigger"
+                                            ref={function}
+                                            className={"relative inline-flex h-[calc(100%-1px)] flex-1 items-center j..."}
+                                          >
++                                           Consumption Trend
+                                      <TabsTrigger value="ranking">
+                                        <TabsTab data-slot="tabs-trigger" className={"relative..."} value="ranking">
+                                          <button
+                                            type="button"
+                                            data-orientation="horizontal"
+                                            data-activation-direction="none"
+                                            onClick={function}
+                                            onMouseDown={function}
+                                            onKeyDown={function}
+                                            onKeyUp={function}
+                                            onPointerDown={function}
+                                            aria-disabled={false}
+                                            tabIndex={-1}
+                                            onFocus={function}
+                                            onMouseMove={function}
+                                            role="tab"
+                                            aria-controls={undefined}
+                                            aria-selected={false}
++                                           id="base-ui-_R_crinebnaitmlb_"
+-                                           id="base-ui-_R_1jeatpetaitmlb_"
+                                            data-composite-item-active={undefined}
+                                            onKeyDownCapture={function}
+                                            data-slot="tabs-trigger"
+                                            ref={function}
+                                            className={"relative inline-flex h-[calc(100%-1px)] flex-1 items-center j..."}
+                                          >
++                                           Models Call Ranking
+                                  <TabsContent value="consumption" className="p-4 pt-3">
+                                    <TabsPanel data-slot="tabs-content" className="flex-1 tex..." value="consumption">
+                                      <div
+                                        data-orientation="horizontal"
+                                        data-activation-direction="none"
+                                        aria-labelledby={undefined}
+                                        hidden={false}
++                                       id="base-ui-_R_1binebnaitmlb_"
+-                                       id="base-ui-_R_5eatpetaitmlb_"
+                                        role="tabpanel"
+                                        tabIndex={0}
+                                        inert={false}
+                                        data-index={-1}
+                                        data-slot="tabs-content"
+                                        ref={function}
+                                        className="flex-1 text-sm outline-none p-4 pt-3"
+                                      >
+                                  ...
+        ...
+ 
+ GET /console/dashboard 200 in 283ms (next.js: 15ms, proxy.ts: 23ms, application-code: 245ms)
+[browser] You have Reduced Motion enabled on your device. Animations may not appear as expected.. For more information and steps for solving, visit https://motion.dev/troubleshooting/reduced-motion-disabled (src/components/motion/index.tsx:22:42)
+[browser] A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <RedirectBoundary>
+      <RedirectErrorBoundary router={{...}}>
+        <InnerLayoutRouter url="/console/d..." tree={[...]} params={{}} cacheNode={{rsc:{...}, ...}} segmentPath={[...]} ...>
+          <SegmentViewNode type="layout" pagePath="console/la...">
+            <SegmentTrieNode>
+            <script>
+            <script>
+            <script>
+            <script>
+            <script>
+            <script>
+            <script>
+            <script>
+            <script>
+            <script>
+            <script>
+            <script>
+            <script>
+            <script>
+            <ConsoleLayout>
+              <ConsoleLayoutClient user={{id:"user_m...", ...}}>
+                <SidebarProvider>
+                  <div data-slot="sidebar-wr..." style={{...}} className="group/side...">
+                    <ConsoleSidebarInner>
+                    <SidebarInset>
+                      <main data-slot="sidebar-inset" className="relative f...">
+                        <ConsoleTopBar>
+                        <main className="flex flex-...">
+                          <FadeIn duration={0.3} y={12}>
+                            <div
+                              className={undefined}
+-                             style={{opacity:"0",transform:"translateY..."}}
+                            >
+                              ...
+                                <div data-orientation="horizontal" data-activation-direction="none" data-slot="tabs" ...>
+                                  ...
+                                    <div data-orientation="horizontal" data-activation-direction="none" ref={function} ...>
+                                      <TabsTrigger value="consumption">
+                                        <TabsTab data-slot="tabs-trigger" className={"relative..."} value="consumption">
+                                          <button
+                                            type="button"
+                                            data-active=""
+                                            data-orientation="horizontal"
+                                            data-activation-direction="none"
+                                            onClick={function}
+                                            onMouseDown={function}
+                                            onKeyDown={function}
+                                            onKeyUp={function}
+                                            onPointerDown={function}
+                                            aria-disabled={false}
+                                            tabIndex={-1}
+                                            onFocus={function}
+                                            onMouseMove={function}
+                                            role="tab"
+                                            aria-controls={undefined}
+                                            aria-selected={true}
++                                           id="base-ui-_R_4rinebnaitmlb_"
+-                                           id="base-ui-_R_jeatpetaitmlb_"
+                                            data-composite-item-active=""
+                                            onKeyDownCapture={function}
+                                            data-slot="tabs-trigger"
+                                            ref={function}
+                                            className={"relative inline-flex h-[calc(100%-1px)] flex-1 items-center j..."}
+                                          >
++                                           Consumption Distribution
+                                      <TabsTrigger value="trend">
+                                        <TabsTab data-slot="tabs-trigger" className={"relative..."} value="trend">
+                                          <button
+                                            type="button"
+                                            data-orientation="horizontal"
+                                            data-activation-direction="none"
+                                            onClick={function}
+                                            onMouseDown={function}
+                                            onKeyDown={function}
+                                            onKeyUp={function}
+                                            onPointerDown={function}
+                                            aria-disabled={false}
+                                            tabIndex={-1}
+                                            onFocus={function}
+                                            onMouseMove={function}
+                                            role="tab"
+                                            aria-controls={undefined}
+                                            aria-selected={false}
++                                           id="base-ui-_R_8rinebnaitmlb_"
+-                                           id="base-ui-_R_13eatpetaitmlb_"
+                                            data-composite-item-active={undefined}
+                                            onKeyDownCapture={function}
+                                            data-slot="tabs-trigger"
+                                            ref={function}
+                                            className={"relative inline-flex h-[calc(100%-1px)] flex-1 items-center j..."}
+                                          >
++                                           Consumption Trend
+                                      <TabsTrigger value="ranking">
+                                        <TabsTab data-slot="tabs-trigger" className={"relative..."} value="ranking">
+                                          <button
+                                            type="button"
+                                            data-orientation="horizontal"
+                                            data-activation-direction="none"
+                                            onClick={function}
+                                            onMouseDown={function}
+                                            onKeyDown={function}
+                                            onKeyUp={function}
+                                            onPointerDown={function}
+                                            aria-disabled={false}
+                                            tabIndex={-1}
+                                            onFocus={function}
+                                            onMouseMove={function}
+                                            role="tab"
+                                            aria-controls={undefined}
+                                            aria-selected={false}
++                                           id="base-ui-_R_crinebnaitmlb_"
+-                                           id="base-ui-_R_1jeatpetaitmlb_"
+                                            data-composite-item-active={undefined}
+                                            onKeyDownCapture={function}
+                                            data-slot="tabs-trigger"
+                                            ref={function}
+                                            className={"relative inline-flex h-[calc(100%-1px)] flex-1 items-center j..."}
+                                          >
++                                           Models Call Ranking
+                                  <TabsContent value="consumption" className="p-4 pt-3">
+                                    <TabsPanel data-slot="tabs-content" className="flex-1 tex..." value="consumption">
+                                      <div
+                                        data-orientation="horizontal"
+                                        data-activation-direction="none"
+                                        aria-labelledby={undefined}
+                                        hidden={false}
++                                       id="base-ui-_R_1binebnaitmlb_"
+-                                       id="base-ui-_R_5eatpetaitmlb_"
+                                        role="tabpanel"
+                                        tabIndex={0}
+                                        inert={false}
+                                        data-index={-1}
+                                        data-slot="tabs-content"
+                                        ref={function}
+                                        className="flex-1 text-sm outline-none p-4 pt-3"
+                                      >
+                                  ...
+        ...
+ 
+ GET /console/models 200 in 542ms (next.js: 331ms, proxy.ts: 2ms, application-code: 209ms)
+ GET /console/dashboard 200 in 42ms (next.js: 2ms, proxy.ts: 2ms, application-code: 37ms)
+ GET / 200 in 115ms (next.js: 30ms, proxy.ts: 2ms, application-code: 83ms)
+ GET /api/auth/get-session 200 in 445ms (next.js: 226ms, proxy.ts: 1984µs, application-code: 217ms)
+ GET / 200 in 303ms (next.js: 3ms, proxy.ts: 3ms, application-code: 297ms)
+[browser] You have Reduced Motion enabled on your device. Animations may not appear as expected.. For more information and steps for solving, visit https://motion.dev/troubleshooting/reduced-motion-disabled (src/components/motion/index.tsx:21:42)
+ GET /api/auth/get-session 200 in 26ms (next.js: 12ms, proxy.ts: 4ms, application-code: 9ms)
+[browser] A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <ScrollAndMaybeFocusHandler cacheNode={{rsc:{...}, ...}}>
+      <InnerScrollAndFocusHandlerOld focusAndScrollRef={{scrollRef:null, ...}} cacheNode={{rsc:{...}, ...}}>
+        <ErrorBoundary errorComponent={undefined} errorStyles={undefined} errorScripts={undefined}>
+          <LoadingBoundary name="(public)/" loading={null}>
+            <HTTPAccessFallbackBoundary notFound={{...}} forbidden={undefined} unauthorized={undefined}>
+              <HTTPAccessFallbackErrorBoundary pathname="/" notFound={{...}} forbidden={undefined} ...>
+                <RedirectBoundary>
+                  <RedirectErrorBoundary router={{...}}>
+                    <InnerLayoutRouter url="/" tree={[...]} params={{}} cacheNode={{rsc:{...}, ...}} segmentPath={[...]} ...>
+                      <SegmentViewNode type="page" pagePath="(public)/p...">
+                        <SegmentTrieNode>
+                        <HomePage>
+                          <Hero>
+                            <section className="relative o...">
+                              <div>
+                              <div className="mx-auto ma...">
+                                <FadeIn>
+                                  <div
+                                    className={undefined}
+-                                   style={{opacity:"0",transform:"translateY..."}}
+                                  >
+                                <FadeIn delay={0.1}>
+                                  <div
+                                    className={undefined}
+-                                   style={{opacity:"0",transform:"translateY..."}}
+                                  >
+                                <FadeIn delay={0.2}>
+                                  <div
+                                    className={undefined}
+-                                   style={{opacity:"0",transform:"translateY..."}}
+                                  >
+                                <FadeIn delay={0.3}>
+                                  <div
+                                    className={undefined}
+-                                   style={{opacity:"0",transform:"translateY..."}}
+                                  >
+                                <ScaleIn delay={0.4}>
+                                  <div
+                                    className={undefined}
+-                                   style={{opacity:"0",transform:"scale(0.92)"}}
+                                  >
+                          <Features>
+                            <section id="features" className="mx-auto ma...">
+                              <FadeIn>
+                                <div
+                                  className={undefined}
+-                                 style={{opacity:"0",transform:"translateY..."}}
+                                >
+                              <FadeInStagger stagger={0.08} className="mt-14 grid...">
+                                <div className="mt-14 grid...">
+                                  <FadeInItem>
+                                    <div
+                                      className={undefined}
+-                                     style={{opacity:"0",transform:"translateY..."}}
+                                    >
+                                  <FadeInItem>
+                                    <div
+                                      className={undefined}
+-                                     style={{opacity:"0",transform:"translateY..."}}
+                                    >
+                                  <FadeInItem>
+                                    <div
+                                      className={undefined}
+-                                     style={{opacity:"0",transform:"translateY..."}}
+                                    >
+                                  <FadeInItem>
+                                    <div
+                                      className={undefined}
+-                                     style={{opacity:"0",transform:"translateY..."}}
+                                    >
+                                  <FadeInItem>
+                                    <div
+                                      className={undefined}
+-                                     style={{opacity:"0",transform:"translateY..."}}
+                                    >
+                                  <FadeInItem>
+                                    <div
+                                      className={undefined}
+-                                     style={{opacity:"0",transform:"translateY..."}}
+                                    >
+                          <HowItWorks>
+                            <section id="how" className="bg-muted/4...">
+                              <div className="mx-auto ma...">
+                                <FadeIn>
+                                  <div
+                                    className={undefined}
+-                                   style={{opacity:"0",transform:"translateY..."}}
+                                  >
+                                <FadeInStagger stagger={0.12} className="mt-14 grid...">
+                                  <div className="mt-14 grid...">
+                                    <FadeInItem>
+                                      <div
+                                        className={undefined}
+-                                       style={{opacity:"0",transform:"translateY..."}}
+                                      >
+                                    <FadeInItem>
+                                      <div
+                                        className={undefined}
+-                                       style={{opacity:"0",transform:"translateY..."}}
+                                      >
+                                    <FadeInItem>
+                                      <div
+                                        className={undefined}
+-                                       style={{opacity:"0",transform:"translateY..."}}
+                                      >
+                          ...
+                      ...
+                    ...
+        ...
+ 
+ GET /console/dashboard 200 in 51ms (next.js: 3ms, proxy.ts: 2ms, application-code: 46ms)
+ GET /console/chat 200 in 403ms (next.js: 216ms, proxy.ts: 2ms, application-code: 184ms)
+ GET /console/models 200 in 30ms (next.js: 2ms, proxy.ts: 2ms, application-code: 26ms)
+ GET /console/usage 200 in 419ms (next.js: 224ms, proxy.ts: 2ms, application-code: 193ms)
+ GET /console/settings 200 in 44ms (next.js: 18ms, proxy.ts: 2ms, application-code: 24ms)
+ GET / 200 in 47ms (next.js: 2ms, proxy.ts: 2ms, application-code: 43ms)
+ GET /api/auth/get-session 200 in 23ms (next.js: 13ms, proxy.ts: 2ms, application-code: 8ms)
+ GET /console/dashboard 200 in 95ms (next.js: 3ms, proxy.ts: 2ms, application-code: 89ms)
+ GET / 200 in 51ms (next.js: 2ms, proxy.ts: 2ms, application-code: 46ms)
+ GET /api/auth/get-session 200 in 22ms (next.js: 13ms, proxy.ts: 2ms, application-code: 7ms)
+ GET /console/dashboard 200 in 47ms (next.js: 3ms, proxy.ts: 1993µs, application-code: 42ms)
+ GET /console/dashboard 200 in 36ms (next.js: 3ms, proxy.ts: 1941µs, application-code: 31ms)
+✓ Compiled in 415ms
+ GET /console/dashboard 200 in 1495ms (next.js: 428ms, proxy.ts: 67ms, application-code: 1000ms)
+ GET /console/dashboard 200 in 604ms (next.js: 155ms, proxy.ts: 305ms, application-code: 145ms)
+ GET /console/dashboard 200 in 133ms (next.js: 13ms, proxy.ts: 7ms, application-code: 112ms)
+✓ Compiled in 225ms
+ GET /console/dashboard 200 in 592ms (next.js: 247ms, proxy.ts: 25ms, application-code: 320ms)
+ GET /console/dashboard 200 in 191ms (next.js: 7ms, proxy.ts: 28ms, application-code: 157ms)
+ GET /console/dashboard 200 in 137ms (next.js: 12ms, proxy.ts: 9ms, application-code: 116ms)
+✓ Compiled in 245ms
+ GET /console/dashboard 200 in 672ms (next.js: 282ms, proxy.ts: 48ms, application-code: 342ms)
+ GET /console/dashboard 200 in 209ms (next.js: 7ms, proxy.ts: 30ms, application-code: 172ms)
+ GET /console/dashboard 200 in 158ms (next.js: 9ms, proxy.ts: 7ms, application-code: 143ms)
+✓ Compiled in 223ms
+ GET /console/dashboard 200 in 549ms (next.js: 264ms, proxy.ts: 33ms, application-code: 252ms)
+[browser] Uncaught ReferenceError: cn is not defined
+    at ConsoleTopBar (src/app/console/console-layout-client.tsx:287:26)
+    at ConsoleLayoutClient (src/app/console/console-layout-client.tsx:309:44)
+    at ConsoleLayout (src\app\console\layout.tsx:27:5)
+  285 |             <Link
+  286 |               href="/admin"
+> 287 |               className={cn(
+      |                          ^
+  288 |                 "rounded-full px-3 py-1.5 text-sm transition-colors hover:bg-accent hover...
+  289 |                 pathname.startsWith("/admin")
+  290 |                   ? "text-foreground font-medium"
+✓ Compiled in 456ms
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+[browser] Encountered a script tag while rendering React component. Scripts inside React components are never executed when rendering on the client. Consider using template tag instead (https://developer.mozilla.org/en-US/docs/Web/HTML/Element/template). 
+    at Set.forEach (<anonymous>) (<anonymous>)
+ GET /console/dashboard 200 in 1097ms (next.js: 313ms, proxy.ts: 4ms, application-code: 780ms)
+[browser] You have Reduced Motion enabled on your device. Animations may not appear as expected.. For more information and steps for solving, visit https://motion.dev/troubleshooting/reduced-motion-disabled (src/components/motion/index.tsx:22:42)
+[browser] A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <RedirectBoundary>
+      <RedirectErrorBoundary router={{...}}>
+        <InnerLayoutRouter url="/console/d..." tree={[...]} params={{}} cacheNode={{rsc:{...}, ...}} segmentPath={[...]} ...>
+          <SegmentViewNode type="layout" pagePath="console/la...">
+            <SegmentTrieNode>
+            <script>
+            <script>
+            <script>
+            <script>
+            <script>
+            <script>
+            <script>
+            <script>
+            <script>
+            <script>
+            <script>
+            <script>
+            <script>
+            <script>
+            <ConsoleLayout>
+              <ConsoleLayoutClient user={{id:"user_m...", ...}}>
+                <SidebarProvider>
+                  <div data-slot="sidebar-wr..." style={{...}} className="group/side...">
+                    <ConsoleSidebarInner>
+                    <SidebarInset>
+                      <main data-slot="sidebar-inset" className="relative f...">
+                        <ConsoleTopBar>
+                        <main className="flex flex-...">
+                          <FadeIn duration={0.3} y={12}>
+                            <div
+                              className={undefined}
+-                             style={{opacity:"0",transform:"translateY..."}}
+                            >
+                              ...
+                                <div data-orientation="horizontal" data-activation-direction="none" data-slot="tabs" ...>
+                                  ...
+                                    <div data-orientation="horizontal" data-activation-direction="none" ref={function} ...>
+                                      <TabsTrigger value="consumption">
+                                        <TabsTab data-slot="tabs-trigger" className={"relative..."} value="consumption">
+                                          <button
+                                            type="button"
+                                            data-active=""
+                                            data-orientation="horizontal"
+                                            data-activation-direction="none"
+                                            onClick={function}
+                                            onMouseDown={function}
+                                            onKeyDown={function}
+                                            onKeyUp={function}
+                                            onPointerDown={function}
+                                            aria-disabled={false}
+                                            tabIndex={-1}
+                                            onFocus={function}
+                                            onMouseMove={function}
+                                            role="tab"
+                                            aria-controls={undefined}
+                                            aria-selected={true}
++                                           id="base-ui-_R_4rinebnaitmlb_"
+-                                           id="base-ui-_R_jeatpetaitmlb_"
+                                            data-composite-item-active=""
+                                            onKeyDownCapture={function}
+                                            data-slot="tabs-trigger"
+                                            ref={function}
+                                            className={"relative inline-flex h-[calc(100%-1px)] flex-1 items-center j..."}
+                                          >
++                                           Consumption Distribution
+                                      <TabsTrigger value="trend">
+                                        <TabsTab data-slot="tabs-trigger" className={"relative..."} value="trend">
+                                          <button
+                                            type="button"
+                                            data-orientation="horizontal"
+                                            data-activation-direction="none"
+                                            onClick={function}
+                                            onMouseDown={function}
+                                            onKeyDown={function}
+                                            onKeyUp={function}
+                                            onPointerDown={function}
+                                            aria-disabled={false}
+                                            tabIndex={-1}
+                                            onFocus={function}
+                                            onMouseMove={function}
+                                            role="tab"
+                                            aria-controls={undefined}
+                                            aria-selected={false}
++                                           id="base-ui-_R_8rinebnaitmlb_"
+-                                           id="base-ui-_R_13eatpetaitmlb_"
+                                            data-composite-item-active={undefined}
+                                            onKeyDownCapture={function}
+                                            data-slot="tabs-trigger"
+                                            ref={function}
+                                            className={"relative inline-flex h-[calc(100%-1px)] flex-1 items-center j..."}
+                                          >
++                                           Consumption Trend
+                                      <TabsTrigger value="ranking">
+                                        <TabsTab data-slot="tabs-trigger" className={"relative..."} value="ranking">
+                                          <button
+                                            type="button"
+                                            data-orientation="horizontal"
+                                            data-activation-direction="none"
+                                            onClick={function}
+                                            onMouseDown={function}
+                                            onKeyDown={function}
+                                            onKeyUp={function}
+                                            onPointerDown={function}
+                                            aria-disabled={false}
+                                            tabIndex={-1}
+                                            onFocus={function}
+                                            onMouseMove={function}
+                                            role="tab"
+                                            aria-controls={undefined}
+                                            aria-selected={false}
++                                           id="base-ui-_R_crinebnaitmlb_"
+-                                           id="base-ui-_R_1jeatpetaitmlb_"
+                                            data-composite-item-active={undefined}
+                                            onKeyDownCapture={function}
+                                            data-slot="tabs-trigger"
+                                            ref={function}
+                                            className={"relative inline-flex h-[calc(100%-1px)] flex-1 items-center j..."}
+                                          >
++                                           Models Call Ranking
+                                  <TabsContent value="consumption" className="p-4 pt-3">
+                                    <TabsPanel data-slot="tabs-content" className="flex-1 tex..." value="consumption">
+                                      <div
+                                        data-orientation="horizontal"
+                                        data-activation-direction="none"
+                                        aria-labelledby={undefined}
+                                        hidden={false}
++                                       id="base-ui-_R_1binebnaitmlb_"
+-                                       id="base-ui-_R_5eatpetaitmlb_"
+                                        role="tabpanel"
+                                        tabIndex={0}
+                                        inert={false}
+                                        data-index={-1}
+                                        data-slot="tabs-content"
+                                        ref={function}
+                                        className="flex-1 text-sm outline-none p-4 pt-3"
+                                      >
+                                  ...
+        ...
+ 
+ GET /console/dashboard 200 in 193ms (next.js: 5ms, proxy.ts: 7ms, application-code: 181ms)
+[browser] You have Reduced Motion enabled on your device. Animations may not appear as expected.. For more information and steps for solving, visit https://motion.dev/troubleshooting/reduced-motion-disabled (src/components/motion/index.tsx:22:42)
+[browser] A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <RedirectBoundary>
+      <RedirectErrorBoundary router={{...}}>
+        <InnerLayoutRouter url="/console/d..." tree={[...]} params={{}} cacheNode={{rsc:{...}, ...}} segmentPath={[...]} ...>
+          <SegmentViewNode type="layout" pagePath="console/la...">
+            <SegmentTrieNode>
+            <script>
+            <script>
+            <script>
+            <script>
+            <script>
+            <script>
+            <script>
+            <script>
+            <script>
+            <script>
+            <script>
+            <script>
+            <script>
+            <script>
+            <ConsoleLayout>
+              <ConsoleLayoutClient user={{id:"user_m...", ...}}>
+                <SidebarProvider>
+                  <div data-slot="sidebar-wr..." style={{...}} className="group/side...">
+                    <ConsoleSidebarInner>
+                    <SidebarInset>
+                      <main data-slot="sidebar-inset" className="relative f...">
+                        <ConsoleTopBar>
+                        <main className="flex flex-...">
+                          <FadeIn duration={0.3} y={12}>
+                            <div
+                              className={undefined}
+-                             style={{opacity:"0",transform:"translateY..."}}
+                            >
+                              ...
+                                <div data-orientation="horizontal" data-activation-direction="none" data-slot="tabs" ...>
+                                  ...
+                                    <div data-orientation="horizontal" data-activation-direction="none" ref={function} ...>
+                                      <TabsTrigger value="consumption">
+                                        <TabsTab data-slot="tabs-trigger" className={"relative..."} value="consumption">
+                                          <button
+                                            type="button"
+                                            data-active=""
+                                            data-orientation="horizontal"
+                                            data-activation-direction="none"
+                                            onClick={function}
+                                            onMouseDown={function}
+                                            onKeyDown={function}
+                                            onKeyUp={function}
+                                            onPointerDown={function}
+                                            aria-disabled={false}
+                                            tabIndex={-1}
+                                            onFocus={function}
+                                            onMouseMove={function}
+                                            role="tab"
+                                            aria-controls={undefined}
+                                            aria-selected={true}
++                                           id="base-ui-_R_4rinebnaitmlb_"
+-                                           id="base-ui-_R_jeatpetaitmlb_"
+                                            data-composite-item-active=""
+                                            onKeyDownCapture={function}
+                                            data-slot="tabs-trigger"
+                                            ref={function}
+                                            className={"relative inline-flex h-[calc(100%-1px)] flex-1 items-center j..."}
+                                          >
++                                           Consumption Distribution
+                                      <TabsTrigger value="trend">
+                                        <TabsTab data-slot="tabs-trigger" className={"relative..."} value="trend">
+                                          <button
+                                            type="button"
+                                            data-orientation="horizontal"
+                                            data-activation-direction="none"
+                                            onClick={function}
+                                            onMouseDown={function}
+                                            onKeyDown={function}
+                                            onKeyUp={function}
+                                            onPointerDown={function}
+                                            aria-disabled={false}
+                                            tabIndex={-1}
+                                            onFocus={function}
+                                            onMouseMove={function}
+                                            role="tab"
+                                            aria-controls={undefined}
+                                            aria-selected={false}
++                                           id="base-ui-_R_8rinebnaitmlb_"
+-                                           id="base-ui-_R_13eatpetaitmlb_"
+                                            data-composite-item-active={undefined}
+                                            onKeyDownCapture={function}
+                                            data-slot="tabs-trigger"
+                                            ref={function}
+                                            className={"relative inline-flex h-[calc(100%-1px)] flex-1 items-center j..."}
+                                          >
++                                           Consumption Trend
+                                      <TabsTrigger value="ranking">
+                                        <TabsTab data-slot="tabs-trigger" className={"relative..."} value="ranking">
+                                          <button
+                                            type="button"
+                                            data-orientation="horizontal"
+                                            data-activation-direction="none"
+                                            onClick={function}
+                                            onMouseDown={function}
+                                            onKeyDown={function}
+                                            onKeyUp={function}
+                                            onPointerDown={function}
+                                            aria-disabled={false}
+                                            tabIndex={-1}
+                                            onFocus={function}
+                                            onMouseMove={function}
+                                            role="tab"
+                                            aria-controls={undefined}
+                                            aria-selected={false}
++                                           id="base-ui-_R_crinebnaitmlb_"
+-                                           id="base-ui-_R_1jeatpetaitmlb_"
+                                            data-composite-item-active={undefined}
+                                            onKeyDownCapture={function}
+                                            data-slot="tabs-trigger"
+                                            ref={function}
+                                            className={"relative inline-flex h-[calc(100%-1px)] flex-1 items-center j..."}
+                                          >
++                                           Models Call Ranking
+                                  <TabsContent value="consumption" className="p-4 pt-3">
+                                    <TabsPanel data-slot="tabs-content" className="flex-1 tex..." value="consumption">
+                                      <div
+                                        data-orientation="horizontal"
+                                        data-activation-direction="none"
+                                        aria-labelledby={undefined}
+                                        hidden={false}
++                                       id="base-ui-_R_1binebnaitmlb_"
+-                                       id="base-ui-_R_5eatpetaitmlb_"
+                                        role="tabpanel"
+                                        tabIndex={0}
+                                        inert={false}
+                                        data-index={-1}
+                                        data-slot="tabs-content"
+                                        ref={function}
+                                        className="flex-1 text-sm outline-none p-4 pt-3"
+                                      >
+                                  ...
+        ...
+ 
+ GET /console/models 200 in 501ms (next.js: 287ms, proxy.ts: 3ms, application-code: 212ms)
+ GET /console/models 200 in 42ms (next.js: 3ms, proxy.ts: 2ms, application-code: 37ms)
+ GET /console/dashboard 200 in 79ms (next.js: 3ms, proxy.ts: 2ms, application-code: 74ms)
+ GET /release-notes 200 in 155ms (next.js: 81ms, proxy.ts: 1987µs, application-code: 72ms)
+ GET /api/auth/get-session 200 in 307ms (next.js: 235ms, proxy.ts: 2ms, application-code: 70ms)
+ GET /admin 200 in 564ms (next.js: 246ms, proxy.ts: 2ms, application-code: 316ms)
+ GET /admin/models 200 in 514ms (next.js: 347ms, proxy.ts: 3ms, application-code: 164ms)
+ GET /admin/users 200 in 1337ms (next.js: 1273ms, proxy.ts: 16ms, application-code: 48ms)
+ GET /admin/billing 404 in 80ms (next.js: 58ms, proxy.ts: 2ms, application-code: 20ms)
+ GET /admin/billing 404 in 94ms (next.js: 4ms, proxy.ts: 2ms, application-code: 88ms)
+ GET /api/auth/get-session 200 in 25ms (next.js: 16ms, proxy.ts: 3ms, application-code: 7ms)
+ GET / 200 in 264ms (next.js: 134ms, proxy.ts: 7ms, application-code: 123ms)
+ GET /console/dashboard 200 in 52ms (next.js: 3ms, proxy.ts: 1915µs, application-code: 47ms)
+ GET /console/models 200 in 31ms (next.js: 3ms, proxy.ts: 3ms, application-code: 26ms)
+ GET /console/api-keys 200 in 802ms (next.js: 294ms, proxy.ts: 1919µs, application-code: 506ms)
+ GET /console/usage 200 in 424ms (next.js: 221ms, proxy.ts: 3ms, application-code: 200ms)
+ GET /api/auth/get-session 200 in 26ms (next.js: 16ms, proxy.ts: 2ms, application-code: 8ms)
+ GET /admin 200 in 103ms (next.js: 3ms, proxy.ts: 2ms, application-code: 97ms)
+✓ Compiled in 584ms
+ GET /admin 200 in 2.3s (next.js: 637ms, proxy.ts: 7ms, application-code: 1638ms)
+ GET /admin 200 in 939ms (next.js: 240ms, proxy.ts: 83ms, application-code: 617ms)
+ GET /admin 200 in 1516ms (next.js: 325ms, proxy.ts: 34ms, application-code: 1156ms)
+ GET /admin 200 in 946ms (next.js: 264ms, proxy.ts: 82ms, application-code: 600ms)
+ GET /admin 200 in 951ms (next.js: 285ms, proxy.ts: 82ms, application-code: 584ms)
+ GET /admin 200 in 1680ms (next.js: 507ms, proxy.ts: 37ms, application-code: 1135ms)
+ GET /api/auth/get-session 200 in 339ms (next.js: 312ms, proxy.ts: 3ms, application-code: 24ms)
+✓ Compiled in 492ms
+ GET /admin 200 in 1156ms (next.js: 3ms, proxy.ts: 4ms, application-code: 1150ms)
+ GET /admin 200 in 1127ms (next.js: 344ms, proxy.ts: 261ms, application-code: 522ms)
+ GET /admin 200 in 431ms (next.js: 44ms, proxy.ts: 19ms, application-code: 369ms)
+ GET /admin 200 in 432ms (next.js: 98ms, proxy.ts: 18ms, application-code: 315ms)
+ GET /admin 200 in 434ms (next.js: 69ms, proxy.ts: 18ms, application-code: 346ms)
+ GET /admin 200 in 440ms (next.js: 127ms, proxy.ts: 18ms, application-code: 295ms)
+ GET /admin 200 in 250ms (next.js: 5ms, proxy.ts: 9ms, application-code: 236ms)
+ GET /admin 200 in 157ms (next.js: 4ms, proxy.ts: 8ms, application-code: 145ms)
+ GET /admin 200 in 110ms (next.js: 7ms, proxy.ts: 9ms, application-code: 94ms)
+ GET /admin 200 in 101ms (next.js: 32ms, proxy.ts: 3ms, application-code: 66ms)
+✓ Compiled in 295ms
+✓ Compiled in 234ms
+ GET /admin 200 in 960ms (next.js: 416ms, proxy.ts: 33ms, application-code: 511ms)
+ GET /admin 200 in 304ms (next.js: 46ms, proxy.ts: 18ms, application-code: 240ms)
+ GET /admin 200 in 222ms (next.js: 12ms, proxy.ts: 10ms, application-code: 200ms)
+ GET /admin 200 in 222ms (next.js: 35ms, proxy.ts: 10ms, application-code: 177ms)
+✓ Compiled in 270ms
+ GET /admin 200 in 650ms (next.js: 311ms, proxy.ts: 30ms, application-code: 309ms)
+ GET /admin 200 in 192ms (next.js: 21ms, proxy.ts: 25ms, application-code: 146ms)
+ GET /admin 200 in 129ms (next.js: 12ms, proxy.ts: 8ms, application-code: 109ms)
+ GET /api/auth/get-session 200 in 477ms (next.js: 235ms, proxy.ts: 2ms, application-code: 240ms)
+ GET /admin 200 in 371ms (next.js: 3ms, proxy.ts: 6ms, application-code: 361ms)
+ GET /api/auth/get-session 200 in 26ms (next.js: 13ms, proxy.ts: 2ms, application-code: 11ms)
+ GET / 200 in 78ms (next.js: 25ms, proxy.ts: 1950µs, application-code: 51ms)
+[browser] You have Reduced Motion enabled on your device. Animations may not appear as expected.. For more information and steps for solving, visit https://motion.dev/troubleshooting/reduced-motion-disabled (src/components/motion/index.tsx:21:42)
+ GET /console/dashboard 200 in 94ms (next.js: 22ms, proxy.ts: 2ms, application-code: 70ms)
+ GET /admin 200 in 44ms (next.js: 3ms, proxy.ts: 2ms, application-code: 39ms)
+ GET / 200 in 72ms (next.js: 6ms, proxy.ts: 7ms, application-code: 60ms)
+ GET /admin 200 in 83ms (next.js: 3ms, proxy.ts: 3ms, application-code: 78ms)
+ GET /console/dashboard 200 in 100ms (next.js: 4ms, proxy.ts: 3ms, application-code: 93ms)
+ GET /api/auth/get-session 200 in 28ms (next.js: 12ms, proxy.ts: 2ms, application-code: 13ms)
+✓ Compiled in 285ms
+ GET /admin 200 in 701ms (next.js: 379ms, proxy.ts: 29ms, application-code: 293ms)
+⚠ Fast Refresh had to perform a full reload when ./src/app/console/console-layout-client.tsx changed. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+✓ Compiled in 248ms
+ GET /admin 200 in 839ms (next.js: 56ms, proxy.ts: 11ms, application-code: 772ms)
+ GET /admin 200 in 1197ms (next.js: 201ms, proxy.ts: 117ms, application-code: 879ms)
+ GET /admin 200 in 857ms (next.js: 24ms, proxy.ts: 11ms, application-code: 822ms)
+ GET /admin 200 in 856ms (next.js: 90ms, proxy.ts: 11ms, application-code: 754ms)
+ GET /admin 200 in 1692ms (next.js: 302ms, proxy.ts: 22ms, application-code: 1368ms)
+ GET /admin 200 in 1695ms (next.js: 464ms, proxy.ts: 2ms, application-code: 1228ms)
+ GET /api/auth/get-session 200 in 298ms (next.js: 268ms, proxy.ts: 3ms, application-code: 26ms)
+✓ Compiled in 916ms
+ GET /admin 200 in 1792ms (next.js: 776ms, proxy.ts: 13ms, application-code: 1003ms)
+ GET /admin 200 in 588ms (next.js: 291ms, proxy.ts: 23ms, application-code: 274ms)
+ GET /admin 200 in 591ms (next.js: 241ms, proxy.ts: 23ms, application-code: 326ms)
+ GET /admin 200 in 612ms (next.js: 265ms, proxy.ts: 24ms, application-code: 322ms)
+ GET /admin 200 in 857ms (next.js: 38ms, proxy.ts: 42ms, application-code: 777ms)
+ GET /admin 200 in 881ms (next.js: 67ms, proxy.ts: 44ms, application-code: 770ms)
+ GET /api/auth/get-session 200 in 290ms (next.js: 263ms, proxy.ts: 2ms, application-code: 25ms)
+✓ Compiled in 555ms
+ GET /admin 200 in 1324ms (next.js: 4ms, proxy.ts: 3ms, application-code: 1317ms)
+ GET /admin 200 in 1316ms (next.js: 15ms, proxy.ts: 13ms, application-code: 1288ms)
+ GET /admin 200 in 1023ms (next.js: 259ms, proxy.ts: 34ms, application-code: 730ms)
+ GET /admin 200 in 643ms (next.js: 210ms, proxy.ts: 20ms, application-code: 413ms)
+ GET /admin 200 in 645ms (next.js: 181ms, proxy.ts: 20ms, application-code: 444ms)
+ GET /admin 200 in 648ms (next.js: 104ms, proxy.ts: 24ms, application-code: 520ms)
+ GET /admin 200 in 262ms (next.js: 14ms, proxy.ts: 8ms, application-code: 240ms)
+ GET /admin 200 in 201ms (next.js: 20ms, proxy.ts: 18ms, application-code: 163ms)
+ GET /admin 200 in 124ms (next.js: 13ms, proxy.ts: 4ms, application-code: 107ms)
+ GET /admin 200 in 68ms (next.js: 11ms, proxy.ts: 6ms, application-code: 50ms)
+✓ Compiled in 409ms
+ GET /admin/models 200 in 689ms (next.js: 415ms, proxy.ts: 15ms, application-code: 259ms)
+ GET /admin/users 200 in 444ms (next.js: 238ms, proxy.ts: 2ms, application-code: 204ms)
+ GET / 200 in 96ms (next.js: 27ms, proxy.ts: 2ms, application-code: 67ms)
+[browser] You have Reduced Motion enabled on your device. Animations may not appear as expected.. For more information and steps for solving, visit https://motion.dev/troubleshooting/reduced-motion-disabled (src/components/motion/index.tsx:22:42)
+ GET /console/dashboard 200 in 494ms (next.js: 222ms, proxy.ts: 2ms, application-code: 269ms)
+ GET /console/models 200 in 715ms (next.js: 214ms, proxy.ts: 2ms, application-code: 499ms)
+ GET /console/chat 200 in 612ms (next.js: 401ms, proxy.ts: 7ms, application-code: 203ms)
+ GET /console/api-keys 200 in 505ms (next.js: 285ms, proxy.ts: 3ms, application-code: 217ms)
+ GET /console/usage 200 in 521ms (next.js: 273ms, proxy.ts: 3ms, application-code: 246ms)
+ GET /console/balance 200 in 558ms (next.js: 298ms, proxy.ts: 3ms, application-code: 258ms)
+ GET /console/settings 200 in 378ms (next.js: 211ms, proxy.ts: 2ms, application-code: 165ms)
+ GET /console/balance 200 in 36ms (next.js: 3ms, proxy.ts: 2ms, application-code: 31ms)
+ GET /console/dashboard 200 in 93ms (next.js: 5ms, proxy.ts: 3ms, application-code: 86ms)
+ GET /admin 200 in 131ms (next.js: 7ms, proxy.ts: 2ms, application-code: 122ms)
+ GET /api/auth/get-session 200 in 334ms (next.js: 260ms, proxy.ts: 3ms, application-code: 71ms)
+ GET /admin/users 200 in 67ms (next.js: 4ms, proxy.ts: 2ms, application-code: 61ms)
+ POST /admin/users 200 in 81ms (next.js: 3ms, proxy.ts: 3ms, application-code: 75ms)
+  └─ ƒ adminTopUp({"amountUsd":10,"note":"","userId":"user_ms4v5l3m"}) in 26ms src/app/(admin)/admin/users/actions.ts
+[browser] Base UI: A component is changing the controlled value state of Select to be uncontrolled.
+Elements should not switch from uncontrolled to controlled (or vice versa).
+Decide between using a controlled or uncontrolled Select element for the lifetime of the component.
+The nature of the state is determined during the first render. It's considered controlled if the value is not `undefined`.
+More info: https://fb.me/react-controlled-components 
+ GET / 200 in 58ms (next.js: 3ms, proxy.ts: 2ms, application-code: 53ms)
+ GET /console/dashboard 200 in 95ms (next.js: 3ms, proxy.ts: 2ms, application-code: 90ms)
+✓ Compiled in 347ms
+ GET /console/dashboard 200 in 841ms (next.js: 399ms, proxy.ts: 42ms, application-code: 400ms)
+ GET /console/dashboard 200 in 79ms (next.js: 20ms, proxy.ts: 32ms, application-code: 27ms)
+ GET /console/dashboard 200 in 209ms (next.js: 7ms, proxy.ts: 7ms, application-code: 194ms)
+ GET / 200 in 324ms (next.js: 50ms, proxy.ts: 4ms, application-code: 269ms)
+ GET /api/auth/get-session 200 in 525ms (next.js: 411ms, proxy.ts: 3ms, application-code: 112ms)
+ GET /console/dashboard 200 in 90ms (next.js: 3ms, proxy.ts: 3ms, application-code: 84ms)
+ GET /console/dashboard 200 in 1164ms (next.js: 401ms, proxy.ts: 56ms, application-code: 706ms)
+ GET /console/dashboard 200 in 957ms (next.js: 269ms, proxy.ts: 449ms, application-code: 239ms)
+ GET /console/dashboard 200 in 540ms (next.js: 256ms, proxy.ts: 27ms, application-code: 257ms)
+○ Compiling /console/dashboard ...
+✓ Compiled in 30.4s
+ GET /console/dashboard 200 in 15.7s (next.js: 7.0s, proxy.ts: 332ms, application-code: 8.4s)
+ GET /console/dashboard 200 in 15.9s (next.js: 7.0s, proxy.ts: 245ms, application-code: 8.6s)
+ GET /console/dashboard 200 in 14.4s (next.js: 5.6s, proxy.ts: 4ms, application-code: 8.8s)
+ GET /console/dashboard 200 in 14.0s (next.js: 5.3s, proxy.ts: 7ms, application-code: 8.7s)
+ GET /console/dashboard 200 in 14.0s (next.js: 5.2s, proxy.ts: 7ms, application-code: 8.7s)
+ GET /console/dashboard 200 in 36.4s (next.js: 27.2s, proxy.ts: 4ms, application-code: 9.2s)
+ GET /console/dashboard 200 in 7.4s (next.js: 5.2s, proxy.ts: 805ms, application-code: 1460ms)
+ GET /console/dashboard 200 in 6.7s (next.js: 6.3s, proxy.ts: 5ms, application-code: 404ms)
+ GET /console/dashboard 200 in 7.5s (next.js: 6.3s, proxy.ts: 743ms, application-code: 483ms)
+✓ Finished writing to filesystem cache in 14.6s
+✓ Finished filesystem cache database compaction in 12.7s
+✓ Compiled in 423ms
+✓ Compiled in 555ms

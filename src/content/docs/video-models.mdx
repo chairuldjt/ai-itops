@@ -1,0 +1,67 @@
+export const metadata = {
+  title: "Video Models",
+  description: "Video model support in AI Gateway.",
+  order: 7,
+}
+
+# Video Models
+
+AI Gateway supports video-capable models through the same unified API.
+
+## Supported workflows
+
+- **Video understanding** — send a video for analysis (models that support it)
+- **Video generation** — generate video from text prompts (when upstream supports it)
+
+## How video is handled
+
+Video content follows the same capability-check pattern as images:
+
+1. Client sends video content in the request
+2. Gateway checks if the target model supports video
+3. If not supported, the image policy applies (strip, canned, or reject)
+
+## Request format
+
+Video content uses the `image_url` content type with a video MIME type:
+
+```json
+{
+  "model": "video-model-id",
+  "messages": [{
+    "role": "user",
+    "content": [
+      { "type": "text", "text": "What happens in this video?" },
+      {
+        "type": "image_url",
+        "image_url": {
+          "url": "data:video/mp4;base64,..."
+        }
+      }
+    ]
+  }]
+}
+```
+
+<Callout type="info">
+  Not all upstream models support video. Check the model capabilities in the admin panel.
+</Callout>
+
+## Model configuration
+
+Set the `video` capability on models that support it:
+
+```
+Capability: vision, video, streaming
+```
+
+## Limitations
+
+- Video file size limits depend on the upstream provider
+- Large videos may be truncated or rejected
+- Streaming may not be supported for video generation
+
+## Next steps
+
+- [Capability Handling](/docs/capability-handling) — understand how capabilities are enforced
+- [Management API](/docs/management-api) — manage models programmatically

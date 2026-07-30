@@ -1,0 +1,111 @@
+export const metadata = {
+  title: "Capability Handling",
+  description: "How AI Gateway handles images for non-vision models.",
+  order: 8,
+}
+
+# Capability Handling
+
+AI Gateway's signature feature: **non-vision models that receive an image reply like a human** — no errors, no crashes.
+
+## The problem
+
+In a normal gateway, sending an image to a text-only model returns a `400 Bad Request`. Your agent crashes. Your pipeline breaks.
+
+## The solution
+
+AI Gateway lets you choose the **per-model** image policy:
+
+## The 3 policies
+
+### 1. Strip and instruct (default)
+
+The image is silently removed from the request. A human-like instruction is injected so the model responds naturally.
+
+**Example flow:**
+
+```json
+// Client sends
+{
+  "model": "text-only-model",
+  "messages": [{
+    "role": "user",
+    "content": [
+      { "type": "text", "text": "What's in this image?" },
+      { "type": "image_url", "image_url": { "url": "..." } }
+    ]
+  }]
+}
+
+// Model receives (after gateway strips image)
+{
+  "messages": [{
+    "role": "user",
+    "content": "What's in this image?\n\n[Image received but not visible to this model]"
+  }]
+}
+
+// Model replies naturally
+{ "content": "I can't actually see images in this conversation — could you describe what you'd like me to help with?" }
+```
+
+**When to use:** Default for most text-only models. Keeps pipelines running without errors.
+
+### 2. Canned response
+
+The gateway replies itself with a friendly canned text. No upstream call is made.
+
+**Example response:**
+
+```json
+{
+  "choices": [{
+    "message": {
+      "role": "assistant",
+      "content": "I'm a text-only model and can't process images. Please describe what you need help with."
+    },
+    "finish_reason": "stop"
+  }]
+}
+```
+
+**When to use:** When you want to save upstream tokens and give a clear message.
+
+### 3. Reject
+
+Returns a clear `400 Bad Request` error.
+
+```json
+{
+  "error": {
+    "message": "This model does not support image inputs. Use a vision-capable model.",
+    "type": "invalid_request_error",
+    "code": "capability_mismatch"
+  }
+}
+```
+
+**When to use:** When clients should explicitly handle capability mismatches.
+
+## Configuration
+
+Set the image policy per model in the admin panel:
+
+```
+Model: text-only-model
+Capabilities: streaming, tools
+Image Policy: strip_and_instruct
+```
+
+## Policy comparison
+
+| Policy | Upstream call | Error to client | Best for |
+|--------|:------------:|:---------------:|----------|
+| `strip_and_instruct` | Yes | None | Default, keeps pipelines alive |
+| `canned_response` | No | None | Save tokens, clear messaging |
+| `reject_error` | No | 400 error | Strict clients |
+
+## Next steps
+
+- [Rate Limits](/docs/rate-limits) — understand quotas and limits
+- [Management API](/docs/management-api) — configure policies via API

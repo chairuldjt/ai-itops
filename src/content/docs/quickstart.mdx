@@ -1,0 +1,79 @@
+export const metadata = {
+  title: "Quickstart",
+  description: "Get running with AI Gateway in 5 minutes.",
+  order: 2,
+}
+
+# Quickstart
+
+Get your first API call working in under 5 minutes.
+
+## Step 1 — Create an account
+
+Go to the **Sign Up** page and create your account. You get free credits to start.
+
+## Step 2 — Get your API key
+
+After logging in, navigate to **Dashboard → Keys** and generate a new API key.
+
+Your key looks like this:
+
+```
+sk_live_YOUR_KEY_HERE
+```
+
+<Callout type="warning">
+  Keep your API key secret. Never commit it to version control.
+</Callout>
+
+## Step 3 — Test with curl
+
+```bash
+curl https://your-domain.com/v1/chat/completions \
+  -H "Authorization: Bearer sk_live_YOUR_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-4o",
+    "messages": [{"role": "user", "content": "Hello!"}]
+  }'
+```
+
+You should get a response like:
+
+```json
+{
+  "id": "chatcmpl-abc123",
+  "object": "chat.completion",
+  "choices": [{
+    "message": { "role": "assistant", "content": "Hello! How can I help?" },
+    "finish_reason": "stop"
+  }],
+  "usage": { "prompt_tokens": 10, "completion_tokens": 8, "total_tokens": 18 }
+}
+```
+
+## Step 4 — Try streaming
+
+```bash
+curl https://your-domain.com/v1/chat/completions \
+  -H "Authorization: Bearer sk_live_YOUR_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-4o",
+    "stream": true,
+    "messages": [{"role": "user", "content": "Count to 5"}]
+  }'
+```
+
+## Step 5 — Browse models
+
+```bash
+curl https://your-domain.com/v1/models \
+  -H "Authorization: Bearer sk_live_YOUR_KEY"
+```
+
+## Next steps
+
+- [OpenAI Setup](/docs/openai-setup) — configure opencode, Cursor, or any OpenAI SDK
+- [Claude Code Setup](/docs/claude-code-setup) — point Claude Code at the gateway
+- [Capability Handling](/docs/capability-handling) — understand image policies
