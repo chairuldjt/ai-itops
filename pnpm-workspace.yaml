@@ -1,3 +1,6 @@
-ignoredBuiltDependencies:
+onlyBuiltDependencies:
+  - esbuild
+  - "@esbuild-kit/core-utils"
+  - "@esbuild-kit/esm-loader"
   - sharp
   - unrs-resolver
