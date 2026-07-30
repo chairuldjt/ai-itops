@@ -341,7 +341,6 @@ export function transformOpenAIStreamToAnthropic(
     async pull(controller) {
       try {
         const { value, done } = await reader.read();
-        console.log("[anthropic-transform] pull:", done ? "DONE" : `${value?.length} bytes`);
         // FIX #14: Skip if stream already closed (e.g. by [DONE] event).
         if (done || streamClosed) {
           if (!streamClosed) {
@@ -605,6 +604,11 @@ function translateChunk(
         );
       }
     }
+  }
+
+  // Emit ping to keep connection alive during reasoning/thinking phases
+  if (lines.length === 0 && state.started) {
+    lines.push(emit("ping", { type: "ping" }));
   }
 
   // Final chunk usage override

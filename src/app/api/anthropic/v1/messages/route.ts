@@ -304,7 +304,6 @@ async function handleStream(params: {
 }) {
   const { request, auth, model, body, modelPublicId, startMs, clientIp } = params;
   const streamBody = ensureStreamUsage(body);
-  console.log("[anthropic-stream] handleStream start, model:", body.model, "upstreamId:", model.upstreamId);
 
   let upstream;
   try {
@@ -314,9 +313,7 @@ async function handleStream(params: {
       stream: true,
       signal: request.signal,
     });
-    console.log("[anthropic-stream] upstream connected, status:", upstream.status);
   } catch (err) {
-    console.error("[anthropic-stream] upstream error:", err);
     return anthropicErrorResponse(
       502,
       err instanceof Error ? err.message : "Upstream error",
@@ -354,7 +351,6 @@ async function handleStream(params: {
     transform(chunk, controller) {
       // Pass chunk through untouched, but also inspect for usage.
       try {
-        console.log("[anthropic-stream] transform chunk:", chunk.length, "bytes");
         // FIX #1: Use stream-safe decoder to handle multi-byte UTF-8 splits.
         sseAccum += decoder.decode(chunk, { stream: true });
         // FIX #16: Guard against unbounded buffer growth.
