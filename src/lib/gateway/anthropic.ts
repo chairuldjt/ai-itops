@@ -334,11 +334,25 @@ export function transformOpenAIStreamToAnthropic(
   let started = false;
   let streamClosed = false; // FIX #14: Prevent duplicate close events.
   let stopReason: AnthropicStopReason = null;
+  let keepaliveTimer: ReturnType<typeof setInterval> | null = null;
 
   const emit = (event: string, data: unknown): string =>
     `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
 
   return new ReadableStream<Uint8Array>({
+    start(controller) {
+      // Cloudflare proxy timeout is 100-120s. Send pings every 30s
+      // to keep the connection alive while waiting for upstream.
+      keepaliveTimer = setInterval(() => {
+        if (!streamClosed) {
+          try {
+            controller.enqueue(encoder.encode(emit("ping", { type: "ping" })));
+          } catch {
+            // stream already closed
+          }
+        }
+      }, 30_000);
+    },
     async pull(controller) {
       try {
         const { value, done } = await reader.read();
@@ -346,6 +360,7 @@ export function transformOpenAIStreamToAnthropic(
         if (done || streamClosed) {
           if (!streamClosed) {
             streamClosed = true;
+            if (keepaliveTimer) clearInterval(keepaliveTimer);
             // Finish up — close any open block and emit final events.
             if (currentBlockType != null) {
               controller.enqueue(
@@ -388,6 +403,7 @@ export function transformOpenAIStreamToAnthropic(
             // FIX #14: Only emit close events once.
             if (!streamClosed) {
               streamClosed = true;
+              if (keepaliveTimer) clearInterval(keepaliveTimer);
               // Close any open content block before final events
               if (currentBlockType != null) {
                 controller.enqueue(
@@ -449,10 +465,12 @@ export function transformOpenAIStreamToAnthropic(
           if (events.state.stopReason != null) stopReason = events.state.stopReason;
         }
       } catch (err) {
+        if (keepaliveTimer) clearInterval(keepaliveTimer);
         controller.error(err);
       }
     },
     cancel(reason) {
+      if (keepaliveTimer) clearInterval(keepaliveTimer);
       return reader.cancel(reason);
     },
   });
