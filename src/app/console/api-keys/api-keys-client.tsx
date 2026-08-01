@@ -2,10 +2,7 @@
 
 import * as React from "react";
 import { createApiKey, deleteApiKey, toggleApiKeyEnabled } from "@/app/(dashboard)/dashboard/keys/actions";
-import {
-  Card,
-  CardContent,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -96,6 +93,9 @@ export function ApiKeysClient({ initialKeys, availableModels }: Props) {
   const [busy, setBusy] = React.useState(false);
   const [deleteTarget, setDeleteTarget] = React.useState<string | null>(null);
   const [showBulkDelete, setShowBulkDelete] = React.useState(false);
+  const [copiedUrl, setCopiedUrl] = React.useState<string | null>(null);
+
+  const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
 
   const filteredKeys = keys.filter((k) => {
     if (!search) return true;
@@ -202,6 +202,12 @@ export function ApiKeysClient({ initialKeys, availableModels }: Props) {
     navigator.clipboard.writeText(text);
   };
 
+  const copyUrl = async (url: string, label: string) => {
+    await navigator.clipboard.writeText(url);
+    setCopiedUrl(label);
+    setTimeout(() => setCopiedUrl(null), 1500);
+  };
+
   const toggleModel = (modelId: string) => {
     setAllowedModels((prev) =>
       prev.includes(modelId)
@@ -218,6 +224,53 @@ export function ApiKeysClient({ initialKeys, availableModels }: Props) {
           Create and manage keys for OpenAI-compatible endpoints.
         </p>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm font-medium">Base URLs</CardTitle>
+          <CardDescription>
+            Point your client at one of these endpoints.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex items-center gap-2">
+            <span className="w-24 shrink-0 text-xs font-medium text-muted-foreground">OpenAI</span>
+            <code className="flex-1 truncate rounded bg-muted px-2 py-1.5 font-mono text-xs">
+              {baseUrl}/v1
+            </code>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="shrink-0"
+              onClick={() => copyUrl(`${baseUrl}/v1`, "openai")}
+            >
+              {copiedUrl === "openai" ? (
+                <><CheckIcon className="size-3.5 mr-1" /> Copied</>
+              ) : (
+                <><CopyIcon className="size-3.5 mr-1" /> Copy</>
+              )}
+            </Button>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="w-24 shrink-0 text-xs font-medium text-muted-foreground">Anthropic</span>
+            <code className="flex-1 truncate rounded bg-muted px-2 py-1.5 font-mono text-xs">
+              {baseUrl}/anthropic/v1
+            </code>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="shrink-0"
+              onClick={() => copyUrl(`${baseUrl}/anthropic/v1`, "anthropic")}
+            >
+              {copiedUrl === "anthropic" ? (
+                <><CheckIcon className="size-3.5 mr-1" /> Copied</>
+              ) : (
+                <><CopyIcon className="size-3.5 mr-1" /> Copy</>
+              )}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       <Dialog open={Boolean(createdKey)} onOpenChange={(v) => !v && setCreatedKey(null)}>
         <DialogContent>
