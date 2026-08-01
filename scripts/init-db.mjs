@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 
 /**
- * Database initialization script.
+ * Database initialization script — runs on every deploy.
  *
- * 1. Connects to PostgreSQL (default `postgres` database)
- * 2. Creates the target database if it doesn't exist
- * 3. Pushes the schema (creates/updates tables)
- * 4. Seeds the admin user if not exists
+ * 1. Creates the target database if it doesn't exist
+ * 2. Pushes schema (drizzle-kit push — safe, idempotent)
+ * 3. Seeds admin user if not exists
+ * 4. Seeds demo models if not exists
  *
  * Usage:  node scripts/init-db.mjs
  * Env:    DATABASE_URL must be set
@@ -25,30 +25,26 @@ if (!DATABASE_URL) {
 
 // Parse DATABASE_URL
 const url = new URL(DATABASE_URL);
-const dbName = url.pathname.slice(1); // remove leading /
+const dbName = url.pathname.slice(1);
 const adminUrl = new URL(DATABASE_URL);
-adminUrl.pathname = "/postgres"; // connect to default db
+adminUrl.pathname = "/postgres";
 
 console.log(`\n🔧 Database initialization`);
 console.log(`   Host:     ${url.hostname}:${url.port || 5432}`);
 console.log(`   Database: ${dbName}`);
 console.log(`   User:     ${url.username}`);
 
-// Step 1: Create database if not exists
-console.log(`\n📦 Step 1/3: Checking database "${dbName}"...`);
+// ── Step 1: Create database if not exists ──────────────────────
+console.log(`\n📦 Step 1/4: Checking database "${dbName}"...`);
 const adminSql = postgres(adminUrl.toString(), {
   max: 1,
   connect_timeout: 10,
 });
 
 try {
-  const result = await adminSql`
-    SELECT 1 FROM pg_database WHERE datname = ${dbName}
-  `;
-
+  const result = await adminSql`SELECT 1 FROM pg_database WHERE datname = ${dbName}`;
   if (result.length === 0) {
     console.log(`   Creating database "${dbName}"...`);
-    // Can't use parameterized query for CREATE DATABASE
     await adminSql.unsafe(`CREATE DATABASE "${dbName}"`);
     console.log(`   ✅ Database "${dbName}" created`);
   } else {
@@ -61,30 +57,46 @@ try {
   await adminSql.end();
 }
 
-// Step 2: Push schema
-console.log(`\n📦 Step 2/3: Pushing schema...`);
+// ── Step 2: Push schema (idempotent — safe to run repeatedly) ──
+console.log(`\n📦 Step 2/4: Pushing schema...`);
 try {
   execSync("npx drizzle-kit push --force", {
     stdio: "inherit",
+    cwd: process.cwd(),
     env: { ...process.env, DATABASE_URL },
   });
-  console.log(`   ✅ Schema pushed successfully`);
+  console.log(`   ✅ Schema pushed`);
 } catch (err) {
   console.error(`   ❌ Schema push failed:`, err.message);
   process.exit(1);
 }
 
-// Step 3: Seed admin user
-console.log(`\n📦 Step 3/3: Seeding admin user...`);
+// ── Step 3: Seed admin user (skips if exists) ──────────────────
+console.log(`\n📦 Step 3/4: Seeding admin user...`);
 try {
   execSync("npx tsx src/lib/db/seed.ts", {
     stdio: "inherit",
+    cwd: process.cwd(),
     env: { ...process.env, DATABASE_URL },
   });
-  console.log(`   ✅ Seed completed`);
+  console.log(`   ✅ Admin seed done`);
 } catch (err) {
-  console.error(`   ❌ Seed failed:`, err.message);
+  console.error(`   ❌ Admin seed failed:`, err.message);
   process.exit(1);
+}
+
+// ── Step 4: Seed demo models (skips if exists) ────────────────
+console.log(`\n📦 Step 4/4: Seeding demo models...`);
+try {
+  execSync("npx tsx src/lib/db/seed-demo.ts", {
+    stdio: "inherit",
+    cwd: process.cwd(),
+    env: { ...process.env, DATABASE_URL },
+  });
+  console.log(`   ✅ Demo models seed done`);
+} catch (err) {
+  // Non-fatal — demo models are optional
+  console.warn(`   ⚠️  Demo seed skipped:`, err.message);
 }
 
 console.log(`\n✅ Database initialization complete!\n`);

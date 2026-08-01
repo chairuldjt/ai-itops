@@ -1,21 +1,18 @@
 #!/usr/bin/env bash
 #
-# Deployment script for AI Gateway on Linux server with PM2.
+# Deployment script for AI Gateway — one-command deploy.
 #
-# Prerequisites:
-#   - Node.js 22+ installed
-#   - pnpm installed (npm install -g pnpm)
-#   - PM2 installed (npm install -g pm2)
-#   - PostgreSQL 16+ running and accessible
-#   - Git (for cloning the repo)
+# What it does:
+#   1. git pull (fast-forward only)
+#   2. pnpm install
+#   3. Build
+#   4. DB migrate + seed (idempotent)
+#   5. pm2 restart (preserves pm2 id)
 #
 # Usage:
-#   chmod +x scripts/deploy.sh
-#   ./scripts/deploy.sh
-#
-# Environment:
-#   Set variables in .env file before running this script.
-#   See .env.example for all available options.
+#   bash scripts/deploy.sh          # full deploy
+#   bash scripts/deploy.sh --skip-build   # db-only update
+#   bash scripts/deploy.sh --skip-db      # code-only update
 #
 
 set -euo pipefail
@@ -24,112 +21,104 @@ APP_NAME="ai-gateway"
 APP_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 LOG_DIR="$APP_DIR/logs"
 
+SKIP_BUILD=false
+SKIP_DB=false
+for arg in "$@"; do
+  case "$arg" in
+    --skip-build) SKIP_BUILD=true ;;
+    --skip-db)    SKIP_DB=true ;;
+  esac
+done
+
 echo "========================================"
-echo "  AI Gateway — Deployment Script"
+echo "  AI Gateway — Deploy"
 echo "========================================"
 echo ""
 
-# --------------------------------------------------
-# 1. Check prerequisites
-# --------------------------------------------------
+# ── 1. Check prerequisites ────────────────────────────────────
 echo "📋 Checking prerequisites..."
 
-command -v node >/dev/null 2>&1 || { echo "❌ Node.js not found. Install: curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash - && sudo apt-get install -y nodejs"; exit 1; }
-command -v pnpm >/dev/null 2>&1 || { echo "❌ pnpm not found. Install: npm install -g pnpm"; exit 1; }
-command -v pm2 >/dev/null 2>&1 || { echo "❌ PM2 not found. Install: npm install -g pm2"; exit 1; }
+command -v node  >/dev/null 2>&1 || { echo "❌ Node.js not found";  exit 1; }
+command -v pnpm >/dev/null 2>&1 || { echo "❌ pnpm not found";     exit 1; }
+command -v pm2  >/dev/null 2>&1 || { echo "❌ PM2 not found";      exit 1; }
+command -v git  >/dev/null 2>&1 || { echo "❌ git not found";      exit 1; }
 
-echo "   ✅ Node.js $(node -v)"
-echo "   ✅ pnpm $(pnpm -v)"
-echo "   ✅ PM2 $(pm2 -v)"
+echo "   ✅ Node $(node -v)  pnpm $(pnpm -v)  PM2 $(pm2 -v 2>/dev/null || echo '?')"
 
-# --------------------------------------------------
-# 2. Check .env file
-# --------------------------------------------------
-echo ""
-echo "📋 Checking environment..."
-
+# ── 2. Check .env ─────────────────────────────────────────────
 if [ ! -f "$APP_DIR/.env" ]; then
-  echo "   ⚠️  .env file not found. Creating from .env.example..."
-  cp "$APP_DIR/.env.example" "$APP_DIR/.env"
-  echo "   ⚠️  Please edit .env with your actual values before continuing."
-  echo "   ⚠️  At minimum, set: DATABASE_URL, BETTER_AUTH_SECRET, NEXT_PUBLIC_APP_URL"
   echo ""
-  echo "   Run: nano $APP_DIR/.env"
-  echo "   Then re-run this script."
+  echo "❌ .env not found. Copy from .env.example and fill in values:"
+  echo "   cp .env.example .env && nano .env"
   exit 1
 fi
+echo "   ✅ .env found"
 
-echo "   ✅ .env file found"
+cd "$APP_DIR"
 
-# --------------------------------------------------
-# 3. Install dependencies
-# --------------------------------------------------
+# ── 3. Git pull ───────────────────────────────────────────────
+echo ""
+echo "📥 Pulling latest code..."
+git pull --ff-only
+echo "   ✅ On $(git rev-parse --short HEAD)"
+
+# ── 4. Install dependencies ───────────────────────────────────
 echo ""
 echo "📦 Installing dependencies..."
-cd "$APP_DIR"
-pnpm install --frozen-lockfile
+pnpm install --frozen-lockfile 2>/dev/null || pnpm install
 echo "   ✅ Dependencies installed"
 
-# --------------------------------------------------
-# 4. Initialize database
-# --------------------------------------------------
-echo ""
-echo "🗄️  Initializing database..."
-node scripts/init-db.mjs
-echo "   ✅ Database ready"
+# ── 5. Build ──────────────────────────────────────────────────
+if [ "$SKIP_BUILD" = false ]; then
+  echo ""
+  echo "🔨 Building..."
+  pnpm build
+  # Copy static assets for standalone output
+  cp -r .next/static .next/standalone/.next/static 2>/dev/null || true
+  cp -r public .next/standalone/public 2>/dev/null || true
+  echo "   ✅ Build complete"
+else
+  echo ""
+  echo "⏭️  Skipping build (--skip-build)"
+fi
 
-# --------------------------------------------------
-# 5. Build the application
-# --------------------------------------------------
-echo ""
-echo "🔨 Building application..."
-pnpm build
+# ── 6. Database migrate + seed ────────────────────────────────
+if [ "$SKIP_DB" = false ]; then
+  echo ""
+  echo "🗄️  Database setup..."
+  node scripts/init-db.mjs
+  echo "   ✅ Database ready"
+else
+  echo ""
+  echo "⏭️  Skipping DB (--skip-db)"
+fi
 
-# Copy static assets for standalone output
-echo "   Copying static assets..."
-cp -r .next/static .next/standalone/.next/static
-cp -r public .next/standalone/public
-echo "   ✅ Build complete"
-
-# --------------------------------------------------
-# 6. Create logs directory
-# --------------------------------------------------
+# ── 7. Logs directory ─────────────────────────────────────────
 mkdir -p "$LOG_DIR"
 
-# --------------------------------------------------
-# 7. Start / restart with PM2
-# --------------------------------------------------
+# ── 8. PM2 restart (not delete+start — preserves pm2 id) ─────
 echo ""
-echo "🚀 Starting with PM2..."
+echo "🔄 Restarting PM2..."
 
-# Stop existing process if running
-pm2 delete "$APP_NAME" 2>/dev/null || true
-
-# Start with ecosystem config
-pm2 start ecosystem.config.cjs
-
-# Save PM2 process list (so it survives server reboot)
-pm2 save
-
-# Setup PM2 to start on boot (if not already done)
-pm2 startup 2>/dev/null || true
+if pm2 describe "$APP_NAME" >/dev/null 2>&1; then
+  pm2 restart "$APP_NAME"
+  echo "   ✅ Restarted (same pm2 id)"
+else
+  # First time — start from ecosystem config
+  pm2 start ecosystem.config.cjs
+  pm2 save
+  pm2 startup 2>/dev/null || true
+  echo "   ✅ Started (new pm2 id)"
+fi
 
 echo ""
 echo "========================================"
-echo "  ✅ Deployment complete!"
+echo "  ✅ Deploy complete!"
 echo "========================================"
-echo ""
 
-# Show port from .env
 PORT=$(grep -E "^PORT=" "$APP_DIR/.env" | cut -d= -f2 || echo "9003")
-echo "  App running on: http://localhost:${PORT}"
-echo "  PM2 status:     pm2 status"
-echo "  PM2 logs:       pm2 logs $APP_NAME"
-echo "  PM2 restart:    pm2 restart $APP_NAME"
-echo "  PM2 stop:       pm2 stop $APP_NAME"
 echo ""
-echo "  Useful commands:"
-echo "    pm2 monit              # Real-time monitoring"
-echo "    pm2 logs $APP_NAME     # View logs"
-echo "    pm2 restart $APP_NAME  # Restart app"
+echo "  App:     http://localhost:${PORT}"
+echo "  Status:  pm2 status"
+echo "  Logs:    pm2 logs $APP_NAME --lines 50"
 echo ""
