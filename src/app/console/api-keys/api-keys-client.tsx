@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { toast } from "sonner";
 import { createApiKey, deleteApiKey, toggleApiKeyEnabled } from "@/app/(dashboard)/dashboard/keys/actions";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -88,7 +89,6 @@ export function ApiKeysClient({ initialKeys, availableModels }: Props) {
   const [quantity, setQuantity] = React.useState(1);
   const [unlimitedQuota, setUnlimitedQuota] = React.useState(true);
   const [quotaAmount, setQuotaAmount] = React.useState("");
-  const [allowedModels, setAllowedModels] = React.useState<string[]>([]);
   const [createdKey, setCreatedKey] = React.useState<string | null>(null);
   const [busy, setBusy] = React.useState(false);
   const [deleteTarget, setDeleteTarget] = React.useState<string | null>(null);
@@ -129,11 +129,26 @@ export function ApiKeysClient({ initialKeys, availableModels }: Props) {
 
     const budget = !unlimitedQuota && quotaAmount ? Number(quotaAmount) : undefined;
 
+    // Compute expiration date
+    let expiresAt: Date | undefined;
+    if (expiration === "month") {
+      const d = new Date();
+      d.setMonth(d.getMonth() + 1);
+      expiresAt = d;
+    } else if (expiration === "day") {
+      const d = new Date();
+      d.setDate(d.getDate() + 1);
+      expiresAt = d;
+    } else if (expiration === "custom" && customDate) {
+      expiresAt = new Date(customDate);
+    }
+
     const results = await Promise.all(
       Array.from({ length: quantity }, () =>
         createApiKey({
           name: newKeyName.trim(),
           monthlyBudgetUsd: budget,
+          expiresAt,
         })
       )
     );
@@ -144,6 +159,7 @@ export function ApiKeysClient({ initialKeys, availableModels }: Props) {
 
     if (createdKeys.length > 0) {
       setCreatedKey(createdKeys.join("\n"));
+      toast.success(`API key${createdKeys.length > 1 ? "s" : ""} created`);
       // Add optimistic items to state
       setKeys((prev) => [
         ...results
@@ -157,7 +173,7 @@ export function ApiKeysClient({ initialKeys, availableModels }: Props) {
             monthlyBudget: budget ? Math.round(budget * 1_000_000) : null,
             monthlySpent: 0,
             enabled: true,
-            expiresAt: null,
+            expiresAt: expiresAt ?? null,
             lastUsedAt: null,
             createdAt: new Date(),
           })),
@@ -180,15 +196,18 @@ export function ApiKeysClient({ initialKeys, availableModels }: Props) {
       return next;
     });
     setDeleteTarget(null);
+    toast.success("API key deleted");
   };
 
   const onDeleteSelected = async () => {
     await Promise.all(
       Array.from(selectedIds).map((id) => deleteApiKey(id))
     );
+    const count = selectedIds.size;
     setKeys((prev) => prev.filter((k) => !selectedIds.has(k.id)));
     setSelectedIds(new Set());
     setShowBulkDelete(false);
+    toast.success(`${count} API key${count > 1 ? "s" : ""} deleted`);
   };
 
   const onToggle = async (id: string, enabled: boolean) => {
@@ -196,24 +215,19 @@ export function ApiKeysClient({ initialKeys, availableModels }: Props) {
     setKeys((prev) =>
       prev.map((k) => (k.id === id ? { ...k, enabled } : k))
     );
+    toast.success(enabled ? "API key enabled" : "API key disabled");
   };
 
   const copyKey = (text: string) => {
     navigator.clipboard.writeText(text);
+    toast.success("API key copied to clipboard");
   };
 
   const copyUrl = async (url: string, label: string) => {
     await navigator.clipboard.writeText(url);
     setCopiedUrl(label);
     setTimeout(() => setCopiedUrl(null), 1500);
-  };
-
-  const toggleModel = (modelId: string) => {
-    setAllowedModels((prev) =>
-      prev.includes(modelId)
-        ? prev.filter((m) => m !== modelId)
-        : [...prev, modelId]
-    );
+    toast.success(`${label} URL copied`);
   };
 
   return (
@@ -227,7 +241,7 @@ export function ApiKeysClient({ initialKeys, availableModels }: Props) {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-sm font-medium">Base URLs</CardTitle>
+          <CardTitle>Base URLs</CardTitle>
           <CardDescription>
             Point your client at one of these endpoints.
           </CardDescription>
@@ -428,7 +442,7 @@ export function ApiKeysClient({ initialKeys, availableModels }: Props) {
                         <DropdownMenu>
                           <DropdownMenuTrigger
                             render={
-                              <Button variant="ghost" size="icon-sm" />
+                              <Button variant="ghost" size="icon-sm" aria-label="Key actions" />
                             }
                           >
                             <MoreHorizontalIcon className="size-4" />
@@ -545,26 +559,6 @@ export function ApiKeysClient({ initialKeys, availableModels }: Props) {
               )}
             </div>
 
-            <Separator />
-
-            <div className="space-y-2">
-              <Label>Allowed Models</Label>
-              <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto">
-                {availableModels.map((m) => (
-                  <Button
-                    key={m.id}
-                    variant={
-                      allowedModels.includes(m.id) ? "default" : "outline"
-                    }
-                    size="sm"
-                    onClick={() => toggleModel(m.id)}
-                    className="text-xs"
-                  >
-                    {m.id}
-                  </Button>
-                ))}
-              </div>
-            </div>
           </div>
 
           <SheetFooter>

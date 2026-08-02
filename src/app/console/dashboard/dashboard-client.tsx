@@ -50,9 +50,9 @@ import {
 
 function getGreeting() {
   const h = new Date().getHours();
-  if (h < 12) return "🌞 Good Morning";
-  if (h < 18) return "👋 Good Afternoon";
-  return "🌙 Good Evening";
+  if (h < 12) return "Good morning";
+  if (h < 18) return "Good afternoon";
+  return "Good evening";
 }
 
 type Props = {
@@ -101,10 +101,10 @@ function MetricTile({
         <Icon className="size-4 shrink-0 text-primary" aria-hidden="true" />
         <span className="truncate">{label}</span>
       </div>
-      <div className="mt-2 text-[22px] font-semibold leading-tight tracking-tight">
+      <div className="mt-2 text-xl font-semibold leading-tight tracking-tight">
         {value}
       </div>
-      <div className="mt-0.5 text-[13px] text-muted-foreground">{subtitle}</div>
+      <div className="mt-0.5 text-xs text-muted-foreground">{subtitle}</div>
     </div>
   );
 }
@@ -152,7 +152,7 @@ function DateRangeFilter({
 
 function AccountBalanceCard({ creditBalance }: { creditBalance: number }) {
   return (
-    <Card className="rounded-2xl">
+    <Card>
       <CardContent className="p-4">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2 text-base font-medium">
@@ -174,10 +174,10 @@ function AccountBalanceCard({ creditBalance }: { creditBalance: number }) {
               <WalletIcon className="size-4 shrink-0 text-primary" aria-hidden="true" />
               <span>Cash Balance</span>
             </div>
-            <div className="mt-2 text-[22px] font-semibold leading-tight">
+            <div className="mt-2 text-xl font-semibold leading-tight">
               ${creditBalance.toFixed(2)}
             </div>
-            <div className="mt-0.5 text-[13px] text-muted-foreground">
+            <div className="mt-0.5 text-xs text-muted-foreground">
               Wallet balance (date filters excluded)
             </div>
           </div>
@@ -188,10 +188,10 @@ function AccountBalanceCard({ creditBalance }: { creditBalance: number }) {
               <GiftIcon className="size-4 shrink-0 text-primary" aria-hidden="true" />
               <span>Voucher Balance</span>
             </div>
-            <div className="mt-2 text-[22px] font-semibold leading-tight">
+            <div className="mt-2 text-xl font-semibold leading-tight">
               $0.00
             </div>
-            <div className="mt-0.5 text-[13px] text-muted-foreground">
+            <div className="mt-0.5 text-xs text-muted-foreground">
               Current remaining promotional credits
             </div>
           </div>
@@ -246,14 +246,11 @@ function UsageSummaryCard({ stats }: { stats: Props["stats"] }) {
   ];
 
   return (
-    <Card className="rounded-2xl">
+    <Card>
       <CardContent className="p-4">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2 text-base font-medium">
-            <span className="relative flex h-2.5 w-2.5 shrink-0 items-center justify-center">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500" />
-            </span>
+            <span className="inline-flex h-2.5 w-2.5 shrink-0 rounded-full bg-emerald-500" />
             Usage Summary
           </div>
           <span className="text-sm text-muted-foreground">
@@ -283,10 +280,10 @@ function ModelAnalysisCard({
   dailyTrend: Props["dailyTrend"];
 }) {
   return (
-    <Card className="rounded-2xl">
+    <Card>
       <CardHeader className="border-b pb-3">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <CardTitle className="text-lg">Model Data Analysis</CardTitle>
+          <CardTitle>Model Data Analysis</CardTitle>
         </div>
       </CardHeader>
       <CardContent className="p-0">
@@ -304,7 +301,11 @@ function ModelAnalysisCard({
               <EmptyState
                 title="No data yet"
                 description="Start making API calls to see consumption data."
-              />
+              >
+                <Button variant="outline" size="sm" render={<Link href="/console/api-keys" />}>
+                  Create an API key
+                </Button>
+              </EmptyState>
             ) : (
               <ChartContainer config={chartConfig} className="h-[300px] w-full">
                 <BarChart data={modelConsumption}>
@@ -336,7 +337,11 @@ function ModelAnalysisCard({
               <EmptyState
                 title="No trend data"
                 description="Data will appear once you start using the API."
-              />
+              >
+                <Button variant="outline" size="sm" render={<Link href="/console/chat" />}>
+                  Try the chat playground
+                </Button>
+              </EmptyState>
             ) : (
               <ChartContainer config={chartConfig} className="h-[300px] w-full">
                 <LineChart data={dailyTrend}>
@@ -430,7 +435,7 @@ export function DashboardClient({
   const [datePreset, setDatePreset] = React.useState<string>("Last 30 Days");
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       {/* Header row */}
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <h1 className="min-w-0 text-2xl font-medium leading-8" title={`${getGreeting()}, ${userName}`}>

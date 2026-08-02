@@ -258,7 +258,7 @@ export function ChatClient({
         {/* Left config panel */}
         <Card className="w-full lg:w-80 shrink-0 flex flex-col">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm">Configuration</CardTitle>
+            <CardTitle>Configuration</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-4 overflow-y-auto">
             <div className="space-y-2">
@@ -419,6 +419,7 @@ export function ChatClient({
                   <Button
                     variant="ghost"
                     size="icon-sm"
+                    aria-label="Remove attached image"
                     onClick={() => setAttachedImage(null)}
                   >
                     <XIcon className="size-4" />
@@ -437,6 +438,7 @@ export function ChatClient({
                   variant="outline"
                   size="icon-sm"
                   className="shrink-0"
+                  aria-label="Attach image"
                   onClick={() => fileInputRef.current?.click()}
                 >
                   <PaperclipIcon className="size-4" />
@@ -457,6 +459,7 @@ export function ChatClient({
                 />
                 <Button
                   size="icon-sm"
+                  aria-label="Send message"
                   onClick={sendMessage}
                   disabled={!input.trim() || !apiKey.trim() || isGenerating}
                 >
@@ -485,11 +488,12 @@ export function ChatClient({
         <Card className="hidden lg:flex w-60 shrink-0 flex-col">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-sm">Raw Response</CardTitle>
+              <CardTitle>Raw Response</CardTitle>
               {rawJson && (
                 <Button
                   variant="ghost"
                   size="icon-sm"
+                  aria-label="Copy raw response"
                   onClick={() =>
                     copyToClipboard(JSON.stringify(rawJson, null, 2))
                   }

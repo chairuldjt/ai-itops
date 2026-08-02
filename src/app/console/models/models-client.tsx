@@ -145,7 +145,7 @@ export function ModelsClient({ models }: Props) {
                       {m.provider}
                     </Badge>
                   </div>
-                  <CardTitle className="text-base mt-3">{m.publicId}</CardTitle>
+                  <CardTitle className="mt-3">{m.publicId}</CardTitle>
                   <CardDescription className="line-clamp-2 text-xs">
                     {m.description || "No description available."}
                   </CardDescription>
@@ -182,21 +182,21 @@ export function ModelsClient({ models }: Props) {
                     )}
                   </div>
                   <div className="flex flex-wrap gap-1 mt-3">
-                    <Badge variant="secondary" className="text-[10px]">
+                    <Badge variant="secondary" className="text-xs">
                       {m.type}
                     </Badge>
                     {m.capabilities.supportsImageInput && (
-                      <Badge variant="secondary" className="text-[10px]">
+                      <Badge variant="secondary" className="text-xs">
                         Vision
                       </Badge>
                     )}
                     {m.capabilities.supportsStreaming && (
-                      <Badge variant="secondary" className="text-[10px]">
+                      <Badge variant="secondary" className="text-xs">
                         Streaming
                       </Badge>
                     )}
                     {m.capabilities.maxContextTokens && (
-                      <Badge variant="secondary" className="text-[10px]">
+                      <Badge variant="secondary" className="text-xs">
                         {(m.capabilities.maxContextTokens / 1000).toFixed(0)}K
                         ctx
                       </Badge>
@@ -205,7 +205,7 @@ export function ModelsClient({ models }: Props) {
                       <Badge
                         key={tag}
                         variant="outline"
-                        className="text-[10px]"
+                        className="text-xs"
                       >
                         {tag}
                       </Badge>

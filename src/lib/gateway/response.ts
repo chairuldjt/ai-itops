@@ -23,10 +23,14 @@ export function openaiErrorResponse(
   status: number,
   message: string,
   code?: string,
+  headers?: Record<string, string>,
+  requestId?: string,
 ): NextResponse {
-  return NextResponse.json(openaiErrorBody(status, message, code), {
+  const body = openaiErrorBody(status, message, code) as ReturnType<typeof openaiErrorBody> & { request_id?: string };
+  if (requestId) body.request_id = requestId;
+  return NextResponse.json(body, {
     status,
-    headers: errorHeaders(),
+    headers: { ...errorHeaders(), ...headers, ...(requestId ? { "X-Request-ID": requestId, "request-id": requestId } : {}) },
   });
 }
 
@@ -47,10 +51,14 @@ export function anthropicErrorBody(status: number, message: string) {
 export function anthropicErrorResponse(
   status: number,
   message: string,
+  headers?: Record<string, string>,
+  requestId?: string,
 ): NextResponse {
-  return NextResponse.json(anthropicErrorBody(status, message), {
+  const body = anthropicErrorBody(status, message) as ReturnType<typeof anthropicErrorBody> & { request_id?: string };
+  if (requestId) body.request_id = requestId;
+  return NextResponse.json(body, {
     status,
-    headers: errorHeaders(),
+    headers: { ...errorHeaders(), ...headers, ...(requestId ? { "X-Request-ID": requestId, "request-id": requestId } : {}) },
   });
 }
 
@@ -105,14 +113,39 @@ function codeForStatus(status: number): string {
 /**
  * Safely parse JSON from a request body.
  */
+export const MAX_JSON_BODY_BYTES = 1_048_576;
+
 export async function parseJsonBody<T = unknown>(
   request: Request,
-): Promise<{ ok: true; body: T } | { ok: false; message: string }> {
+): Promise<{ ok: true; body: T } | { ok: false; status: 400 | 413; message: string }> {
+  const declared = request.headers.get("content-length");
+  if (declared && /^\d+$/.test(declared) && Number(declared) > MAX_JSON_BODY_BYTES) {
+    return { ok: false, status: 413, message: "Request body too large" };
+  }
+  if (!request.body) return { ok: false, status: 400, message: "Invalid JSON body" };
+  const reader = request.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let size = 0;
   try {
-    const body = (await request.json()) as T;
-    return { ok: true, body };
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      size += value.byteLength;
+      if (size > MAX_JSON_BODY_BYTES) {
+        await reader.cancel();
+        return { ok: false, status: 413, message: "Request body too large" };
+      }
+      chunks.push(value);
+    }
+    const bytes = new Uint8Array(size);
+    let offset = 0;
+    for (const chunk of chunks) {
+      bytes.set(chunk, offset);
+      offset += chunk.byteLength;
+    }
+    return { ok: true, body: JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(bytes)) as T };
   } catch {
-    return { ok: false, message: "Invalid JSON body" };
+    return { ok: false, status: 400, message: "Invalid JSON body" };
   }
 }
 

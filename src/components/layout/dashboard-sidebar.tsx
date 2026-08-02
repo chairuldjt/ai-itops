@@ -110,7 +110,7 @@ export function DashboardSidebar({
       : Number(rawBalance ?? 0) / 1_000_000;
 
   return (
-    <Sidebar variant="inset" {...props}>
+    <Sidebar className="top-topbar bottom-auto h-[calc(100svh-var(--topbar-height))]" {...props}>
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel>{mode === "admin" ? "Admin" : "Dashboard"}</SidebarGroupLabel>

@@ -30,7 +30,6 @@ import {
   LayoutDashboardIcon,
   LogOutIcon,
   SettingsIcon,
-  BookOpenIcon,
   ChevronsUpDownIcon,
   SunIcon,
   MoonIcon,
@@ -72,16 +71,45 @@ export function ThemeToggle() {
 /*                          NAV ITEM CONFIG                           */
 /* ------------------------------------------------------------------ */
 
+export type SiteSection = "public" | "console" | "admin";
+
 interface NavItem {
   label: string;
   href: string;
 }
 
-const PUBLIC_NAV: NavItem[] = [
+const BASE_NAV: NavItem[] = [
   { label: "Models", href: "/models" },
   { label: "Docs", href: "/docs" },
   { label: "Blog", href: "/blog" },
 ];
+
+function buildNavItems(section: SiteSection, isAdmin: boolean): NavItem[] {
+  const items: NavItem[] = [...BASE_NAV];
+
+  // Release Notes — always show except on public (where it's in mobile menu only)
+  if (section !== "public") {
+    items.push({ label: "Release Notes", href: "/release-notes" });
+  }
+
+  if (section === "admin") {
+    // On admin pages: show Console link (to switch back), but NOT "Admin"
+    items.push({ label: "Console", href: "/console/dashboard" });
+  } else if (isAdmin) {
+    // On non-admin pages: show Admin link
+    items.push({ label: "Admin", href: "/admin" });
+
+    // On non-console pages: show Console link
+    if (section !== "console") {
+      items.push({ label: "Console", href: "/console/dashboard" });
+    }
+  } else if (section !== "console") {
+    // Non-admin users on non-console pages: show Console link
+    items.push({ label: "Console", href: "/console/dashboard" });
+  }
+
+  return items;
+}
 
 /* ------------------------------------------------------------------ */
 /*                          LOGO COMPONENT                            */
@@ -404,7 +432,15 @@ function MobileMenu({
 /*                         SITE TOP BAR                               */
 /* ------------------------------------------------------------------ */
 
-export function SiteTopBar({ hideLinks = [] }: { hideLinks?: string[] } = {}) {
+export function SiteTopBar({
+  section = "public",
+  hideLinks = [],
+  sidebarTrigger,
+}: {
+  section?: SiteSection;
+  hideLinks?: string[];
+  sidebarTrigger?: React.ReactNode;
+} = {}) {
   const pathname = usePathname();
   const { data: session } = useSession();
 
@@ -436,51 +472,62 @@ export function SiteTopBar({ hideLinks = [] }: { hideLinks?: string[] } = {}) {
       }
     : null;
 
-  // Build nav items — add Admin link for admin users, filter by hideLinks
+  // Build nav items based on section + role
   const navItems: NavItem[] = React.useMemo(() => {
-    const items = [...PUBLIC_NAV];
-    if (user?.role === "admin") {
-      items.push({ label: "Admin", href: "/admin" });
-    }
-    return items.filter((item) => !hideLinks.includes(item.label));
-  }, [user?.role, hideLinks]);
+    return buildNavItems(section, user?.role === "admin").filter(
+      (item) => !hideLinks.includes(item.label)
+    );
+  }, [section, user?.role, hideLinks]);
 
   return (
     <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur">
-      <div className="flex h-16 w-full items-center justify-between px-4">
-        {/* Left: Mobile hamburger + Logo */}
-        <div className="flex items-center gap-4">
+      <div className="flex h-topbar w-full items-center justify-between px-4">
+        {/* Left: Sidebar trigger (console) + Mobile hamburger + Logo */}
+        <div className="flex items-center gap-2">
+          {sidebarTrigger}
           <MobileMenu navItems={navItems} user={user} />
           <SiteLogo />
         </div>
 
-        {/* Right: Desktop nav + Theme + Divider + Auth */}
+        {/* Right: Desktop nav + Theme + Balance + Divider + Auth */}
         <div className="flex items-center gap-1">
           {/* Desktop nav links */}
           <nav
             className="hidden items-center gap-1 md:flex"
             aria-label="Primary navigation"
           >
-            {navItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={cn(
-                  "rounded-full px-4 py-1.5 text-sm transition-colors hover:bg-accent hover:text-foreground",
-                  pathname === item.href || pathname.startsWith(item.href + "/")
-                    ? "text-foreground font-medium"
-                    : "text-muted-foreground"
-                )}
-              >
-                {item.label}
-              </Link>
-            ))}
+            {navItems.map((item) => {
+              const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  aria-current={isActive ? "page" : undefined}
+                  className={cn(
+                    "rounded-full px-4 py-1.5 text-sm transition-colors hover:bg-accent hover:text-foreground",
+                    isActive
+                      ? "text-foreground font-medium"
+                      : "text-muted-foreground"
+                  )}
+                >
+                  {item.label}
+                </Link>
+              );
+            })}
           </nav>
 
           {/* Theme toggle */}
           <div className="hidden md:flex ml-2">
             <ThemeToggle />
           </div>
+
+          {/* Balance badge — only when logged in */}
+          {user && (
+            <Badge variant="outline" className="hidden md:inline-flex font-mono text-xs ml-2">
+              <span className="hidden lg:inline">Balance </span>
+              ${user.creditBalance.toFixed(2)}
+            </Badge>
+          )}
 
           {/* Divider */}
           <div className="mx-3 hidden h-6 w-px bg-border md:block" aria-hidden="true" />

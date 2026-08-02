@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { toast } from "sonner";
 import {
   Card,
   CardContent,
@@ -98,24 +99,18 @@ export function BalanceClient({ creditBalance, transactions }: Props) {
   );
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-semibold tracking-tight">
-              Personal Balance
+              Billing
             </h1>
-            <Badge variant="outline" className="text-xs">
-              Personal
-            </Badge>
           </div>
           <p className="text-sm text-muted-foreground mt-1">
-            Top-ups and vouchers are only for the personal account.
+            Manage your balance, top-ups, and vouchers.
           </p>
         </div>
-        <Button variant="outline" size="sm">
-          <SettingsIcon className="size-4 mr-1" /> Configure
-        </Button>
       </div>
 
       <div className="rounded-lg border border-blue-500/20 bg-blue-500/5 p-4 text-sm text-blue-600 dark:text-blue-400">
@@ -124,11 +119,11 @@ export function BalanceClient({ creditBalance, transactions }: Props) {
 
       <FadeInStagger className="grid gap-4 md:grid-cols-2">
         <FadeInItem>
-          <Card className="bg-gradient-to-br from-blue-500/5 to-blue-500/10 border-blue-500/20">
+          <Card className="bg-primary/5">
             <CardHeader className="pb-2">
               <div className="flex items-center gap-2">
                 <CoinsIcon className="size-5 text-blue-500" />
-                <CardTitle className="text-sm font-medium">
+                <CardTitle>
                   Cash Balance
                 </CardTitle>
               </div>
@@ -150,7 +145,7 @@ export function BalanceClient({ creditBalance, transactions }: Props) {
             <CardHeader className="pb-2">
               <div className="flex items-center gap-2">
                 <TicketIcon className="size-5 text-amber-500" />
-                <CardTitle className="text-sm font-medium">
+                <CardTitle>
                   Voucher Balance
                 </CardTitle>
               </div>
@@ -172,7 +167,10 @@ export function BalanceClient({ creditBalance, transactions }: Props) {
                 <Button
                   size="sm"
                   disabled={!voucherCode.trim()}
-                  onClick={() => setVoucherCode("")}
+                  onClick={() => {
+                    toast.info("Voucher redemption coming soon");
+                    setVoucherCode("");
+                  }}
                 >
                   Redeem
                 </Button>
@@ -185,7 +183,7 @@ export function BalanceClient({ creditBalance, transactions }: Props) {
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-sm">Balance Alert Settings</CardTitle>
+            <CardTitle>Balance Alert Settings</CardTitle>
             <div className="flex items-center gap-2">
               <Label className="text-xs text-muted-foreground">
                 Email reminders

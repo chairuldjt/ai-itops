@@ -5,6 +5,7 @@ import { eq, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { users, creditTransactions } from "@/lib/db/schema";
+import { allocateTopUp, topUpLedgerAmounts } from "@/lib/gateway/billing";
 import { requireAdmin } from "@/lib/auth/session";
 import { createId } from "@/lib/id";
 
@@ -22,31 +23,32 @@ export async function adminTopUp(input: z.infer<typeof Schema>) {
     return { ok: false, error: parsed.error.flatten().fieldErrors };
   }
   const amount = BigInt(Math.round(parsed.data.amountUsd * 1_000_000));
-  const txId = createId("ctx");
-
   const result = await db.transaction(async (tx) => {
-    const [updated] = await tx
-      .update(users)
-      .set({
-        creditBalance: sql`${users.creditBalance} + ${amount}::bigint`,
-        updatedAt: new Date(),
-      })
-      .where(eq(users.id, parsed.data.userId))
-      .returning({ creditBalance: users.creditBalance });
+    const [locked] = await tx.execute<{ outstanding_balance: string }>(
+      sql`select outstanding_balance from "user" where id = ${parsed.data.userId} for update`,
+    );
+    if (!locked) throw new Error("User not found");
+    const allocation = allocateTopUp(amount, BigInt(locked.outstanding_balance));
+    const [updated] = await tx.update(users).set({
+      creditBalance: sql`${users.creditBalance} + ${allocation.credit}::bigint`,
+      outstandingBalance: sql`${users.outstandingBalance} - ${allocation.debtPayment}::bigint`,
+      updatedAt: new Date(),
+    }).where(eq(users.id, parsed.data.userId)).returning({ creditBalance: users.creditBalance });
 
-    if (!updated) {
-      throw new Error("User not found");
+    const ledger = topUpLedgerAmounts(amount, BigInt(locked.outstanding_balance));
+    if (ledger.topUp !== 0n) {
+      await tx.insert(creditTransactions).values({
+        id: createId("ctx"),
+        userId: parsed.data.userId,
+        type: "topup",
+        amount: ledger.topUp,
+        balanceAfter: updated.creditBalance,
+        note: ledger.debtOffset > 0n
+          ? `${parsed.data.note ?? "Manual top-up by admin"}; ${ledger.debtOffset} micro-USD offset outstanding balance`
+          : parsed.data.note ?? "Manual top-up by admin",
+        performedByUserId: admin.user.id,
+      });
     }
-
-    await tx.insert(creditTransactions).values({
-      id: txId,
-      userId: parsed.data.userId,
-      type: "topup",
-      amount,
-      balanceAfter: updated.creditBalance,
-      note: parsed.data.note ?? "Manual top-up by admin",
-      performedByUserId: admin.user.id,
-    });
 
     return updated;
   });

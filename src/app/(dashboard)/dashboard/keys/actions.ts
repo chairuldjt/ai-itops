@@ -7,7 +7,7 @@ import { db } from "@/lib/db";
 import { apiKeys } from "@/lib/db/schema";
 import { requireSession } from "@/lib/auth/session";
 import { createId, generateApiKey } from "@/lib/id";
-import { hashApiKey } from "@/lib/gateway/api-key";
+import { hashApiKey, MAX_RPM_LIMIT } from "@/lib/gateway/api-key";
 
 /* -------------------------------------------------------------------------- */
 /*                                     GET                                    */
@@ -30,8 +30,9 @@ export async function listMyApiKeys() {
 const CreateSchema = z.object({
   name: z.string().min(1).max(100),
   // FIX #24: .finite() prevents Infinity.
-  rpmLimit: z.number().int().positive().finite().optional(),
+  rpmLimit: z.number().int().min(1).max(MAX_RPM_LIMIT).finite().optional(),
   monthlyBudgetUsd: z.number().min(0).finite().optional(),
+  expiresAt: z.coerce.date().optional(),
 });
 
 export async function createApiKey(input: z.infer<typeof CreateSchema>) {
@@ -58,6 +59,7 @@ export async function createApiKey(input: z.infer<typeof CreateSchema>) {
     rpmLimit: parsed.data.rpmLimit ?? null,
     monthlyBudget,
     enabled: true,
+    expiresAt: parsed.data.expiresAt ?? null,
   });
 
   revalidatePath("/dashboard/keys");

@@ -7,7 +7,7 @@ import {
   enforceCapabilities,
   type OpenAIChatBody,
 } from "@/lib/gateway/capability-enforcer";
-import { preflightCredit, recordUsageAndDeduct } from "@/lib/gateway/meter";
+import { createSettlementController, extendBillingLease, finalizeBilling, preflightBilling } from "@/lib/gateway/billing";
 import { callUpstream, callUpstreamStream } from "@/lib/gateway/openai";
 import {
   ensureStreamUsage,
@@ -26,6 +26,8 @@ import {
   getClientIp,
   sseLine,
 } from "@/lib/gateway/response";
+import { anthropicRequestSchema } from "@/lib/gateway/validation";
+import { internalErrorMessage, safeUpstreamMessage } from "@/lib/gateway/errors";
 
 /* -------------------------------------------------------------------------- */
 /*                      POST /api/anthropic/v1/messages                       */
@@ -33,7 +35,10 @@ import {
 
 export async function POST(request: NextRequest) {
   const startMs = Date.now();
+  const requestId = crypto.randomUUID();
   const clientIp = getClientIp(request);
+  let releaseReservation: (() => Promise<void>) | null = null;
+  const billingState = { canRelease: true };
 
   // FIX #11: Wrap entire handler in try/catch to return proper Anthropic error JSON.
   try {
@@ -42,17 +47,14 @@ export async function POST(request: NextRequest) {
     extractApiKey(request) ?? request.headers.get("x-api-key") ?? null;
   if (!raw) return anthropicErrorResponse(401, "Missing API key");
   const auth = await authenticateApiKey(raw);
-  if (!auth.ok) return anthropicErrorResponse(auth.status, auth.message);
+  if (!auth.ok) return anthropicErrorResponse(auth.status, auth.message, auth.retryAfterSeconds ? { "Retry-After": String(auth.retryAfterSeconds) } : undefined);
 
   // 2) Parse body
-  const parsed = await parseJsonBody<AnthropicBody>(request);
-  if (!parsed.ok) return anthropicErrorResponse(400, parsed.message);
-  const aBody = parsed.body;
-  if (!aBody.model) return anthropicErrorResponse(400, "Missing 'model' field");
-  if (!aBody.max_tokens) return anthropicErrorResponse(400, "Missing 'max_tokens' field");
-  if (!Array.isArray(aBody.messages) || aBody.messages.length === 0) {
-    return anthropicErrorResponse(400, "Missing or empty 'messages' array");
-  }
+  const parsed = await parseJsonBody(request);
+  if (!parsed.ok) return anthropicErrorResponse(parsed.status, parsed.message);
+  const validated = anthropicRequestSchema.safeParse(parsed.body);
+  if (!validated.success) return anthropicErrorResponse(400, validated.error.issues[0]?.message ?? "Invalid request body");
+  const aBody = validated.data as AnthropicBody;
 
   // 3) Resolve model
   const resolved = await resolveModel(String(aBody.model));
@@ -71,32 +73,38 @@ export async function POST(request: NextRequest) {
   }
 
   // 6) Preflight credit/budget
-  const pre = await preflightCredit(
-    auth.user.id,
-    auth.apiKey.id,
-    auth.apiKey.monthlyBudget,
-    auth.apiKey.monthlySpent,
-    auth.user.creditBalance,
-  );
+  const pre = await preflightBilling({
+    userId: auth.user.id,
+    apiKeyId: auth.apiKey.id,
+    model,
+    body: aBody,
+  });
   if (!pre.ok) return anthropicErrorResponse(pre.status, pre.message);
+  const reservationId = pre.reservation.id;
+  releaseReservation = () => finalizeBilling(reservationId, {
+    modelId: model.id,
+    modelPublicId: model.publicId,
+    apiFormat: "anthropic",
+    endpoint: "messages",
+    streamed: aBody.stream === true,
+    promptTokens: 0,
+    completionTokens: 0,
+    status: "error",
+    httpStatus: 500,
+    latencyMs: Date.now() - startMs,
+    clientIp,
+    model,
+  }, { actualMicroUsd: 0n });
 
   // 7a) Canned response
   if (enforce.kind === "canned") {
-    if (aBody.stream) {
-      return new Response(
-        cannedAnthropicStream(model.publicId, enforce.text),
-        { status: 200, headers: SSE_HEADERS },
-      );
-    }
-    const resp = cannedAnthropicResponse(model.publicId, enforce.text);
-    void recordUsageAndDeduct({
-      userId: auth.user.id,
-      apiKeyId: auth.apiKey.id,
+    billingState.canRelease = false;
+    await finalizeBilling(reservationId, {
       modelId: model.id,
       modelPublicId: model.publicId,
       apiFormat: "anthropic",
       endpoint: "messages",
-      streamed: false,
+      streamed: aBody.stream === true,
       promptTokens: 0,
       completionTokens: Math.ceil(enforce.text.length / 4),
       status: "canned",
@@ -104,8 +112,14 @@ export async function POST(request: NextRequest) {
       latencyMs: Date.now() - startMs,
       clientIp,
       model,
-    }).catch(() => {});
-    return NextResponse.json(resp);
+    }, { actualMicroUsd: 0n });
+    if (aBody.stream) {
+      return new Response(
+        cannedAnthropicStream(model.publicId, enforce.text),
+        { status: 200, headers: SSE_HEADERS },
+      );
+    }
+    return NextResponse.json(cannedAnthropicResponse(model.publicId, enforce.text));
   }
 
   // 7b) Forward
@@ -121,21 +135,28 @@ export async function POST(request: NextRequest) {
       model,
       body: forwardBody,
       modelPublicId: model.publicId,
+      reservationId,
+      billingState,
+      requestId,
       startMs,
       clientIp,
     });
   }
   return await handleNonStream({
+    request,
     auth,
     model,
     body: forwardBody,
+    reservationId,
+    billingState,
+    requestId,
     startMs,
     clientIp,
   });
   } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    console.error("[POST /anthropic/v1/messages]", msg);
-    return anthropicErrorResponse(500, msg);
+    if (releaseReservation && billingState.canRelease) await releaseReservation();
+    console.error(`[${requestId}] [POST /anthropic/v1/messages]`, err);
+    return anthropicErrorResponse(500, internalErrorMessage(500), undefined, requestId);
   }
 }
 
@@ -229,24 +250,28 @@ function cannedAnthropicStream(modelPublicId: string, text: string) {
 /* -------------------------------------------------------------------------- */
 
 async function handleNonStream(params: {
+  request: NextRequest;
   auth: Extract<Awaited<ReturnType<typeof authenticateApiKey>>, { ok: true }>;
   model: Model;
   body: OpenAIChatBody;
+  reservationId: string;
+  billingState: { canRelease: boolean };
+  requestId: string;
   startMs: number;
   clientIp: string | null;
 }) {
-  const { auth, model, body, startMs, clientIp } = params;
+  const { request, model, body, reservationId, billingState, requestId, startMs, clientIp } = params;
   try {
     const upstream = await callUpstream({
       path: "/chat/completions",
       body,
       stream: false,
+      signal: request.signal,
     });
     const usage = extractUsageFromResponse(upstream.json);
 
-    void recordUsageAndDeduct({
-      userId: auth.user.id,
-      apiKeyId: auth.apiKey.id,
+    billingState.canRelease = false;
+    await finalizeBilling(reservationId, {
       modelId: model.id,
       modelPublicId: model.publicId,
       apiFormat: "anthropic",
@@ -265,14 +290,12 @@ async function handleNonStream(params: {
       latencyMs: Date.now() - startMs,
       clientIp,
       model,
-    }).catch(() => {});
+    });
 
     if (upstream.status >= 400) {
-      // Translate OpenAI upstream error into Anthropic error
-      const msg =
-        (upstream.json as { error?: { message?: string } })?.error?.message ??
-        "Upstream error";
-      return anthropicErrorResponse(upstream.status, msg);
+      const safeMessage = safeUpstreamMessage(upstream.status, upstream.json);
+      if (!safeMessage) console.error(`[${requestId}] [POST /anthropic/v1/messages upstream ${upstream.status}]`, upstream.json);
+      return anthropicErrorResponse(upstream.status >= 500 || !safeMessage ? 502 : upstream.status, safeMessage ?? internalErrorMessage(502), undefined, safeMessage ? undefined : requestId);
     }
 
     const anthropicResp = openAIToAnthropic(
@@ -282,10 +305,27 @@ async function handleNonStream(params: {
       headers: { "X-Model-Resolved-To": model.upstreamId },
     });
   } catch (err) {
-    return anthropicErrorResponse(
-      502,
-      err instanceof Error ? err.message : "Upstream error",
-    );
+    if (!billingState.canRelease) {
+      console.error(`[${requestId}] [POST /anthropic/v1/messages billing]`, err);
+      return anthropicErrorResponse(500, internalErrorMessage(500), undefined, requestId);
+    }
+    await finalizeBilling(reservationId, {
+      modelId: model.id,
+      modelPublicId: model.publicId,
+      apiFormat: "anthropic",
+      endpoint: "messages",
+      streamed: false,
+      promptTokens: 0,
+      completionTokens: 0,
+      status: "error",
+      httpStatus: 502,
+      errorMessage: err instanceof Error ? err.message : "Upstream error",
+      latencyMs: Date.now() - startMs,
+      clientIp,
+      model,
+    });
+    console.error(`[${requestId}] [POST /anthropic/v1/messages upstream]`, err);
+    return anthropicErrorResponse(502, internalErrorMessage(502), undefined, requestId);
   }
 }
 
@@ -299,10 +339,13 @@ async function handleStream(params: {
   model: Model;
   body: OpenAIChatBody;
   modelPublicId: string;
+  reservationId: string;
+  billingState: { canRelease: boolean };
+  requestId: string;
   startMs: number;
   clientIp: string | null;
 }) {
-  const { request, auth, model, body, modelPublicId, startMs, clientIp } = params;
+  const { request, model, body, modelPublicId, reservationId, billingState, requestId, startMs, clientIp } = params;
   const streamBody = ensureStreamUsage(body);
 
   let upstream;
@@ -314,41 +357,53 @@ async function handleStream(params: {
       signal: request.signal,
     });
   } catch (err) {
-    return anthropicErrorResponse(
-      502,
-      err instanceof Error ? err.message : "Upstream error",
-    );
-  }
-
-  // Capture the final usage from the upstream OpenAI SSE for metering.
-  let finalUsage = { promptTokens: 0, completionTokens: 0 };
-  let usageRecorded = false;
-  const decoder = new TextDecoder();
-  let sseAccum = "";
-
-  function recordFinalUsage(status: "ok" | "error") {
-    if (usageRecorded) return;
-    usageRecorded = true;
-    void recordUsageAndDeduct({
-      userId: auth.user.id,
-      apiKeyId: auth.apiKey.id,
+    await finalizeBilling(reservationId, {
       modelId: model.id,
       modelPublicId: model.publicId,
       apiFormat: "anthropic",
       endpoint: "messages",
       streamed: true,
-      promptTokens: finalUsage.promptTokens,
-      completionTokens: finalUsage.completionTokens,
-      status,
+      promptTokens: 0,
+      completionTokens: 0,
+      status: "error",
+      httpStatus: 502,
+      errorMessage: err instanceof Error ? err.message : "Upstream error",
+      latencyMs: Date.now() - startMs,
+      clientIp,
+      model,
+    });
+    console.error(`[${requestId}] [POST /anthropic/v1/messages upstream stream]`, err);
+    return anthropicErrorResponse(502, internalErrorMessage(502), undefined, requestId);
+  }
+
+  // Capture the final usage from the upstream OpenAI SSE for metering.
+  let finalUsage = { promptTokens: 0, completionTokens: 0 };
+  const decoder = new TextDecoder();
+  let sseAccum = "";
+
+  const settlement = createSettlementController(async (usage: typeof finalUsage) => {
+    await finalizeBilling(reservationId, {
+      modelId: model.id,
+      modelPublicId: model.publicId,
+      apiFormat: "anthropic",
+      endpoint: "messages",
+      streamed: true,
+      ...usage,
+      status: "ok",
       httpStatus: 200,
       latencyMs: Date.now() - startMs,
       clientIp,
       model,
-    }).catch(() => {});
-  }
+    }, { chargeReserved: usage.promptTokens === 0 && usage.completionTokens === 0 });
+  });
+  const recordFinalUsage = () => {
+    billingState.canRelease = false;
+    return settlement.settle({ ...finalUsage });
+  };
 
   const transformStream = new TransformStream<Uint8Array, Uint8Array>({
-    transform(chunk, controller) {
+    async transform(chunk, controller) {
+      await extendBillingLease(reservationId);
       // Pass chunk through untouched, but also inspect for usage.
       try {
         // FIX #1: Use stream-safe decoder to handle multi-byte UTF-8 splits.
@@ -387,21 +442,50 @@ async function handleStream(params: {
       }
       controller.enqueue(chunk);
     },
-    flush() {
-      // FIX #12: Normal completion — record usage.
-      recordFinalUsage("ok");
+    async flush() {
+      await recordFinalUsage();
     },
   });
 
   // FIX #12: Also record usage if client disconnects (cancel skips flush).
-  request.signal.addEventListener("abort", () => recordFinalUsage("ok"), { once: true });
+  request.signal.addEventListener("abort", () => {
+    void recordFinalUsage().catch(console.error);
+  }, { once: true });
 
   // Upstream (OpenAI SSE) -> transform to capture usage -> transform to Anthropic SSE
-  const anthropicStream = transformOpenAIStreamToAnthropic(
+  const transformedReader = transformOpenAIStreamToAnthropic(
     upstream.stream.pipeThrough(transformStream),
     modelPublicId,
     request.signal,
-  );
+  ).getReader();
+  const anthropicStream = new ReadableStream<Uint8Array>({
+    async pull(controller) {
+      try {
+        const { value, done } = await transformedReader.read();
+        if (done) {
+          await recordFinalUsage();
+          controller.close();
+        } else {
+          controller.enqueue(value);
+        }
+      } catch (error) {
+        try {
+          await recordFinalUsage();
+        } catch (settlementError) {
+          controller.error(settlementError);
+          return;
+        }
+        controller.error(error);
+      }
+    },
+    async cancel(reason) {
+      const cancelUpstream = transformedReader.cancel(reason);
+      await Promise.allSettled([cancelUpstream, recordFinalUsage()]).then((results) => {
+        const settlementResult = results[1];
+        if (settlementResult.status === "rejected") throw settlementResult.reason;
+      });
+    },
+  });
 
   return new Response(anthropicStream, {
     status: 200,

@@ -1,0 +1,260 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-02T00:00:00Z",
+  "title": "Design System: AI Gateway",
+  "extensions": {
+    "colorMeta": {
+      "fresh-emerald": {
+        "role": "primary",
+        "displayName": "Fresh Emerald",
+        "canonical": "oklch(0.527 0.154 150.069)",
+        "tonalRamp": [
+          "oklch(0.25 0.08 150)",
+          "oklch(0.32 0.12 150)",
+          "oklch(0.40 0.14 151)",
+          "oklch(0.448 0.119 151.328)",
+          "oklch(0.527 0.154 150.069)",
+          "oklch(0.62 0.16 163)",
+          "oklch(0.72 0.14 163)",
+          "oklch(0.85 0.10 165)"
+        ]
+      },
+      "signal-red": {
+        "role": "state",
+        "displayName": "Signal Red",
+        "canonical": "oklch(0.577 0.245 27.325)",
+        "tonalRamp": [
+          "oklch(0.25 0.10 27)",
+          "oklch(0.35 0.15 27)",
+          "oklch(0.45 0.20 27)",
+          "oklch(0.577 0.245 27.325)",
+          "oklch(0.65 0.20 22)",
+          "oklch(0.704 0.191 22.216)",
+          "oklch(0.80 0.12 22)",
+          "oklch(0.90 0.06 22)"
+        ]
+      },
+      "clean-paper": {
+        "role": "neutral",
+        "displayName": "Clean Paper",
+        "canonical": "oklch(1 0 0)",
+        "tonalRamp": [
+          "oklch(0.145 0 0)",
+          "oklch(0.205 0 0)",
+          "oklch(0.35 0 0)",
+          "oklch(0.50 0 0)",
+          "oklch(0.70 0 0)",
+          "oklch(0.85 0 0)",
+          "oklch(0.95 0 0)",
+          "oklch(1 0 0)"
+        ]
+      },
+      "whisper": {
+        "role": "neutral",
+        "displayName": "Whisper",
+        "canonical": "oklch(0.97 0 0)",
+        "tonalRamp": [
+          "oklch(0.15 0 0)",
+          "oklch(0.22 0 0)",
+          "oklch(0.38 0 0)",
+          "oklch(0.55 0 0)",
+          "oklch(0.72 0 0)",
+          "oklch(0.87 0 0)",
+          "oklch(0.95 0 0)",
+          "oklch(0.97 0 0)"
+        ]
+      },
+      "faint-line": {
+        "role": "neutral",
+        "displayName": "Faint Line",
+        "canonical": "oklch(0.922 0 0)",
+        "tonalRamp": [
+          "oklch(0.12 0 0)",
+          "oklch(0.20 0 0)",
+          "oklch(0.35 0 0)",
+          "oklch(0.50 0 0)",
+          "oklch(0.68 0 0)",
+          "oklch(0.82 0 0)",
+          "oklch(0.922 0 0)",
+          "oklch(0.97 0 0)"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "canonical": "oklch(0.145 0 0)",
+        "tonalRamp": [
+          "oklch(0.145 0 0)",
+          "oklch(0.20 0 0)",
+          "oklch(0.30 0 0)",
+          "oklch(0.42 0 0)",
+          "oklch(0.556 0 0)",
+          "oklch(0.70 0 0)",
+          "oklch(0.85 0 0)",
+          "oklch(0.95 0 0)"
+        ]
+      },
+      "ink-muted": {
+        "role": "neutral",
+        "displayName": "Ink Muted",
+        "canonical": "oklch(0.556 0 0)",
+        "tonalRamp": [
+          "oklch(0.15 0 0)",
+          "oklch(0.25 0 0)",
+          "oklch(0.38 0 0)",
+          "oklch(0.556 0 0)",
+          "oklch(0.65 0 0)",
+          "oklch(0.75 0 0)",
+          "oklch(0.85 0 0)",
+          "oklch(0.94 0 0)"
+        ]
+      },
+      "canopy-1": {
+        "role": "chart",
+        "displayName": "Canopy 1",
+        "canonical": "oklch(0.845 0.143 164.978)",
+        "tonalRamp": [
+          "oklch(0.20 0.06 165)",
+          "oklch(0.30 0.09 165)",
+          "oklch(0.40 0.12 165)",
+          "oklch(0.50 0.14 165)",
+          "oklch(0.596 0.145 163.225)",
+          "oklch(0.696 0.17 162.48)",
+          "oklch(0.845 0.143 164.978)",
+          "oklch(0.92 0.06 165)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Landing page hero headings only. Never used inside the app shell." },
+      "headline": { "displayName": "Headline", "purpose": "Page titles, section headings, card titles." },
+      "title": { "displayName": "Title", "purpose": "Sub-section headings, dialog titles, table headers." },
+      "body": { "displayName": "Body", "purpose": "All prose and paragraph text. 70ch max line length." },
+      "label": { "displayName": "Label", "purpose": "Form labels, badge text, table column headers, nav items." },
+      "mono": { "displayName": "Mono", "purpose": "Code, API keys, terminal output, technical data." }
+    },
+    "shadows": [
+      { "name": "surface", "value": "none", "purpose": "Default state. Flat." },
+      { "name": "lift", "value": "0 4px 12px oklch(0 0 0 / 0.08)", "purpose": "Hover state for interactive cards." },
+      { "name": "float", "value": "0 8px 24px oklch(0 0 0 / 0.12)", "purpose": "Dropdowns, popovers, tooltips." },
+      { "name": "backdrop", "value": "0 16px 48px oklch(0 0 0 / 0.16)", "purpose": "Modals and dialogs." }
+    ],
+    "motion": [
+      { "name": "ease-standard", "value": "cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "Default easing for state transitions. Exponential ease-out." },
+      { "name": "duration-fast", "value": "150ms", "purpose": "Interactive state changes: hover, focus, active." },
+      { "name": "duration-normal", "value": "250ms", "purpose": "Layout transitions, panel slides." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" },
+      { "name": "xl", "value": "1280px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The most prominent interactive element. Pill-shaped, emerald background, white text.",
+      "html": "<button class=\"ds-btn-primary\">Start for free</button>",
+      "css": ".ds-btn-primary { background: oklch(0.527 0.154 150.069); color: #fff; padding: 10px 24px; border: none; border-radius: 9999px; font-family: 'Inter', system-ui, sans-serif; font-size: 0.875rem; font-weight: 500; cursor: pointer; transition: background 150ms cubic-bezier(0.16, 1, 0.3, 1); line-height: 1.4; } .ds-btn-primary:hover { background: oklch(0.448 0.119 151.328); } .ds-btn-primary:focus-visible { outline: 2px solid oklch(0.527 0.154 150.069); outline-offset: 2px; } .ds-btn-primary:active { transform: scale(0.98); }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Subdued action. Whisper background, ink text, same pill shape.",
+      "html": "<button class=\"ds-btn-secondary\">View docs</button>",
+      "css": ".ds-btn-secondary { background: oklch(0.97 0 0); color: oklch(0.145 0 0); padding: 10px 24px; border: 1px solid oklch(0.922 0 0); border-radius: 9999px; font-family: 'Inter', system-ui, sans-serif; font-size: 0.875rem; font-weight: 500; cursor: pointer; transition: background 150ms cubic-bezier(0.16, 1, 0.3, 1); line-height: 1.4; } .ds-btn-secondary:hover { background: oklch(0.95 0 0); } .ds-btn-secondary:focus-visible { outline: 2px solid oklch(0.527 0.154 150.069); outline-offset: 2px; }"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Tertiary action. Transparent, ink text, subtle hover tint.",
+      "html": "<button class=\"ds-btn-ghost\">Cancel</button>",
+      "css": ".ds-btn-ghost { background: transparent; color: oklch(0.145 0 0); padding: 10px 24px; border: none; border-radius: 9999px; font-family: 'Inter', system-ui, sans-serif; font-size: 0.875rem; font-weight: 500; cursor: pointer; transition: background 150ms cubic-bezier(0.16, 1, 0.3, 1); line-height: 1.4; } .ds-btn-ghost:hover { background: oklch(0.97 0 0); } .ds-btn-ghost:focus-visible { outline: 2px solid oklch(0.527 0.154 150.069); outline-offset: 2px; }"
+    },
+    {
+      "name": "Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Content container. Flat at rest, lift shadow on hover when interactive.",
+      "html": "<div class=\"ds-card\"><div class=\"ds-card-header\"><h3 class=\"ds-card-title\">Usage This Month</h3><p class=\"ds-card-description\">Your API usage breakdown</p></div><div class=\"ds-card-content\"><span class=\"ds-card-metric\">$12.48</span></div></div>",
+      "css": ".ds-card { background: #fff; border: 1px solid oklch(0.922 0 0); border-radius: 10px; padding: 24px; transition: box-shadow 150ms cubic-bezier(0.16, 1, 0.3, 1); } .ds-card:hover { box-shadow: 0 4px 12px oklch(0 0 0 / 0.08); } .ds-card-header { margin-bottom: 16px; } .ds-card-title { font-family: 'Inter', system-ui, sans-serif; font-size: 1.5rem; font-weight: 600; line-height: 1.3; color: oklch(0.145 0 0); margin: 0; } .ds-card-description { font-family: 'Inter', system-ui, sans-serif; font-size: 0.875rem; color: oklch(0.556 0 0); margin: 4px 0 0; line-height: 1.4; } .ds-card-content { } .ds-card-metric { font-family: 'Inter', system-ui, sans-serif; font-size: 2rem; font-weight: 600; color: oklch(0.145 0 0); line-height: 1.2; }"
+    },
+    {
+      "name": "Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Text field. Clean Paper background, Faint Line border, emerald focus.",
+      "html": "<div class=\"ds-input-wrap\"><label class=\"ds-label\">API Key Name</label><input class=\"ds-input\" type=\"text\" placeholder=\"e.g. production-key\" /></div>",
+      "css": ".ds-input-wrap { display: flex; flex-direction: column; gap: 6px; } .ds-label { font-family: 'Inter', system-ui, sans-serif; font-size: 0.8125rem; font-weight: 500; color: oklch(0.145 0 0); line-height: 1.4; } .ds-input { background: #fff; border: 1px solid oklch(0.922 0 0); border-radius: 8px; padding: 8px 12px; font-family: 'Inter', system-ui, sans-serif; font-size: 0.9375rem; color: oklch(0.145 0 0); outline: none; transition: border-color 150ms cubic-bezier(0.16, 1, 0.3, 1); } .ds-input::placeholder { color: oklch(0.556 0 0); } .ds-input:focus { border-color: oklch(0.527 0.154 150.069); } .ds-input:disabled { background: oklch(0.97 0 0); color: oklch(0.556 0 0); cursor: not-allowed; }"
+    },
+    {
+      "name": "Badge",
+      "kind": "chip",
+      "refersTo": "badge",
+      "description": "Small label for status, tags, categories. Whisper background, muted text.",
+      "html": "<span class=\"ds-badge\">Active</span> <span class=\"ds-badge-outline\">Beta</span>",
+      "css": ".ds-badge { display: inline-flex; align-items: center; background: oklch(0.97 0 0); color: oklch(0.556 0 0); border-radius: 9999px; padding: 2px 10px; font-family: 'Inter', system-ui, sans-serif; font-size: 0.8125rem; font-weight: 500; line-height: 1.4; } .ds-badge-outline { display: inline-flex; align-items: center; background: transparent; color: oklch(0.556 0 0); border: 1px solid oklch(0.922 0 0); border-radius: 9999px; padding: 2px 10px; font-family: 'Inter', system-ui, sans-serif; font-size: 0.8125rem; font-weight: 500; line-height: 1.4; }"
+    },
+    {
+      "name": "Sidebar Nav",
+      "kind": "nav",
+      "refersTo": "sidebar",
+      "description": "Dashboard sidebar with warm Whisper background. Active item has emerald left indicator.",
+      "html": "<nav class=\"ds-sidebar\"><div class=\"ds-sidebar-header\"><span class=\"ds-sidebar-logo\">AI Gateway</span></div><a class=\"ds-sidebar-item ds-sidebar-item-active\" href=\"#\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><rect x=\"3\" y=\"3\" width=\"7\" height=\"7\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"7\"/><rect x=\"3\" y=\"14\" width=\"7\" height=\"7\"/><rect x=\"14\" y=\"14\" width=\"7\" height=\"7\"/></svg>Dashboard</a><a class=\"ds-sidebar-item\" href=\"#\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><circle cx=\"12\" cy=\"12\" r=\"3\"/><path d=\"M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z\"/></svg>Settings</a></nav>",
+      "css": ".ds-sidebar { display: flex; flex-direction: column; width: 240px; background: oklch(0.985 0 0); border-right: 1px solid oklch(0.922 0 0); padding: 16px 8px; font-family: 'Inter', system-ui, sans-serif; } .ds-sidebar-header { padding: 8px 12px; margin-bottom: 16px; } .ds-sidebar-logo { font-size: 1rem; font-weight: 600; color: oklch(0.145 0 0); } .ds-sidebar-item { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 8px; font-size: 0.875rem; font-weight: 400; color: oklch(0.556 0 0); text-decoration: none; transition: background 150ms, color 150ms; } .ds-sidebar-item:hover { background: oklch(0.97 0 0); color: oklch(0.145 0 0); } .ds-sidebar-item-active { color: oklch(0.145 0 0); background: oklch(0.97 0 0); border-left: 2px solid oklch(0.527 0.154 150.069); font-weight: 500; } .ds-sidebar-item svg { flex-shrink: 0; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Greenhouse",
+    "overview": "This is a system for managing living things — models, keys, credits, usage — behind clean glass panels. The interface is organized like a greenhouse: transparent, structured, and alive. Every surface is a window into a system that grows and changes. The green accent isn't decoration; it's health, status, connection.\n\nThe system rejects noise. No gradient heroes, no card grids with icon-heading-paragraph repeating endlessly, no eyebrow text above every section. Information density is welcome when it serves the task; cognitive overload is not. Every screen answers one question.\n\nBoth light and dark themes are first-class. Neither is a default or an afterthought. The light theme is a clean workbench; the dark theme is a control room.",
+    "keyCharacteristics": [
+      "Functional color — emerald communicates state, not decoration. Appears on ≤10% of any screen.",
+      "Tonal neutrality — achromatic grays carry all structural weight. No warm or cool tint.",
+      "Warm approachability — rounded, tactile, responsive components. Pill buttons, soft corners.",
+      "Breathing room — generous spacing between sections, tight spacing within components."
+    ],
+    "rules": [
+      { "name": "The 10% Rule", "body": "The primary accent appears on ≤10% of any given screen. Its rarity is the point. If every button is green, no button is green.", "section": "colors" },
+      { "name": "The Zero-Chroma Rule", "body": "All neutrals — backgrounds, cards, borders, muted text, dividers — are achromatic (chroma = 0). No warm gray, no cool gray. Tinted neutrals are prohibited.", "section": "colors" },
+      { "name": "The Functional Color Rule", "body": "Color communicates state, not decoration. Green means active/connected/valid/success. Red means error/danger/destructive. No color on a surface that doesn't carry meaning.", "section": "colors" },
+      { "name": "The One-Family Rule", "body": "Inter carries every text element in the product. No display font, no serif pairing, no secondary sans. Geist Mono is the only exception for code-adjacent contexts.", "section": "typography" },
+      { "name": "The Fixed-Scale Rule", "body": "Type sizes are fixed rem values, not fluid clamp scales. The sole exception is the display heading on the landing page.", "section": "typography" },
+      { "name": "The Flat-By-Default Rule", "body": "No component ships with a shadow in its resting state. Shadows are earned through interaction.", "section": "elevation" },
+      { "name": "The Ambient-Not-Dramatic Rule", "body": "Shadows are soft, low-opacity, and large-blur. Hard-edged or high-contrast shadows are prohibited.", "section": "elevation" }
+    ],
+    "dos": [
+      "Use Fresh Emerald sparingly — primary buttons, active states, success indicators. The 10% Rule applies.",
+      "Use achromatic neutrals for all structural surfaces.",
+      "Make both themes feel intentional. Light is a workbench; dark is a control room.",
+      "Use pill radii on buttons. Every button is fully rounded.",
+      "Use 150ms ease-out transitions on interactive state changes.",
+      "Show a number before a chart.",
+      "Use skeleton states for loading, not spinners.",
+      "Keep shadows ambient and subtle. Flat by default; lift on interaction.",
+      "Respect prefers-reduced-motion.",
+      "Use Geist Mono only for code, API keys, and terminal output."
+    ],
+    "donts": [
+      "Don't use gradient text (background-clip: text with a gradient).",
+      "Don't use side-stripe borders (border-left/right > 1px as colored accent).",
+      "Don't use glassmorphism as a default.",
+      "Don't put tiny uppercase tracked eyebrows above every section.",
+      "Don't use numbered section markers (01/02/03) as default scaffolding.",
+      "Don't use identical card grids — same-sized cards with icon + heading + text.",
+      "Don't use the hero-metric template — big number, small label, stats, gradient accent.",
+      "Don't use overly complex dashboards with 15 charts and 3 sidebars.",
+      "Don't use dark-only or dev-tool cliché aesthetics.",
+      "Don't use border-radius: 32px+ on cards or sections.",
+      "Don't use decorative grid backgrounds.",
+      "Don't use tinted neutrals. Achromatic means chroma = 0.",
+      "Don't use a display font for UI labels, buttons, or data.",
+      "Don't animate CSS layout properties.",
+      "Don't use bounce or elastic easing."
+    ]
+  }
+}

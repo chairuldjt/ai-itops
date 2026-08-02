@@ -8,6 +8,41 @@
       "when": 1785419203424,
       "tag": "0000_blushing_klaw",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1785559251927,
+      "tag": "0001_billing_reservations",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1785559893700,
+      "tag": "0002_harden_billing_reservations",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1785560688075,
+      "tag": "0003_user_outstanding_balance",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1785578649541,
+      "tag": "0004_smooth_madame_hydra",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1785584437715,
+      "tag": "0005_token_bucket_rate_limit",
+      "breakpoints": true
     }
   ]
 }

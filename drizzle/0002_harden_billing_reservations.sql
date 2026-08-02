@@ -1,0 +1,7 @@
+ALTER TABLE "billing_reservation" ADD COLUMN "charged_micro_usd" bigint;--> statement-breakpoint
+ALTER TABLE "billing_reservation" ADD COLUMN "outstanding_micro_usd" bigint;--> statement-breakpoint
+ALTER TABLE "billing_reservation" ADD COLUMN "billing_month" timestamp with time zone NOT NULL;--> statement-breakpoint
+ALTER TABLE "billing_reservation" ADD COLUMN "expires_at" timestamp with time zone NOT NULL;--> statement-breakpoint
+CREATE INDEX "billing_reservation_open_expiry_idx" ON "billing_reservation" USING btree ("expires_at") WHERE "billing_reservation"."finalized_at" is null;--> statement-breakpoint
+ALTER TABLE "billing_reservation" ADD CONSTRAINT "billing_reservation_reserved_nonnegative" CHECK ("billing_reservation"."reserved_micro_usd" >= 0);--> statement-breakpoint
+ALTER TABLE "billing_reservation" ADD CONSTRAINT "billing_reservation_settlement_coherent" CHECK (("billing_reservation"."finalized_at" is null and "billing_reservation"."actual_micro_usd" is null and "billing_reservation"."charged_micro_usd" is null and "billing_reservation"."outstanding_micro_usd" is null and "billing_reservation"."usage_log_id" is null) or ("billing_reservation"."finalized_at" is not null and "billing_reservation"."actual_micro_usd" >= 0 and "billing_reservation"."charged_micro_usd" >= 0 and "billing_reservation"."outstanding_micro_usd" >= 0 and "billing_reservation"."actual_micro_usd" = "billing_reservation"."charged_micro_usd" + "billing_reservation"."outstanding_micro_usd"));

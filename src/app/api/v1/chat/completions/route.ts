@@ -7,7 +7,7 @@ import {
   enforceCapabilities,
   type OpenAIChatBody,
 } from "@/lib/gateway/capability-enforcer";
-import { preflightCredit, recordUsageAndDeduct } from "@/lib/gateway/meter";
+import { createSettlementController, extendBillingLease, finalizeBilling, preflightBilling } from "@/lib/gateway/billing";
 import { callUpstream, callUpstreamStream } from "@/lib/gateway/openai";
 import {
   buildCannedCompletionResponse,
@@ -21,6 +21,8 @@ import {
   parseJsonBody,
   getClientIp,
 } from "@/lib/gateway/response";
+import { openAIChatRequestSchema } from "@/lib/gateway/validation";
+import { internalErrorMessage, safeUpstreamMessage } from "@/lib/gateway/errors";
 
 /* -------------------------------------------------------------------------- */
 /*                              GET /v1/models                                */
@@ -55,7 +57,10 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   const startMs = Date.now();
+  const requestId = crypto.randomUUID();
   const clientIp = getClientIp(request);
+  let releaseReservation: (() => Promise<void>) | null = null;
+  const billingState = { canRelease: true };
 
   // FIX #11: Wrap entire handler in try/catch to return proper OpenAI error JSON.
   try {
@@ -63,16 +68,14 @@ export async function POST(request: NextRequest) {
   const raw = extractApiKey(request);
   if (!raw) return openaiErrorResponse(401, "Missing API key");
   const auth = await authenticateApiKey(raw);
-  if (!auth.ok) return openaiErrorResponse(auth.status, auth.message);
+  if (!auth.ok) return openaiErrorResponse(auth.status, auth.message, undefined, auth.retryAfterSeconds ? { "Retry-After": String(auth.retryAfterSeconds) } : undefined);
 
   // 2) Parse body
-  const parsed = await parseJsonBody<OpenAIChatBody>(request);
-  if (!parsed.ok) return openaiErrorResponse(400, parsed.message);
-  const body = parsed.body;
-  if (!body.model) return openaiErrorResponse(400, "Missing 'model' field");
-  if (!Array.isArray(body.messages) || body.messages.length === 0) {
-    return openaiErrorResponse(400, "Missing or empty 'messages' array");
-  }
+  const parsed = await parseJsonBody(request);
+  if (!parsed.ok) return openaiErrorResponse(parsed.status, parsed.message);
+  const validated = openAIChatRequestSchema.safeParse(parsed.body);
+  if (!validated.success) return openaiErrorResponse(400, validated.error.issues[0]?.message ?? "Invalid request body");
+  const body = validated.data as OpenAIChatBody;
 
   // 3) Resolve model
   const resolved = await resolveModel(String(body.model));
@@ -86,14 +89,28 @@ export async function POST(request: NextRequest) {
   }
 
   // 5) Preflight credit/budget check
-  const pre = await preflightCredit(
-    auth.user.id,
-    auth.apiKey.id,
-    auth.apiKey.monthlyBudget,
-    auth.apiKey.monthlySpent,
-    auth.user.creditBalance,
-  );
+  const pre = await preflightBilling({
+    userId: auth.user.id,
+    apiKeyId: auth.apiKey.id,
+    model,
+    body,
+  });
   if (!pre.ok) return openaiErrorResponse(pre.status, pre.message);
+  const reservationId = pre.reservation.id;
+  releaseReservation = () => finalizeBilling(reservationId, {
+    modelId: model.id,
+    modelPublicId: model.publicId,
+    apiFormat: "openai",
+    endpoint: "chat.completions",
+    streamed: body.stream === true,
+    promptTokens: 0,
+    completionTokens: 0,
+    status: "error",
+    httpStatus: 500,
+    latencyMs: Date.now() - startMs,
+    clientIp,
+    model,
+  }, { actualMicroUsd: 0n });
 
   // 6a) Canned response short-circuit (no upstream call)
   if (enforce.kind === "canned") {
@@ -104,9 +121,8 @@ export async function POST(request: NextRequest) {
         content: enforce.text,
       });
       // Record usage (cost = 0, status = canned) async so we don't block
-      void recordUsageAndDeduct({
-        userId: auth.user.id,
-        apiKeyId: auth.apiKey.id,
+    billingState.canRelease = false;
+    await finalizeBilling(reservationId, {
         modelId: model.id,
         modelPublicId: model.publicId,
         apiFormat: "openai",
@@ -119,16 +135,15 @@ export async function POST(request: NextRequest) {
         latencyMs: Date.now() - startMs,
         clientIp,
         model,
-      }).catch(() => {});
+      }, { actualMicroUsd: 0n });
       return new Response(stream, { status: 200, headers: SSE_HEADERS });
     }
     const resp = buildCannedCompletionResponse({
       model: model.publicId,
       content: enforce.text,
     });
-    void recordUsageAndDeduct({
-      userId: auth.user.id,
-      apiKeyId: auth.apiKey.id,
+    billingState.canRelease = false;
+    await finalizeBilling(reservationId, {
       modelId: model.id,
       modelPublicId: model.publicId,
       apiFormat: "openai",
@@ -141,7 +156,7 @@ export async function POST(request: NextRequest) {
       latencyMs: Date.now() - startMs,
       clientIp,
       model,
-    }).catch(() => {});
+    }, { actualMicroUsd: 0n });
     return NextResponse.json(resp);
   }
 
@@ -162,22 +177,29 @@ export async function POST(request: NextRequest) {
       auth,
       model,
       body: upstreamBody,
+      reservationId,
+      billingState,
+      requestId,
       startMs,
       clientIp,
     });
   }
   const resp = await handleNonStream({
+    request,
     auth,
     model,
     body: upstreamBody,
+    reservationId,
+    billingState,
+    requestId,
     startMs,
     clientIp,
   });
   return resp;
   } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    console.error("[POST /v1/chat/completions]", msg);
-    return openaiErrorResponse(500, msg);
+    if (releaseReservation && billingState.canRelease) await releaseReservation();
+    console.error(`[${requestId}] [POST /v1/chat/completions]`, err);
+    return openaiErrorResponse(500, internalErrorMessage(500), undefined, undefined, requestId);
   }
 }
 
@@ -186,27 +208,31 @@ export async function POST(request: NextRequest) {
 /* -------------------------------------------------------------------------- */
 
 async function handleNonStream(params: {
+  request: NextRequest;
   auth: Extract<Awaited<ReturnType<typeof authenticateApiKey>>, { ok: true }>;
   model: Model;
   body: OpenAIChatBody;
+  reservationId: string;
+  billingState: { canRelease: boolean };
+  requestId: string;
   startMs: number;
   clientIp: string | null;
 }) {
-  const { auth, model, body, startMs, clientIp } = params;
+  const { model, body, reservationId, billingState, requestId, startMs, clientIp } = params;
   try {
     const upstream = await callUpstream({
       path: "/chat/completions",
       body,
       stream: false,
+      signal: params.request.signal,
     });
 
     const usage = extractUsageFromResponse(upstream.json);
 
     // Meter even on upstream errors (cost will be 0 since usage = 0).
     const isOk = upstream.status >= 200 && upstream.status < 300;
-    void recordUsageAndDeduct({
-        userId: auth.user.id,
-        apiKeyId: auth.apiKey.id,
+    billingState.canRelease = false;
+    await finalizeBilling(reservationId, {
         modelId: model.id,
         modelPublicId: model.publicId,
         apiFormat: "openai",
@@ -222,18 +248,13 @@ async function handleNonStream(params: {
         latencyMs: Date.now() - startMs,
         clientIp,
         model,
-      }).catch(() => {});
+      });
 
     if (!isOk) {
       // Translate upstream error into an OpenAI-style error for the client.
-      const err = upstream.json as
-        | { error?: { message?: string; type?: string; code?: string } }
-        | { raw?: string };
-      const message =
-        (err as { error?: { message?: string } })?.error?.message ??
-        (err as { raw?: string })?.raw?.slice(0, 500) ??
-        `Upstream returned ${upstream.status}`;
-      return openaiErrorResponse(upstream.status, message);
+      if (upstream.status >= 500) console.error(`[${requestId}] [POST /v1/chat/completions upstream ${upstream.status}]`, upstream.json);
+      const safeMessage = safeUpstreamMessage(upstream.status, upstream.json);
+      return openaiErrorResponse(upstream.status >= 500 || !safeMessage ? 502 : upstream.status, safeMessage ?? internalErrorMessage(502), undefined, undefined, safeMessage ? undefined : requestId);
     }
 
     return NextResponse.json(upstream.json, {
@@ -243,9 +264,27 @@ async function handleNonStream(params: {
       },
     });
   } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    console.error("[handleNonStream catch]", msg);
-    return openaiErrorResponse(502, msg);
+    if (!billingState.canRelease) {
+      console.error(`[${requestId}] [POST /v1/chat/completions billing]`, err);
+      return openaiErrorResponse(500, internalErrorMessage(500), undefined, undefined, requestId);
+    }
+    await finalizeBilling(reservationId, {
+      modelId: model.id,
+      modelPublicId: model.publicId,
+      apiFormat: "openai",
+      endpoint: "chat.completions",
+      streamed: false,
+      promptTokens: 0,
+      completionTokens: 0,
+      status: "error",
+      httpStatus: 502,
+      errorMessage: err instanceof Error ? err.message : String(err),
+      latencyMs: Date.now() - startMs,
+      clientIp,
+      model,
+    });
+    console.error(`[${requestId}] [POST /v1/chat/completions upstream]`, err);
+    return openaiErrorResponse(502, internalErrorMessage(502), undefined, undefined, requestId);
   }
 }
 
@@ -258,10 +297,13 @@ async function handleStream(params: {
   auth: Extract<Awaited<ReturnType<typeof authenticateApiKey>>, { ok: true }>;
   model: Model;
   body: OpenAIChatBody;
+  reservationId: string;
+  billingState: { canRelease: boolean };
+  requestId: string;
   startMs: number;
   clientIp: string | null;
 }) {
-  const { request, auth, model, body, startMs, clientIp } = params;
+  const { request, model, body, reservationId, billingState, requestId, startMs, clientIp } = params;
 
   // Ensure upstream returns a final usage chunk
   const streamBody = ensureStreamUsage(body);
@@ -275,10 +317,23 @@ async function handleStream(params: {
       signal: request.signal,
     });
   } catch (err) {
-    return openaiErrorResponse(
-      502,
-      err instanceof Error ? err.message : "Upstream error",
-    );
+    await finalizeBilling(reservationId, {
+      modelId: model.id,
+      modelPublicId: model.publicId,
+      apiFormat: "openai",
+      endpoint: "chat.completions",
+      streamed: true,
+      promptTokens: 0,
+      completionTokens: 0,
+      status: "error",
+      httpStatus: 502,
+      errorMessage: err instanceof Error ? err.message : "Upstream error",
+      latencyMs: Date.now() - startMs,
+      clientIp,
+      model,
+    });
+    console.error(`[${requestId}] [POST /v1/chat/completions upstream stream]`, err);
+    return openaiErrorResponse(502, internalErrorMessage(502), undefined, undefined, requestId);
   }
 
   // Pass-through the upstream SSE chunks to the client, but intercept the
@@ -287,41 +342,37 @@ async function handleStream(params: {
   const reader = upstream.stream.getReader();
   const decoder = new TextDecoder();
   let sseBuffer = "";
-  let usageRecorded = false;
-
-  function recordFinalUsage() {
-    if (usageRecorded) return;
-    usageRecorded = true;
-    void recordUsageAndDeduct({
-      userId: auth.user.id,
-      apiKeyId: auth.apiKey.id,
+  const settlement = createSettlementController(async (usage: typeof finalUsage) => {
+    await finalizeBilling(reservationId, {
       modelId: model.id,
       modelPublicId: model.publicId,
       apiFormat: "openai",
       endpoint: "chat.completions",
       streamed: true,
-      promptTokens: finalUsage.promptTokens,
-      completionTokens: finalUsage.completionTokens,
-      cacheReadTokens: finalUsage.cacheReadTokens,
-      cacheWriteTokens: finalUsage.cacheWriteTokens,
+      ...usage,
       status: "ok",
       httpStatus: 200,
       latencyMs: Date.now() - startMs,
       clientIp,
       model,
-    }).catch(() => {});
-  }
+    }, { chargeReserved: usage.promptTokens === 0 && usage.completionTokens === 0 });
+  });
+  const recordFinalUsage = () => {
+    billingState.canRelease = false;
+    return settlement.settle({ ...finalUsage });
+  };
 
   const outputStream = new ReadableStream<Uint8Array>({
     async pull(controller) {
       try {
         const { value, done } = await reader.read();
         if (done) {
-          recordFinalUsage();
+          await recordFinalUsage();
           controller.close();
           return;
         }
 
+        await extendBillingLease(reservationId);
         // Decode and parse the chunks so we can capture the final usage.
         sseBuffer += decoder.decode(value, { stream: true });
 
@@ -370,14 +421,16 @@ async function handleStream(params: {
         controller.enqueue(value);
       } catch (err) {
         // FIX #12: Record usage even on stream error.
-        recordFinalUsage();
+        await recordFinalUsage();
         controller.error(err);
       }
     },
-    cancel(reason) {
-      // FIX #12: Client disconnected — still record partial usage.
-      recordFinalUsage();
-      return reader.cancel(reason);
+    async cancel(reason) {
+      const cancelUpstream = reader.cancel(reason);
+      await Promise.allSettled([cancelUpstream, recordFinalUsage()]).then((results) => {
+        const settlementResult = results[1];
+        if (settlementResult.status === "rejected") throw settlementResult.reason;
+      });
     },
   });
 

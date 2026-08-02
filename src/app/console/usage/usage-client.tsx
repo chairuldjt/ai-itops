@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Card,
@@ -270,7 +271,11 @@ export function UsageClient({
                         icon={<BarChart3Icon className="size-7" />}
                         title="No Usage Logs"
                         description="API usage logs will appear here once you start making requests."
-                      />
+                      >
+                        <Button variant="outline" size="sm" render={<Link href="/console/api-keys" />}>
+                          Create an API key
+                        </Button>
+                      </EmptyState>
                     </TableCell>
                   </TableRow>
                 ) : (

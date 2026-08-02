@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { apiKeys, users, type User, type ApiKey } from "@/lib/db/schema";
+import { consumeRateLimit } from "./rate-limit";
 
 /**
  * Hash a raw API key with SHA-256. We never store the raw key.
@@ -10,52 +11,27 @@ export function hashApiKey(raw: string): string {
   return crypto.createHash("sha256").update(raw).digest("hex");
 }
 
-/**
- * Extract the raw API key from the `Authorization: Bearer sk_live_...`
- * header (case-insensitive) or the `?api_key=...` query param.
- */
+export const MAX_RPM_LIMIT = 1_000_000;
+
+export function normalizeRpmLimit(value: unknown): number | null {
+  return typeof value === "number" && Number.isInteger(value) && value >= 1 && value <= MAX_RPM_LIMIT ? value : null;
+}
+
 export function extractApiKey(request: Request): string | null {
-  const auth = request.headers.get("authorization");
-  if (auth && auth.toLowerCase().startsWith("bearer ")) {
-    return auth.slice(7).trim() || null;
-  }
-  const url = new URL(request.url);
-  const q = url.searchParams.get("api_key") ?? url.searchParams.get("key");
-  return q;
+  const match = request.headers.get("authorization")?.match(/^Bearer\s+([^\s]+)$/i);
+  return match?.[1] ?? null;
 }
 
-// FIX #5: In-memory sliding window rate limiter per API key.
-const rateLimitMap = new Map<string, number[]>();
-const RATE_WINDOW_MS = 60_000; // 1 minute window
-
-function checkRateLimit(keyId: string, rpmLimit: number): boolean {
-  const now = Date.now();
-  let timestamps = rateLimitMap.get(keyId);
-  if (!timestamps) {
-    timestamps = [];
-    rateLimitMap.set(keyId, timestamps);
-  }
-  // Purge timestamps outside the window.
-  while (timestamps.length > 0 && timestamps[0] <= now - RATE_WINDOW_MS) {
-    timestamps.shift();
-  }
-  if (timestamps.length >= rpmLimit) {
-    return false; // Rate limit exceeded.
-  }
-  timestamps.push(now);
-  return true;
+export function apiKeyAccessDecision(
+  key: Pick<ApiKey, "enabled" | "expiresAt">,
+  user: Pick<User, "banned" | "banExpires">,
+  now = new Date(),
+): { ok: true } | { ok: false; status: 403; message: string } {
+  if (!key.enabled) return { ok: false, status: 403, message: "API key is disabled" };
+  if (key.expiresAt && key.expiresAt.getTime() <= now.getTime()) return { ok: false, status: 403, message: "API key has expired" };
+  if (user.banned && (!user.banExpires || user.banExpires.getTime() > now.getTime())) return { ok: false, status: 403, message: "User is banned" };
+  return { ok: true };
 }
-
-// Periodically clean up stale entries to prevent memory leak.
-setInterval(() => {
-  const cutoff = Date.now() - RATE_WINDOW_MS;
-  for (const [key, timestamps] of rateLimitMap) {
-    while (timestamps.length > 0 && timestamps[0] <= cutoff) {
-      timestamps.shift();
-    }
-    if (timestamps.length === 0) rateLimitMap.delete(key);
-  }
-}, 60_000);
 
 /**
  * Validate an API key, returning the user + key record if valid.
@@ -71,7 +47,7 @@ export async function authenticateApiKey(
   rawKey: string,
 ): Promise<
   | { ok: true; user: User; apiKey: ApiKey }
-  | { ok: false; status: number; message: string }
+  | { ok: false; status: number; message: string; retryAfterSeconds?: number }
 > {
   if (!rawKey) {
     return { ok: false, status: 401, message: "Missing API key" };
@@ -90,20 +66,15 @@ export async function authenticateApiKey(
   }
   const { key, user } = rows[0];
 
-  if (!key.enabled) {
-    return { ok: false, status: 403, message: "API key is disabled" };
-  }
-  if (key.expiresAt && key.expiresAt.getTime() < Date.now()) {
-    return { ok: false, status: 403, message: "API key has expired" };
-  }
-  if (user.banned) {
-    return { ok: false, status: 403, message: "User is banned" };
-  }
+  const access = apiKeyAccessDecision(key, user);
+  if (!access.ok) return access;
 
-  // FIX #5: Enforce per-key rate limit.
-  if (key.rpmLimit != null && key.rpmLimit > 0) {
-    if (!checkRateLimit(key.id, key.rpmLimit)) {
-      return { ok: false, status: 429, message: "Rate limit exceeded. Try again later." };
+  if (key.rpmLimit != null) {
+    const rpmLimit = normalizeRpmLimit(key.rpmLimit);
+    if (rpmLimit == null) return { ok: false, status: 403, message: "API key rate limit is invalid" };
+    const rate = await consumeRateLimit(key.id, rpmLimit);
+    if (!rate.allowed) {
+      return { ok: false, status: 429, message: "Rate limit exceeded. Try again later.", retryAfterSeconds: rate.retryAfterSeconds };
     }
   }
 

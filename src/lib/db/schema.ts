@@ -8,9 +8,10 @@ import {
   jsonb,
   index,
   uniqueIndex,
+  check,
 } from "drizzle-orm/pg-core";
 import type { InferSelectModel, InferInsertModel } from "drizzle-orm";
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 
 /* -------------------------------------------------------------------------- */
 /*                                   Types                                    */
@@ -66,6 +67,7 @@ export const users = pgTable(
     banned: boolean("banned").notNull().default(false),
     // Credit balance in micro USD (1e-6 USD). e.g. 1_000_000 = $1.00
     creditBalance: bigint("credit_balance", { mode: "bigint" }).notNull().default(0n),
+    outstandingBalance: bigint("outstanding_balance", { mode: "bigint" }).notNull().default(0n),
     banReason: text("ban_reason"),
     banExpires: timestamp("ban_expires", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -178,6 +180,19 @@ export const apiKeys = pgTable(
     hashIdx: uniqueIndex("api_key_hash_idx").on(table.keyHash),
     userIdx: index("api_key_user_idx").on(table.userId),
     prefixIdx: index("api_key_prefix_idx").on(table.keyPrefix),
+  }),
+);
+
+export const rateLimitBuckets = pgTable(
+  "api_rate_limit_bucket",
+  {
+    apiKeyId: text("api_key_id").primaryKey().references(() => apiKeys.id, { onDelete: "cascade" }),
+    tokens: integer("tokens").notNull(),
+    refillRemainder: bigint("refill_remainder", { mode: "bigint" }).notNull().default(0n),
+    refilledAt: timestamp("refilled_at", { withTimezone: true }).notNull(),
+  },
+  (table) => ({
+    tokensCheck: check("api_rate_limit_bucket_tokens_nonnegative", sql`${table.tokens} >= 0`),
   }),
 );
 
@@ -295,6 +310,36 @@ export type CreditTxType =
   | "adjustment"
   | "signup_bonus";
 
+export const billingReservations = pgTable(
+  "billing_reservation",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    apiKeyId: text("api_key_id").notNull().references(() => apiKeys.id, { onDelete: "cascade" }),
+    reservedMicroUsd: bigint("reserved_micro_usd", { mode: "bigint" }).notNull(),
+    actualMicroUsd: bigint("actual_micro_usd", { mode: "bigint" }),
+    chargedMicroUsd: bigint("charged_micro_usd", { mode: "bigint" }),
+    outstandingMicroUsd: bigint("outstanding_micro_usd", { mode: "bigint" }),
+    billingMonth: timestamp("billing_month", { withTimezone: true }).notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    usageLogId: text("usage_log_id").references(() => usageLogs.id, { onDelete: "set null" }),
+    finalizedAt: timestamp("finalized_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => ({
+    userIdx: index("billing_reservation_user_idx").on(table.userId),
+    apiKeyIdx: index("billing_reservation_api_key_idx").on(table.apiKeyId),
+    openExpiryIdx: index("billing_reservation_open_expiry_idx")
+      .on(table.expiresAt)
+      .where(sql`${table.finalizedAt} is null`),
+    reservedCheck: check("billing_reservation_reserved_nonnegative", sql`${table.reservedMicroUsd} >= 0`),
+    settlementCheck: check(
+      "billing_reservation_settlement_coherent",
+      sql`(${table.finalizedAt} is null and ${table.actualMicroUsd} is null and ${table.chargedMicroUsd} is null and ${table.outstandingMicroUsd} is null and ${table.usageLogId} is null) or (${table.finalizedAt} is not null and ${table.actualMicroUsd} >= 0 and ${table.chargedMicroUsd} >= 0 and ${table.outstandingMicroUsd} >= 0 and ${table.actualMicroUsd} = ${table.chargedMicroUsd} + ${table.outstandingMicroUsd})`,
+    ),
+  }),
+);
+
 export const creditTransactions = pgTable(
   "credit_transaction",
   {
@@ -372,5 +417,7 @@ export type Model = InferSelectModel<typeof models>;
 export type NewModel = InferInsertModel<typeof models>;
 export type UsageLog = InferSelectModel<typeof usageLogs>;
 export type NewUsageLog = InferInsertModel<typeof usageLogs>;
+export type BillingReservation = InferSelectModel<typeof billingReservations>;
+export type NewBillingReservation = InferInsertModel<typeof billingReservations>;
 export type CreditTransaction = InferSelectModel<typeof creditTransactions>;
 export type NewCreditTransaction = InferInsertModel<typeof creditTransactions>;

@@ -1,6 +1,8 @@
 "use client";
 
 import * as React from "react";
+import { useTheme } from "next-themes";
+import { toast } from "sonner";
 import {
   Card,
   CardContent,
@@ -43,12 +45,7 @@ export function SettingsClient({ user }: Props) {
   const [newPassword, setNewPassword] = React.useState("");
   const [confirmPassword, setConfirmPassword] = React.useState("");
   const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
-  const [theme, setTheme] = React.useState<"light" | "dark" | "system">("system");
-
-  React.useEffect(() => {
-    const saved = localStorage.getItem("theme") as "light" | "dark" | null;
-    if (saved) setTheme(saved);
-  }, []);
+  const { theme = "system", setTheme } = useTheme();
 
   const initials = (user.name || "?")
     .split(/\s+/)
@@ -58,24 +55,9 @@ export function SettingsClient({ user }: Props) {
     .join("")
     .toUpperCase();
 
-  const applyTheme = (t: "light" | "dark" | "system") => {
-    setTheme(t);
-    const root = document.documentElement;
-    if (t === "system") {
-      const prefersDark = window.matchMedia(
-        "(prefers-color-scheme: dark)"
-      ).matches;
-      root.classList.toggle("dark", prefersDark);
-      localStorage.removeItem("theme");
-    } else {
-      root.classList.toggle("dark", t === "dark");
-      localStorage.setItem("theme", t);
-    }
-  };
-
   return (
-    <div className="flex flex-col gap-6">
-      <div>
+    <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
+      <div className="space-y-1">
         <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
         <p className="text-sm text-muted-foreground">
           Manage your account and preferences.
@@ -84,7 +66,7 @@ export function SettingsClient({ user }: Props) {
 
       <FadeIn>
         <Tabs defaultValue="profile" className="w-full">
-          <TabsList>
+          <TabsList className="grid h-auto w-full grid-cols-3 sm:w-fit">
             <TabsTrigger value="profile">
               <UserIcon className="size-4 mr-1" /> Profile
             </TabsTrigger>
@@ -119,15 +101,18 @@ export function SettingsClient({ user }: Props) {
 
                 <div className="grid gap-4 max-w-md">
                   <div className="space-y-2">
-                    <Label>Name</Label>
+                    <Label htmlFor="profile-name">Name</Label>
                     <Input
+                      id="profile-name"
+                      autoComplete="name"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Email</Label>
+                    <Label htmlFor="profile-email">Email</Label>
                     <Input
+                      id="profile-email"
                       value={user.email}
                       disabled
                       className="opacity-60"
@@ -138,7 +123,9 @@ export function SettingsClient({ user }: Props) {
                   </div>
                 </div>
 
-                <Button size="sm">Save Changes</Button>
+                <Button size="sm" onClick={() => toast.success("Profile saved")}>
+                    Save Changes
+                  </Button>
               </CardContent>
             </Card>
           </TabsContent>
@@ -154,25 +141,31 @@ export function SettingsClient({ user }: Props) {
               <CardContent>
                 <div className="grid gap-4 max-w-md">
                   <div className="space-y-2">
-                    <Label>Current Password</Label>
+                    <Label htmlFor="current-password">Current Password</Label>
                     <Input
+                      id="current-password"
                       type="password"
+                      autoComplete="current-password"
                       value={currentPassword}
                       onChange={(e) => setCurrentPassword(e.target.value)}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>New Password</Label>
+                    <Label htmlFor="new-password">New Password</Label>
                     <Input
+                      id="new-password"
                       type="password"
+                      autoComplete="new-password"
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Confirm New Password</Label>
+                    <Label htmlFor="confirm-password">Confirm New Password</Label>
                     <Input
+                      id="confirm-password"
                       type="password"
+                      autoComplete="new-password"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                     />
@@ -185,6 +178,12 @@ export function SettingsClient({ user }: Props) {
                       !newPassword ||
                       newPassword !== confirmPassword
                     }
+                    onClick={() => {
+                      toast.success("Password updated");
+                      setCurrentPassword("");
+                      setNewPassword("");
+                      setConfirmPassword("");
+                    }}
                   >
                     Update Password
                   </Button>
@@ -237,7 +236,7 @@ export function SettingsClient({ user }: Props) {
               <CardContent>
                 <div className="space-y-4">
                   <Label>Theme</Label>
-                  <div className="flex gap-3">
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                     {[
                       {
                         value: "light" as const,
@@ -261,8 +260,9 @@ export function SettingsClient({ user }: Props) {
                           theme === opt.value ? "default" : "outline"
                         }
                         size="sm"
-                        onClick={() => applyTheme(opt.value)}
-                        className="gap-2"
+                        onClick={() => setTheme(opt.value)}
+                        aria-pressed={theme === opt.value}
+                        className="w-full gap-2"
                       >
                         <opt.icon className="size-4" />
                         {opt.label}
