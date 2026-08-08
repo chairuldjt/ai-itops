@@ -56,21 +56,23 @@ async function main() {
     .where(eq(apiKeys.keyPrefix, prefix))
     .limit(1);
   if (existingKey.length === 0) {
-    const { key, prefix: keyPrefix } = generateApiKey();
-    // Override the prefix so we can document a stable key for testing.
+    const { key } = generateApiKey();
     const keyHash = hashApiKey(key);
+    // Store the stable `sk_live_demo` prefix (not the random generated one) so
+    // the existence check above matches on subsequent runs and we don't create
+    // a new demo key on every deploy. The raw key stays random and is shown once.
     await db.insert(apiKeys).values({
       id: createId("key"),
       userId: user.id,
       name: "demo-key",
       keyHash,
-      keyPrefix,
+      keyPrefix: prefix,
       enabled: true,
     });
     console.log(`✓ Demo API key created: ${key}`);
     console.log("  (copy this — it's only shown once)");
   } else {
-    console.log("• Demo API key already exists (see earlier output for value)");
+    console.log("• Demo API key already exists (raw key shown only at first creation)");
   }
 
   // ---- Demo models (mapped to 9router's actual mimo models)
