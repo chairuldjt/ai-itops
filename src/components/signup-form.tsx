@@ -60,8 +60,10 @@ export function SignupForm({
       toast.error(res.error.message ?? "Could not create account");
       return;
     }
-    toast.success("Account created! Redirecting…");
-    router.push("/console/dashboard");
+    toast.success("Account created! Enter the code we emailed you.");
+    // Email verification is required — the OTP was sent automatically on
+    // sign-up. Continue to the verification step (no session exists yet).
+    router.push(`/verify-email?email=${encodeURIComponent(data.email)}`);
     router.refresh();
   };
 

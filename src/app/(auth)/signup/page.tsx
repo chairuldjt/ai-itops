@@ -1,8 +1,10 @@
 import { Suspense } from "react";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { SignupForm } from "@/components/signup-form";
 import type { Metadata } from "next";
 import { WorkflowIcon } from "lucide-react";
+import { getSession } from "@/lib/auth/session";
 
 export const metadata: Metadata = {
   title: "Sign up — AI Gateway",
@@ -10,7 +12,10 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
-export default function SignupPage() {
+export default async function SignupPage() {
+  const session = await getSession();
+  if (session?.user) redirect("/console/dashboard");
+
   return (
     <div className="flex min-h-svh flex-col items-center justify-center bg-muted p-6 md:p-10">
       {/* Logo link back to home */}

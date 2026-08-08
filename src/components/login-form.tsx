@@ -7,7 +7,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { signInAndSetRoleCookie } from "@/lib/auth/client";
+import { signInAndSetRoleCookie, isSafeRedirect } from "@/lib/auth/client";
 import { AuthBrandPanel } from "@/components/auth-brand-panel";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -29,7 +29,9 @@ type FormData = z.infer<typeof schema>;
 export function LoginForm({ className, ...props }: React.ComponentProps<"div">) {
   const router = useRouter();
   const sp = useSearchParams();
-  const redirect = sp.get("redirect") || "/console/dashboard";
+  // Only allow relative, same-site redirect targets (open-redirect protection).
+  const rawRedirect = sp.get("redirect");
+  const redirect = isSafeRedirect(rawRedirect) ? rawRedirect : "/console/dashboard";
   const [loading, setLoading] = useState(false);
 
   const {
@@ -46,7 +48,14 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
     });
     setLoading(false);
     if (res.error) {
-      toast.error(res.error.message ?? "Invalid email or password");
+      const msg = res.error.message ?? "";
+      // Registration requires a verified email — route users to the OTP step.
+      if (msg.toUpperCase().includes("EMAIL_NOT_VERIFIED")) {
+        toast.error("Please verify your email before logging in.");
+        router.push(`/verify-email?email=${encodeURIComponent(data.email)}`);
+        return;
+      }
+      toast.error(msg || "Invalid email or password");
       return;
     }
     toast.success("Welcome back!");
@@ -87,7 +96,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
                 <div className="flex items-center">
                   <FieldLabel htmlFor="password">Password</FieldLabel>
                     <Link
-                      href="/docs/faq"
+                      href="/forgot-password"
                       className="ml-auto text-sm underline-offset-2 hover:underline"
                     >
                       Forgot?

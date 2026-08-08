@@ -20,13 +20,14 @@ import {
 } from "@/components/ui/avatar";
 import { PageHeader } from "@/components/layout/page-header";
 import { FadeIn } from "@/components/motion";
-import { updateUser, changePassword, useSession } from "@/lib/auth/client";
+import { updateUser, requestPasswordReset, useSession } from "@/lib/auth/client";
 import {
   UserIcon,
   ShieldIcon,
   UploadIcon,
   Trash2Icon,
   Loader2,
+  MailIcon,
 } from "lucide-react";
 
 type Props = {
@@ -42,10 +43,8 @@ export function SettingsClient({ user }: Props) {
   const [name, setName] = React.useState(user.name);
   const [savingProfile, setSavingProfile] = React.useState(false);
 
-  const [currentPassword, setCurrentPassword] = React.useState("");
-  const [newPassword, setNewPassword] = React.useState("");
-  const [confirmPassword, setConfirmPassword] = React.useState("");
-  const [savingPassword, setSavingPassword] = React.useState(false);
+  const [sendingResetLink, setSendingResetLink] = React.useState(false);
+  const [resetLinkSent, setResetLinkSent] = React.useState(false);
 
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [uploadingAvatar, setUploadingAvatar] = React.useState(false);
@@ -128,34 +127,27 @@ export function SettingsClient({ user }: Props) {
     router.refresh();
   };
 
-  const savePassword = async () => {
-    if (!currentPassword || !newPassword) {
-      toast.error("Fill in your current and new password");
-      return;
-    }
-    if (newPassword.length < 8) {
-      toast.error("New password must be at least 8 characters");
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      toast.error("New passwords do not match");
-      return;
-    }
-    setSavingPassword(true);
-    const res = await changePassword({
-      currentPassword,
-      newPassword,
-      revokeOtherSessions: false,
+  /**
+   * Professional password change: instead of accepting a new password inline,
+   * email a single-use confirmation link to the account's address. The user
+   * opens the link and sets a new password there — this proves inbox control
+   * and revokes all other sessions on completion.
+   */
+  const sendPasswordResetLink = async () => {
+    if (sendingResetLink) return;
+    setSendingResetLink(true);
+    const redirectTo = `${window.location.origin}/reset-password`;
+    const res = await requestPasswordReset({
+      email: user.email,
+      redirectTo,
     });
-    setSavingPassword(false);
+    setSendingResetLink(false);
     if (res.error) {
-      toast.error(res.error.message ?? "Could not change password");
+      toast.error(res.error.message ?? "Could not send the confirmation link");
       return;
     }
-    toast.success("Password updated");
-    setCurrentPassword("");
-    setNewPassword("");
-    setConfirmPassword("");
+    setResetLinkSent(true);
+    toast.success(`Confirmation link sent to ${user.email}`);
   };
 
   return (
@@ -259,47 +251,62 @@ export function SettingsClient({ user }: Props) {
               Security
             </CardTitle>
             <CardDescription>
-              Update your password to keep your account secure.
+              Keep your account secure. Password changes are confirmed by email.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid gap-4 max-w-md">
-              <div className="space-y-2">
-                <Label htmlFor="current-password">Current Password</Label>
-                <Input
-                  id="current-password"
-                  type="password"
-                  autoComplete="current-password"
-                  value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
-                />
+              <div className="rounded-lg border bg-muted/40 p-4">
+                <div className="flex items-center gap-2 text-sm font-medium">
+                  <MailIcon className="size-4 text-primary" aria-hidden="true" />
+                  Change password
+                </div>
+                <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+                  For your protection, we&apos;ll email a single-use
+                  confirmation link to{" "}
+                  <span className="font-medium text-foreground">
+                    {user.email}
+                  </span>
+                  . Open it to choose a new password. All other sessions are
+                  signed out when the password changes.
+                </p>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="new-password">New Password</Label>
-                <Input
-                  id="new-password"
-                  type="password"
-                  autoComplete="new-password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="confirm-password">Confirm New Password</Label>
-                <Input
-                  id="confirm-password"
-                  type="password"
-                  autoComplete="new-password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                />
-              </div>
-              <div>
-                <Button size="sm" onClick={savePassword} disabled={savingPassword}>
-                  {savingPassword && <Loader2 className="size-4 mr-1.5 animate-spin" />}
-                  Update Password
-                </Button>
-              </div>
+
+              {resetLinkSent ? (
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <span className="flex size-2 rounded-full bg-emerald-500" aria-hidden="true" />
+                    Link sent — check your inbox (and spam folder). It expires
+                    in 60 minutes.
+                  </div>
+                  <div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={sendPasswordResetLink}
+                      disabled={sendingResetLink}
+                    >
+                      {sendingResetLink && (
+                        <Loader2 className="size-4 mr-1.5 animate-spin" />
+                      )}
+                      Send again
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <Button
+                    size="sm"
+                    onClick={sendPasswordResetLink}
+                    disabled={sendingResetLink}
+                  >
+                    {sendingResetLink && (
+                      <Loader2 className="size-4 mr-1.5 animate-spin" />
+                    )}
+                    Email me a reset link
+                  </Button>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>

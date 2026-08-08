@@ -1,23 +1,23 @@
-import { Suspense } from "react";
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { LoginForm } from "@/components/login-form";
 import type { Metadata } from "next";
 import { WorkflowIcon } from "lucide-react";
-import { getSession } from "@/lib/auth/session";
+import { VerifyEmailForm } from "@/components/verify-email-form";
 
 export const metadata: Metadata = {
-  title: "Log in — AI Gateway",
+  title: "Verify your email — AI Gateway",
 };
 
-// Don't prerender — the page uses better-auth which needs runtime env.
 export const dynamic = "force-dynamic";
 
-export default async function LoginPage() {
-  // Already authenticated? Keep users out of the login form (also prevents
-  // re-login phishing surfaces on the real domain).
-  const session = await getSession();
-  if (session?.user) redirect("/console/dashboard");
+export default async function VerifyEmailPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ email?: string }>;
+}) {
+  const { email } = await searchParams;
+  // Only forward a plausibly-valid email; anything else lets the user retype.
+  const initialEmail =
+    email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? email : "";
 
   return (
     <div className="flex min-h-svh flex-col items-center justify-center bg-muted p-6 md:p-10">
@@ -36,9 +36,7 @@ export default async function LoginPage() {
       </div>
 
       <div className="w-full max-w-sm md:max-w-4xl">
-        <Suspense>
-          <LoginForm />
-        </Suspense>
+        <VerifyEmailForm initialEmail={initialEmail} />
       </div>
     </div>
   );

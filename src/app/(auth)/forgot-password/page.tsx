@@ -1,24 +1,15 @@
-import { Suspense } from "react";
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { LoginForm } from "@/components/login-form";
 import type { Metadata } from "next";
 import { WorkflowIcon } from "lucide-react";
-import { getSession } from "@/lib/auth/session";
+import { ForgotPasswordForm } from "@/components/forgot-password-form";
 
 export const metadata: Metadata = {
-  title: "Log in — AI Gateway",
+  title: "Reset your password — AI Gateway",
 };
 
-// Don't prerender — the page uses better-auth which needs runtime env.
 export const dynamic = "force-dynamic";
 
-export default async function LoginPage() {
-  // Already authenticated? Keep users out of the login form (also prevents
-  // re-login phishing surfaces on the real domain).
-  const session = await getSession();
-  if (session?.user) redirect("/console/dashboard");
-
+export default function ForgotPasswordPage() {
   return (
     <div className="flex min-h-svh flex-col items-center justify-center bg-muted p-6 md:p-10">
       {/* Logo link back to home */}
@@ -36,9 +27,7 @@ export default async function LoginPage() {
       </div>
 
       <div className="w-full max-w-sm md:max-w-4xl">
-        <Suspense>
-          <LoginForm />
-        </Suspense>
+        <ForgotPasswordForm />
       </div>
     </div>
   );
