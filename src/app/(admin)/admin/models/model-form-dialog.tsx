@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
 import type { Model } from "@/lib/db/schema";
+import { PROVIDERS } from "@/lib/providers";
 import {
   createModel,
   updateModel,
@@ -168,6 +169,19 @@ export function ModelFormDialog({
   const isTokenModel = modelType === "chat";
   const tagsStr = form.watch("tags").join(", ");
 
+  // Provider options: the canonical list, plus any legacy value already stored
+  // on this model so it stays selectable/editable.
+  const providerOptions = React.useMemo(() => {
+    const current = model?.provider?.trim();
+    if (
+      current &&
+      !PROVIDERS.some((p) => p.value.toLowerCase() === current.toLowerCase())
+    ) {
+      return [...PROVIDERS, { value: current, label: current, slug: "", color: false }];
+    }
+    return PROVIDERS;
+  }, [model?.provider]);
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger
@@ -223,8 +237,23 @@ export function ModelFormDialog({
                   </Select>
                 </Field>
                 <Field>
-                  <FieldLabel>Provider label</FieldLabel>
-                  <Input {...form.register("provider")} placeholder="OpenAI" />
+                  <FieldLabel>Provider</FieldLabel>
+                  <Select
+                    value={form.watch("provider") || ""}
+                    onValueChange={(v) => form.setValue("provider", v ?? undefined)}
+                  >
+                    <SelectTrigger><SelectValue placeholder="Select provider" /></SelectTrigger>
+                    <SelectContent>
+                      {providerOptions.map((p) => (
+                        <SelectItem key={p.value} value={p.value}>
+                          {p.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FieldDescription>
+                    Determines the official logo shown on the model catalog.
+                  </FieldDescription>
                 </Field>
                 <Field className="col-span-2">
                   <FieldLabel>Description</FieldLabel>

@@ -6,6 +6,8 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { IconSwap } from "@/components/motion";
 import { Badge } from "@/components/ui/badge";
+import { ProviderLogo } from "@/components/provider-logo";
+import { providerLogoSrc } from "@/lib/providers";
 import {
   BotIcon,
   ImageIcon,
@@ -14,6 +16,10 @@ import {
   SparklesIcon,
   CopyIcon,
   CheckIcon,
+  WrenchIcon,
+  BracesIcon,
+  RadioIcon,
+  LayersIcon,
 } from "lucide-react";
 
 export interface ModelCardData {
@@ -86,6 +92,15 @@ function buildPriceRows(m: ModelCardData): PriceRow[] {
   return rows;
 }
 
+/** Format a token count for display (e.g. 131072 -> "128K", 1000000 -> "1M"). */
+function formatContextTokens(n: number): string {
+  if (n >= 1_048_576 && n % 1_048_576 === 0) return `${n / 1_048_576}M`;
+  if (n >= 1024 && n % 1024 === 0) return `${n / 1024}K`;
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1_000) return `${Math.round(n / 1_000)}K`;
+  return `${n}`;
+}
+
 /**
  * TokenRouter-style pricing card.
  * Header (icon + name + copy), price rows, description, footer tags.
@@ -96,6 +111,19 @@ export function ModelCard({ model }: { model: ModelCardData }) {
   const iconColor = TYPE_ICON_COLOR[model.type] ?? "text-primary";
   const priceRows = buildPriceRows(model);
   const isUnit = model.type !== "chat" && model.pricing?.perUnit != null;
+  const hasProviderLogo = Boolean(providerLogoSrc(model.provider));
+
+  // Capability icons (logo only) + max context window.
+  const caps = model.capabilities ?? {};
+  const capIcons = [
+    caps.supportsImageInput ? { icon: ImageIcon, label: "Vision (image input)" } : null,
+    caps.supportsAudioInput ? { icon: MicIcon, label: "Audio input" } : null,
+    caps.supportsTools ? { icon: WrenchIcon, label: "Tools / function calling" } : null,
+    caps.supportsJson ? { icon: BracesIcon, label: "JSON mode" } : null,
+    caps.supportsStreaming ? { icon: RadioIcon, label: "Streaming" } : null,
+  ].filter(Boolean) as { icon: React.ElementType; label: string }[];
+  const contextTokens = Number(caps.maxContextTokens ?? 0) || 0;
+  const contextLabel = contextTokens > 0 ? formatContextTokens(contextTokens) : null;
 
   const copyId = () => {
     navigator.clipboard.writeText(model.publicId).then(() => {
@@ -118,7 +146,11 @@ export function ModelCard({ model }: { model: ModelCardData }) {
       <div className="flex items-center justify-between gap-3">
         <div className="flex min-w-0 flex-1 items-center gap-2.5">
           <div className="flex size-[42px] shrink-0 items-center justify-center rounded-[10px] border border-border bg-muted/40">
-            <Icon className={cn("size-5", iconColor)} aria-hidden="true" />
+            {hasProviderLogo ? (
+              <ProviderLogo provider={model.provider} size={24} />
+            ) : (
+              <Icon className={cn("size-5", iconColor)} aria-hidden="true" />
+            )}
           </div>
           <div className="min-w-0 flex-1">
             <h3
@@ -176,6 +208,31 @@ export function ModelCard({ model }: { model: ModelCardData }) {
           {model.description || ""}
         </p>
       </div>
+
+      {/* Capability icons + max context window */}
+      {(capIcons.length > 0 || contextLabel) && (
+        <div className="mb-3 flex flex-wrap items-center gap-1.5">
+          {capIcons.map((c) => (
+            <span
+              key={c.label}
+              title={c.label}
+              className="flex size-6 items-center justify-center rounded-md border border-border bg-muted/40 text-muted-foreground"
+            >
+              <c.icon className="size-3.5" aria-hidden="true" />
+              <span className="sr-only">{c.label}</span>
+            </span>
+          ))}
+          {contextLabel && (
+            <span
+              title={`Max context window: ${contextLabel} tokens`}
+              className="flex h-6 items-center gap-1 rounded-md border border-border bg-muted/40 px-1.5 text-[11px] font-medium text-muted-foreground tabular-nums"
+            >
+              <LayersIcon className="size-3" aria-hidden="true" />
+              {contextLabel}
+            </span>
+          )}
+        </div>
+      )}
 
       {/* Footer: billing tag + type tag */}
       <div className="mt-auto flex items-center justify-between">
