@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+import { cn, formatTokenPrice } from "@/lib/utils";
 import { IconSwap } from "@/components/motion";
 import { Badge } from "@/components/ui/badge";
 import { ProviderLogo } from "@/components/provider-logo";
@@ -74,20 +74,22 @@ interface PriceRow {
 
 function buildPriceRows(m: ModelCardData): PriceRow[] {
   const p = m.pricing ?? {};
+  const caps = m.capabilities ?? {};
   const rows: PriceRow[] = [];
   if (p.per1MInput != null) {
-    rows.push({ label: "Input", price: `$${p.per1MInput.toFixed(2)}`, unit: "/ 1M tokens" });
+    rows.push({ label: "Input", price: `$${formatTokenPrice(p.per1MInput)}`, unit: "/ 1M tokens" });
   }
   if (p.per1MOutput != null) {
-    rows.push({ label: "Output", price: `$${p.per1MOutput.toFixed(2)}`, unit: "/ 1M tokens" });
+    rows.push({ label: "Output", price: `$${formatTokenPrice(p.per1MOutput)}`, unit: "/ 1M tokens" });
   }
   // Cached prompt tokens — unified rate, with a legacy split-rate fallback.
+  // Only shown when the model actually supports prompt caching.
   const cachedRate = p.per1MCached ?? p.per1MCacheRead ?? p.per1MCacheWrite;
-  if (m.type === "chat" && cachedRate != null) {
-    rows.push({ label: "Cached", price: `$${cachedRate.toFixed(2)}`, unit: "/ 1M tokens" });
+  if (m.type === "chat" && cachedRate != null && caps.supportsCache !== false) {
+    rows.push({ label: "Cached", price: `$${formatTokenPrice(cachedRate)}`, unit: "/ 1M tokens" });
   }
   if (m.type !== "chat" && p.perUnit != null) {
-    rows.push({ label: "Price", price: `$${p.perUnit.toFixed(4)}`, unit: "/ unit" });
+    rows.push({ label: "Price", price: `$${formatTokenPrice(p.perUnit)}`, unit: "/ unit" });
   }
   return rows;
 }

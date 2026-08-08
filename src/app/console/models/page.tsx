@@ -38,7 +38,11 @@ export default async function ConsoleModelsPage() {
         },
         capabilities: (m.capabilities ?? {}) as {
           supportsImageInput?: boolean;
+          supportsAudioInput?: boolean;
+          supportsTools?: boolean;
+          supportsJson?: boolean;
           supportsStreaming?: boolean;
+          supportsCache?: boolean;
           maxContextTokens?: number;
         },
         tags: m.tags ?? [],

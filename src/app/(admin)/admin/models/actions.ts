@@ -27,6 +27,7 @@ const CapabilitiesSchema = z.object({
   supportsTools: z.boolean().optional(),
   supportsJson: z.boolean().optional(),
   supportsStreaming: z.boolean().optional(),
+  supportsCache: z.boolean().optional(),
   maxContextTokens: z.number().int().min(0).optional(),
 });
 

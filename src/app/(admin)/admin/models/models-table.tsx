@@ -21,6 +21,7 @@ import {
   toggleModelEnabled,
 } from "@/app/(admin)/admin/models/actions";
 import { ModelFormDialog } from "./model-form-dialog";
+import { formatTokenPrice } from "@/lib/utils";
 import { PencilIcon, Trash2Icon, SearchIcon } from "lucide-react";
 
 export function ModelsTable({ initialModels }: { initialModels: Model[] }) {
@@ -135,15 +136,19 @@ export function ModelsTable({ initialModels }: { initialModels: Model[] }) {
               </TableCell>
               <TableCell className="text-xs font-mono">
                 {p.per1MInput != null && (
-                  <div>in: ${p.per1MInput.toFixed(2)}</div>
+                  <div>in: ${formatTokenPrice(p.per1MInput)}</div>
                 )}
                 {p.per1MOutput != null && (
-                  <div>out: ${p.per1MOutput.toFixed(2)}</div>
+                  <div>out: ${formatTokenPrice(p.per1MOutput)}</div>
                 )}
-                {m.type === "chat" && p.per1MCached != null && (
-                  <div>cache: ${p.per1MCached.toFixed(2)}</div>
+                {m.type === "chat" &&
+                  p.per1MCached != null &&
+                  m.capabilities?.supportsCache !== false && (
+                    <div>cache: ${formatTokenPrice(p.per1MCached)}</div>
+                  )}
+                {m.type !== "chat" && p.perUnit != null && (
+                  <div>unit: ${formatTokenPrice(p.perUnit)}</div>
                 )}
-                {m.type !== "chat" && p.perUnit != null && <div>unit: ${p.perUnit.toFixed(4)}</div>}
               </TableCell>
               <TableCell className="text-xs">
                 <div className="flex flex-wrap gap-1">

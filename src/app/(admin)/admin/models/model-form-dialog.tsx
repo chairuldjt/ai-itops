@@ -64,6 +64,7 @@ const Schema = z.object({
     supportsTools: z.boolean(),
     supportsJson: z.boolean(),
     supportsStreaming: z.boolean(),
+    supportsCache: z.boolean(),
     maxContextTokens: z.coerce.number().int().min(0).optional(),
   }),
   imagePolicy: z.enum(["strip_and_instruct", "canned_response", "reject_error"]),
@@ -111,6 +112,14 @@ export function ModelFormDialog({
             supportsTools: Boolean(model.capabilities?.supportsTools),
             supportsJson: Boolean(model.capabilities?.supportsJson),
             supportsStreaming: model.capabilities?.supportsStreaming ?? true,
+            // Infer for legacy rows: if a cached rate exists, cache is supported.
+            supportsCache:
+              model.capabilities?.supportsCache ??
+              Boolean(
+                model.pricing?.per1MCached ??
+                  model.pricing?.per1MCacheRead ??
+                  model.pricing?.per1MCacheWrite,
+              ),
             maxContextTokens: model.capabilities?.maxContextTokens ?? 0,
           },
           imagePolicy: model.imagePolicy,
@@ -126,13 +135,14 @@ export function ModelFormDialog({
           type: "chat",
           description: "",
           provider: "",
-          pricing: { per1MInput: 0, per1MOutput: 0, perUnit: 0 },
+          pricing: { per1MInput: 0, per1MOutput: 0, per1MCached: 0, perUnit: 0 },
           capabilities: {
             supportsImageInput: false,
             supportsAudioInput: false,
             supportsTools: true,
             supportsJson: false,
             supportsStreaming: true,
+            supportsCache: false,
           },
           imagePolicy: "strip_and_instruct",
           cannedResponseText: "",
@@ -144,8 +154,15 @@ export function ModelFormDialog({
   });
 
   const onSubmit = async (values: z.infer<typeof Schema>) => {
+    // If the model doesn't support prompt cache, drop any cached rate so it is
+    // neither billed nor displayed.
+    const pricing = { ...values.pricing };
+    if (!values.capabilities.supportsCache) {
+      pricing.per1MCached = undefined;
+    }
     const payload: ModelFormInput = {
       ...values,
+      pricing,
       description: values.description || undefined,
       provider: values.provider || undefined,
       cannedResponseText: values.cannedResponseText || undefined,
@@ -292,25 +309,40 @@ export function ModelFormDialog({
                   <>
                     <Field>
                       <FieldLabel>Input ($/1M tokens)</FieldLabel>
-                      <Input type="number" step="0.0001" {...form.register("pricing.per1MInput")} />
+                      <Input type="number" step="0.000001" {...form.register("pricing.per1MInput")} />
                     </Field>
                     <Field>
                       <FieldLabel>Output ($/1M tokens)</FieldLabel>
-                      <Input type="number" step="0.0001" {...form.register("pricing.per1MOutput")} />
+                      <Input type="number" step="0.000001" {...form.register("pricing.per1MOutput")} />
+                    </Field>
+                    <Field className="flex flex-row items-center gap-3 col-span-2">
+                      <Switch
+                        checked={form.watch("capabilities.supportsCache")}
+                        onCheckedChange={(v) =>
+                          form.setValue("capabilities.supportsCache", v)
+                        }
+                      />
+                      <FieldLabel>Supports prompt cache</FieldLabel>
                     </Field>
                     <Field>
                       <FieldLabel>Cached tokens ($/1M tokens)</FieldLabel>
-                      <Input type="number" step="0.0001" {...form.register("pricing.per1MCached")} />
+                      <Input
+                        type="number"
+                        step="0.000001"
+                        disabled={!form.watch("capabilities.supportsCache")}
+                        {...form.register("pricing.per1MCached")}
+                      />
                       <FieldDescription>
                         Prompt-cache hits (read &amp; write cache are billed together
-                        as cached tokens).
+                        as cached tokens). Enable &ldquo;Supports prompt cache&rdquo; to
+                        set this.
                       </FieldDescription>
                     </Field>
                   </>
                 ) : (
                   <Field className="col-span-2">
                     <FieldLabel>Per-unit price (per image/request/second)</FieldLabel>
-                    <Input type="number" step="0.0001" {...form.register("pricing.perUnit")} />
+                    <Input type="number" step="0.000001" {...form.register("pricing.perUnit")} />
                   </Field>
                 )}
               </FieldGroup>

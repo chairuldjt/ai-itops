@@ -58,6 +58,8 @@ export interface ModelCapabilities {
   supportsTools?: boolean;
   supportsJson?: boolean;
   supportsStreaming?: boolean;
+  /** Whether the model supports prompt caching (drives cached-token pricing). */
+  supportsCache?: boolean;
   maxContextTokens?: number;
   [key: string]: unknown;
 }
