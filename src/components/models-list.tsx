@@ -21,6 +21,7 @@ const TYPE_MAP: Record<string, string> = {
 };
 
 const SORT_OPTIONS = [
+  { label: "Featured", value: "featured" },
   { label: "Name", value: "name" },
   { label: "Price ↑", value: "price-asc" },
   { label: "Price ↓", value: "price-desc" },
@@ -34,7 +35,7 @@ export function ModelsList({ models }: { models: ModelRow[] }) {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("All");
   const [providerFilter, setProviderFilter] = useState("All");
-  const [sort, setSort] = useState<string>("name");
+  const [sort, setSort] = useState<string>("featured");
 
   const providers = useMemo(
     () => [...new Set(models.map((m) => m.provider).filter(Boolean))].sort(),
@@ -63,12 +64,16 @@ export function ModelsList({ models }: { models: ModelRow[] }) {
       result = result.filter((m) => m.provider === providerFilter);
     }
 
-    result = [...result].sort((a, b) => {
-      if (sort === "name") return a.publicId.localeCompare(b.publicId);
-      const aPrice = a.pricing?.per1MInput ?? a.pricing?.perUnit ?? Infinity;
-      const bPrice = b.pricing?.per1MInput ?? b.pricing?.perUnit ?? Infinity;
-      return sort === "price-asc" ? aPrice - bPrice : bPrice - aPrice;
-    });
+    // "featured" keeps the server-provided order (admin `sortOrder`); the other
+    // options re-sort client-side.
+    if (sort !== "featured") {
+      result = [...result].sort((a, b) => {
+        if (sort === "name") return a.publicId.localeCompare(b.publicId);
+        const aPrice = a.pricing?.per1MInput ?? a.pricing?.perUnit ?? Infinity;
+        const bPrice = b.pricing?.per1MInput ?? b.pricing?.perUnit ?? Infinity;
+        return sort === "price-asc" ? aPrice - bPrice : bPrice - aPrice;
+      });
+    }
 
     return result;
   }, [models, search, typeFilter, providerFilter, sort]);
