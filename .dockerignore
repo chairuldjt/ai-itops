@@ -1,0 +1,20 @@
+# Keep secrets, VCS data, and local artifacts out of image layers.
+.env
+.env.*
+!.env.example
+.git
+.gitignore
+node_modules
+.next
+out
+graphify-out
+analysis_outputs
+*.log
+dev.log
+.vscode
+.claude
+.opencode
+.impeccable
+tsconfig.tsbuildinfo
+Dockerfile
+docker-compose.yml

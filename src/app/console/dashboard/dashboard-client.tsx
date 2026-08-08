@@ -420,10 +420,13 @@ export function DashboardClient({
 
   // Greeting depends on the local clock, so it must not render on the
   // server — otherwise server/client hours can differ and hydration breaks.
-  const [greeting, setGreeting] = React.useState<string | null>(null);
-  React.useEffect(() => {
-    setGreeting(getGreeting());
-  }, []);
+  // useSyncExternalStore returns the server snapshot (null) during SSR and the
+  // real greeting on the client, without a setState-in-effect.
+  const greeting = React.useSyncExternalStore(
+    () => () => {},
+    () => getGreeting(),
+    () => null,
+  );
 
   return (
     <div className="flex flex-col gap-4">

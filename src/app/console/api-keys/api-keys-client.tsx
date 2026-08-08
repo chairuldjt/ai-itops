@@ -65,7 +65,6 @@ import {
 type KeyRow = {
   id: string;
   name: string;
-  keyHash: string;
   keyPrefix: string;
   rpmLimit: number | null;
   monthlyBudget: number | null;
@@ -244,7 +243,6 @@ export function ApiKeysClient({ initialKeys, availableModels }: Props) {
           .map((r) => ({
             id: r.id,
             name: newKeyName.trim(),
-            keyHash: "",
             keyPrefix: r.key.slice(0, 12),
             rpmLimit: null,
             monthlyBudget: budget ? Math.round(budget * 1_000_000) : null,

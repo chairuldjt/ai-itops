@@ -85,18 +85,22 @@ try {
   process.exit(1);
 }
 
-// ── Step 4: Seed demo models (skips if exists) ────────────────
+// ── Step 4: Seed demo models (dev only unless SEED_DEMO=1) ─────
 console.log(`\n📦 Step 4/4: Seeding demo models...`);
-try {
-  execSync("npx tsx src/lib/db/seed-demo.ts", {
-    stdio: "inherit",
-    cwd: process.cwd(),
-    env: { ...process.env, DATABASE_URL },
-  });
-  console.log(`   ✅ Demo models seed done`);
-} catch (err) {
-  // Non-fatal — demo models are optional
-  console.warn(`   ⚠️  Demo seed skipped:`, err.message);
+if (process.env.NODE_ENV === "production" && process.env.SEED_DEMO !== "1") {
+  console.log(`   ⏭️  Skipped in production (set SEED_DEMO=1 to override)`);
+} else {
+  try {
+    execSync("npx tsx src/lib/db/seed-demo.ts", {
+      stdio: "inherit",
+      cwd: process.cwd(),
+      env: { ...process.env, DATABASE_URL },
+    });
+    console.log(`   ✅ Demo models seed done`);
+  } catch (err) {
+    // Non-fatal — demo models are optional
+    console.warn(`   ⚠️  Demo seed skipped:`, err.message);
+  }
 }
 
 console.log(`\n✅ Database initialization complete!\n`);

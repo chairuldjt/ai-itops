@@ -26,6 +26,18 @@ async function main() {
     process.exit(1);
   }
 
+  // Refuse to create a production admin with a well-known weak password.
+  if (process.env.NODE_ENV === "production") {
+    const weak = ["admin123", "change-me-admin-123", "password", "password123"];
+    if (weak.includes(password) || password.length < 12) {
+      console.error(
+        "Refusing to seed admin in production with a weak/known password. " +
+          "Set SEED_ADMIN_PASSWORD to a strong unique value.",
+      );
+      process.exit(1);
+    }
+  }
+
   const existing = await db
     .select()
     .from(users)
@@ -60,7 +72,7 @@ async function main() {
     });
   });
 
-  console.log(`✓ Admin user created: ${email} (password: ${password})`);
+  console.log(`✓ Admin user created: ${email}`);
   process.exit(0);
 }
 

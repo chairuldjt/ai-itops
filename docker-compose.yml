@@ -8,8 +8,10 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: ai_gateway
+    # Bind to loopback only — the app reaches postgres via the compose
+    # network; never expose the DB on all host interfaces.
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -26,11 +28,15 @@ services:
         condition: service_healthy
     environment:
       DATABASE_URL: postgres://postgres:postgres@postgres:5432/ai_gateway
-      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:-change-me-to-a-long-random-secret-at-least-32-chars}
+      # Required — the app refuses to boot in production without a strong,
+      # unique secret (never ship the placeholder).
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?"Set BETTER_AUTH_SECRET to a long random value (>=32 chars)"}
       BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:9003}
       NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:9003}
       UPSTREAM_BASE_URL: ${UPSTREAM_BASE_URL:-http://host.docker.internal:8080/v1}
       UPSTREAM_API_KEY: ${UPSTREAM_API_KEY:-}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      EMAIL_FROM: ${EMAIL_FROM:-AI Gateway <onboarding@resend.dev>}
       SEED_ADMIN_EMAIL: ${SEED_ADMIN_EMAIL:-admin@example.com}
       SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:-change-me-admin-123}
       SEED_ADMIN_NAME: ${SEED_ADMIN_NAME:-Administrator}

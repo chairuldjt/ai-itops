@@ -13,8 +13,21 @@ export default async function ConsoleApiKeysPage() {
   const session = await getSession();
   if (!session?.user) redirect("/login");
 
+  // Select only display fields — never send keyHash to the client.
   const keys = await db
-    .select()
+    .select({
+      id: apiKeys.id,
+      name: apiKeys.name,
+      keyPrefix: apiKeys.keyPrefix,
+      rpmLimit: apiKeys.rpmLimit,
+      monthlyBudget: apiKeys.monthlyBudget,
+      monthlySpent: apiKeys.monthlySpent,
+      allowedModels: apiKeys.allowedModels,
+      enabled: apiKeys.enabled,
+      expiresAt: apiKeys.expiresAt,
+      lastUsedAt: apiKeys.lastUsedAt,
+      createdAt: apiKeys.createdAt,
+    })
     .from(apiKeys)
     .where(eq(apiKeys.userId, session.user.id))
     .orderBy(apiKeys.createdAt);

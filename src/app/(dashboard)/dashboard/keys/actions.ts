@@ -15,8 +15,21 @@ import { hashApiKey, MAX_RPM_LIMIT } from "@/lib/gateway/api-key";
 
 export async function listMyApiKeys() {
   const session = await requireSession();
+  // Project display fields only — keyHash must never leave the server.
   const rows = await db
-    .select()
+    .select({
+      id: apiKeys.id,
+      name: apiKeys.name,
+      keyPrefix: apiKeys.keyPrefix,
+      rpmLimit: apiKeys.rpmLimit,
+      monthlyBudget: apiKeys.monthlyBudget,
+      monthlySpent: apiKeys.monthlySpent,
+      allowedModels: apiKeys.allowedModels,
+      enabled: apiKeys.enabled,
+      expiresAt: apiKeys.expiresAt,
+      lastUsedAt: apiKeys.lastUsedAt,
+      createdAt: apiKeys.createdAt,
+    })
     .from(apiKeys)
     .where(eq(apiKeys.userId, session.user.id))
     .orderBy(apiKeys.createdAt);

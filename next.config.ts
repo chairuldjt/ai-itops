@@ -1,10 +1,42 @@
 import type { NextConfig } from "next";
 
+/**
+ * Security headers applied to every response.
+ *
+ * Note: a strict Content-Security-Policy is intentionally not set here yet —
+ * it requires nonce wiring for inline scripts/styles and must be tuned per
+ * deployment. Tracked as a production-readiness follow-up.
+ */
+const securityHeaders = [
+  { key: "X-Content-Type-Options", value: "nosniff" },
+  { key: "X-Frame-Options", value: "DENY" },
+  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+  {
+    key: "Permissions-Policy",
+    value: "camera=(), geolocation=(), microphone=(), payment=(), usb=()",
+  },
+  // Only honored by browsers over HTTPS; harmless in local dev.
+  {
+    key: "Strict-Transport-Security",
+    value: "max-age=63072000; includeSubDomains",
+  },
+];
+
 const nextConfig: NextConfig = {
   output: "standalone",
+  poweredByHeader: false,
   experimental: {
-    // Useful for streaming route handlers that return ReadableStream.
-    serverActions: { bodySizeLimit: "10mb" },
+    // Avatar uploads are <= 2MB files as base64 (~2.7MB). Keep headroom small.
+    serverActions: { bodySizeLimit: "4mb" },
+  },
+
+  async headers() {
+    return [
+      {
+        source: "/(.*)",
+        headers: securityHeaders,
+      },
+    ];
   },
 
   // Rewrite external-facing gateway URLs to internal Next.js route handlers.

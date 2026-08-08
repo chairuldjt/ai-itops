@@ -5,6 +5,9 @@ const PUBLIC_PATHS = [
   "/",
   "/login",
   "/signup",
+  "/verify-email",
+  "/forgot-password",
+  "/reset-password",
   "/models",
   "/blog",
   "/contact-us",
@@ -12,8 +15,6 @@ const PUBLIC_PATHS = [
   "/docs",
   "/api/auth",
 ];
-
-const ADMIN_PREFIX = "/admin";
 
 // FIX #3: Only match known static file extensions, not any path with a dot.
 const STATIC_EXTENSION_RE = /\.\w{1,10}$/;
@@ -24,20 +25,25 @@ const KNOWN_STATIC_EXTENSIONS = new Set([
   ".xml", ".txt", ".robots",
 ]);
 
+function isAdminPath(pathname: string): boolean {
+  // Exact match so hypothetical routes like "/admin-foo" are not treated as admin.
+  return pathname === "/admin" || pathname.startsWith("/admin/");
+}
+
 /**
- * Middleware — runs in the Edge runtime, so we CANNOT touch the DB.
+ * Proxy (Next.js 16 — formerly `middleware`) — cannot touch the DB here.
  *
  * Strategy:
  *  - If the path is public, pass through.
  *  - Otherwise require a session cookie (presence only).
  *  - For /admin routes, require a second cookie `ba_role=admin` that the
  *    login flow sets via Set-Cookie. We set this in the auth client's
- *    onSuccess hook below.
+ *    onSuccess hook.
  *
  * The actual role check for /admin is also performed server-side in the
  * layout (requireAdmin), so this is just a fast-path redirect.
  */
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Anthropic compatibility has been removed — return a clean 404.
@@ -75,7 +81,7 @@ export async function middleware(request: NextRequest) {
 
   // /admin: require a role cookie (set by the client after successful login).
   // This is a fast edge check; the layout does the authoritative DB check.
-  if (pathname.startsWith(ADMIN_PREFIX)) {
+  if (isAdminPath(pathname)) {
     const role = request.cookies.get("ba_role")?.value;
     if (role !== "admin") {
       const url = request.nextUrl.clone();

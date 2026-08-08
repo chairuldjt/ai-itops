@@ -12,6 +12,14 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Agent worktrees / tooling dirs that shadow the source tree.
+    ".claude/**",
+    ".opencode/**",
+    ".impeccable/**",
+    "node_modules/**",
+    "graphify-out/**",
+    "analysis_outputs/**",
+    "drizzle/**",
   ]),
 ]);
 
