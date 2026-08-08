@@ -1,6 +1,6 @@
 /**
  * Create a demo user + API key + 2 demo models so we can smoke-test the
- * gateway against the real 9router upstream.
+ * gateway against the real upstream.
  *
  * Run:  pnpm tsx src/lib/db/seed-demo.ts
  */
@@ -82,7 +82,7 @@ async function main() {
     console.log("• Demo API key already exists (raw key shown only at first creation)");
   }
 
-  // ---- Demo models (mapped to 9router's actual mimo models)
+  // ---- Demo models (mapped to the upstream's actual mimo models)
   const demoModels = [
     {
       publicId: "demo/mimo-v2.5",

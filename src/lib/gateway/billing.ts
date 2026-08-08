@@ -35,7 +35,7 @@ export type BillingUsage = {
   promptTokens: number;
   completionTokens: number;
   /**
-   * Prompt-cached tokens (read + write combined), as reported by the 9router
+   * Prompt-cached tokens (read + write combined), as reported by the upstream
    * upstream. Billed at the single `per1MCached` rate.
    */
   cachedTokens?: number;
@@ -108,7 +108,7 @@ export function computeActualMicroUsd(params: {
   cachedTokens?: number;
 }): bigint {
   const pricing = params.model.pricing ?? {};
-  // 9router reports `prompt_tokens` cache-inclusively (input + cached), so we
+  // The upstream reports `prompt_tokens` cache-inclusively (input + cached), so we
   // subtract the cached portion to bill the remainder at the input rate, and
   // bill all cached tokens at the single `per1MCached` rate.
   const cachedTokens = Math.max(0, params.cachedTokens ?? 0);

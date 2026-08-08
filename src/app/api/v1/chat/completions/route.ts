@@ -171,7 +171,7 @@ export async function POST(request: NextRequest) {
     enforce.kind === "stripped" ? enforce.body : body;
   const isStream = forwardBody.stream === true;
 
-  // Replace model name with the upstream id so 9router understands it
+  // Replace model name with the upstream id so the upstream understands it
   const upstreamBody: OpenAIChatBody = {
     ...forwardBody,
     model: model.upstreamId,
@@ -427,7 +427,7 @@ async function handleStream(params: {
               finalUsage = {
                 promptTokens: Number(obj.usage.prompt_tokens ?? 0) || 0,
                 completionTokens: Number(obj.usage.completion_tokens ?? 0) || 0,
-                // 9router's "cached tokens" bucket = cache read + cache write.
+                // The upstream's "cached tokens" bucket = cache read + cache write.
                 cachedTokens:
                   (Number(details?.cached_tokens ?? 0) || 0) +
                   (Number(details?.cache_creation_tokens ?? 0) || 0),

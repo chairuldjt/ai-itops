@@ -198,7 +198,7 @@ export function ensureStreamUsage(body: OpenAIChatBody): OpenAIChatBody {
  * Count the last assistant content in a non-streaming response, or return 0.
  * Upstream usually returns a proper `usage` field; this is a fallback.
  *
- * Cached tokens: 9router reports prompt-cache tokens in `prompt_tokens_details`
+ * Cached tokens: the upstream reports prompt-cache tokens in `prompt_tokens_details`
  * (`cached_tokens` = read, `cache_creation_tokens` = write) and treats them as
  * one "cached tokens" bucket. We combine read + write into `cachedTokens`.
  */

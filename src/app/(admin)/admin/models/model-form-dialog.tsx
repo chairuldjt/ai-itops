@@ -205,7 +205,7 @@ export function ModelFormDialog({
                   <FieldDescription>e.g. my-gpt-4o, anthropic/claude-3.5-sonnet</FieldDescription>
                 </Field>
                 <Field>
-                  <FieldLabel>Upstream ID (in 9router)</FieldLabel>
+                  <FieldLabel>Upstream model ID</FieldLabel>
                   <Input {...form.register("upstreamId")} placeholder="gpt-4o" />
                 </Field>
                 <Field>
@@ -273,8 +273,8 @@ export function ModelFormDialog({
                       <FieldLabel>Cached tokens ($/1M tokens)</FieldLabel>
                       <Input type="number" step="0.0001" {...form.register("pricing.per1MCached")} />
                       <FieldDescription>
-                        Prompt-cache hits (9router reports read &amp; write cache
-                        combined as cached tokens).
+                        Prompt-cache hits (read &amp; write cache are billed together
+                        as cached tokens).
                       </FieldDescription>
                     </Field>
                   </>

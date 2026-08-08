@@ -20,7 +20,7 @@ const placeholderPosts = [
   {
     title: "Building a Unified AI Gateway from Scratch",
     description:
-      "Lessons learned from creating a single API endpoint for 300+ LLMs with credit tracking and streaming.",
+      "Lessons learned from creating a single API endpoint for a broad model catalog with credit tracking and streaming.",
     date: "Coming soon",
   },
   {
@@ -30,9 +30,9 @@ const placeholderPosts = [
     date: "Coming soon",
   },
   {
-    title: "One Key, Every Model: Routing with 9router",
+    title: "One Key, Every Model: Unified Routing Explained",
     description:
-      "How a single OpenAI-compatible endpoint fronts your 9router upstream with auto-fallback across providers.",
+      "How a single OpenAI-compatible endpoint routes requests across models with automatic fallback.",
     date: "Coming soon",
   },
 ];

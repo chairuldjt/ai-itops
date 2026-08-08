@@ -1,5 +1,5 @@
 /**
- * Upstream client for 9router (OpenAI-compatible).
+ * Upstream client (OpenAI-compatible).
  *
  * Responsibilities:
  *  - Forward a prepared body to the configured upstream base URL

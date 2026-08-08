@@ -22,7 +22,7 @@ export const metadata: Metadata = {
     template: "%s · AI Gateway",
   },
   description:
-    "A unified AI gateway that exposes an OpenAI-compatible API in front of your own router — centralized credits, usage tracking, and per-key model control.",
+    "A unified AI gateway exposing an OpenAI-compatible API — one key for every model, with centralized credits, usage tracking, and per-key control.",
 };
 
 export default function RootLayout({

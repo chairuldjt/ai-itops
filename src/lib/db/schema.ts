@@ -38,7 +38,7 @@ export interface ModelPricing {
   /**
    * Price per 1M prompt-cached tokens.
    *
-   * Aligned with the 9router upstream, which reports prompt-cache tokens in
+   * Aligned with the upstream, which reports prompt-cache tokens in
    * `usage.prompt_tokens_details` and treats cache read + cache write as a
    * single "cached tokens" bucket (its `prompt_tokens` is cache-inclusive).
    * We therefore bill all cached prompt tokens at one combined rate.
@@ -221,7 +221,7 @@ export const models = pgTable(
     id: text("id").primaryKey(),
     // Public name users see (e.g. "my-gpt-4o"). Used in /v1/models.
     publicId: text("public_id").notNull().unique(),
-    // Actual upstream model name in 9router
+    // Actual upstream model name
     upstreamId: text("upstream_id").notNull(),
     type: text("type").$type<ModelType>().notNull().default("chat"),
     description: text("description"),

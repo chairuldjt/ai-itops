@@ -52,7 +52,7 @@ test("computeSettlementDelta charges excess actual cost", () => {
 });
 
 test("computeActualMicroUsd charges cached prompt tokens exactly once", () => {
-  // prompt is cache-inclusive (9router): 10 = 5 non-cached + 5 cached.
+  // prompt is cache-inclusive (upstream): 10 = 5 non-cached + 5 cached.
   assert.equal(
     computeActualMicroUsd({
       model: {

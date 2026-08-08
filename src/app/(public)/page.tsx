@@ -2,16 +2,19 @@ import Link from "next/link";
 import {
   ShieldCheckIcon,
   KeyRoundIcon,
-  BotIcon,
   LineChartIcon,
-  WorkflowIcon,
   ArrowRightIcon,
   TerminalIcon,
   SparklesIcon,
   GaugeIcon,
-  ServerIcon,
   CircleCheckIcon,
   CodeIcon,
+  WalletIcon,
+  SlidersHorizontalIcon,
+  RadioIcon,
+  UserPlusIcon,
+  CreditCardIcon,
+  RocketIcon,
 } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -29,7 +32,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "AI Gateway — One API key for every AI model",
   description:
-    "A unified AI hub in front of your 9router that exposes an OpenAI-compatible API, with centralized credit, usage tracking, and graceful capability handling.",
+    "A single OpenAI-compatible API key for all leading AI models — transparent per-token pricing, real-time usage tracking, and per-key budgets and rate limits.",
 };
 
 /* ------------------------------------------------------------------ */
@@ -53,14 +56,14 @@ function Hero() {
         aria-hidden="true"
       />
 
-      <div className="relative mx-auto max-w-6xl px-4 py-20 sm:py-24 md:py-32 text-center">
+      <div className="relative mx-auto max-w-6xl px-4 py-20 text-center sm:py-24 md:py-32">
         <FadeIn>
           <Badge
             variant="outline"
             className="mb-7 gap-2 rounded-full border-primary/30 bg-primary/10 px-4 py-1.5 text-xs text-foreground backdrop-blur"
           >
             <SparklesIcon className="size-3.5 text-primary" aria-hidden="true" />
-            Unified AI API — OpenAI compatible
+            OpenAI-compatible AI gateway
           </Badge>
         </FadeIn>
 
@@ -74,11 +77,10 @@ function Hero() {
 
         <FadeIn delay={0.1}>
           <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground text-pretty">
-            A unified AI gateway that sits in front of your own upstream router
-            (like <strong className="text-foreground">9router</strong>) and exposes
-            an <strong className="text-foreground">OpenAI-compatible</strong> API
-            — with centralized credit, usage tracking, and graceful capability
-            handling.
+            A single <strong className="text-foreground">OpenAI-compatible</strong>{" "}
+            endpoint for your whole model catalog — with transparent per-token
+            pricing, real-time usage tracking, and fine-grained control over every
+            API key you issue.
           </p>
         </FadeIn>
 
@@ -92,10 +94,10 @@ function Hero() {
               <ArrowRightIcon className="size-4 ml-2" aria-hidden="true" />
             </Link>
             <Link
-              href="/docs"
+              href="/models"
               className={buttonVariants({ size: "lg", variant: "outline", className: "px-7" })}
             >
-              Read the docs
+              Browse models
             </Link>
           </div>
         </FadeIn>
@@ -110,7 +112,7 @@ function Hero() {
                 <span className="size-2.5 rounded-full bg-green-400/70" />
               </span>
               <TerminalIcon className="ml-2 size-3.5" aria-hidden="true" />
-              <span className="font-mono">curl — drop-in replacement for OpenAI</span>
+              <span className="font-mono">drop-in replacement for the OpenAI API</span>
             </div>
             <pre className="overflow-x-auto bg-card p-5 text-xs leading-relaxed font-mono">
 {`curl ${getAppBaseUrl()}/v1/chat/completions \\
@@ -132,39 +134,39 @@ function Hero() {
 /*                               FEATURES                             */
 /* ------------------------------------------------------------------ */
 
-const heroFeatures = [
+const primaryFeatures = [
   {
     icon: <KeyRoundIcon className="size-5" aria-hidden="true" />,
     title: "One key, every model",
-    desc: "Issue a single API key that unlocks access to your whole model catalog. Revoke, limit, or rotate it anytime. Your users hit one endpoint — the gateway routes to the right upstream.",
+    desc: "A single API key unlocks your entire model catalog. Point one endpoint at us and switch models by name — no new integration for each one.",
   },
   {
-    icon: <WorkflowIcon className="size-5" aria-hidden="true" />,
-    title: "OpenAI compatible",
-    desc: "Point your OpenAI SDK, opencode, or any OpenAI-compatible client at one URL. No client-side changes required — the gateway routes to your 9router upstream.",
+    icon: <WalletIcon className="size-5" aria-hidden="true" />,
+    title: "Pay only for what you use",
+    desc: "Credits are metered per request down to the micro-dollar. Top up anytime, watch your balance live, and pay for tokens — never seat fees.",
   },
 ];
 
-const compactFeatures = [
-  {
-    icon: <ShieldCheckIcon className="size-4" aria-hidden="true" />,
-    title: "Graceful capability handling",
-    desc: "Non-vision models that receive an image respond naturally — no errors, no hallucinations.",
-  },
-  {
-    icon: <BotIcon className="size-4" aria-hidden="true" />,
-    title: "Full admin control",
-    desc: "Map public names to upstream IDs, set per-model pricing, declare capabilities, choose policies.",
-  },
+const gridFeatures = [
   {
     icon: <LineChartIcon className="size-4" aria-hidden="true" />,
-    title: "Usage & credit tracking",
-    desc: "Per-request token metering, micro-USD credit balance, monthly budgets, and detailed audit logs.",
+    title: "Real-time usage analytics",
+    desc: "Per-request token counts, cost by model, daily trends, and a full request history.",
+  },
+  {
+    icon: <SlidersHorizontalIcon className="size-4" aria-hidden="true" />,
+    title: "Per-key controls",
+    desc: "Rate limits, monthly budgets, model allowlists, and expiry — set on every key you issue.",
+  },
+  {
+    icon: <RadioIcon className="size-4" aria-hidden="true" />,
+    title: "Streaming built in",
+    desc: "Token-by-token SSE passthrough with no buffering, so responses start instantly.",
   },
   {
     icon: <GaugeIcon className="size-4" aria-hidden="true" />,
     title: "Built for production",
-    desc: "Streaming SSE passthrough, rate limits, budget caps, and a PostgreSQL-backed audit trail.",
+    desc: "Atomic token-bucket rate limiting and a PostgreSQL-backed audit trail on every call.",
   },
 ];
 
@@ -177,17 +179,17 @@ function Features() {
             Features
           </Badge>
           <h2 className="text-3xl font-semibold tracking-tight text-balance md:text-4xl">
-            One gateway, <span className="text-gradient">full control</span>
+            Everything you need to <span className="text-gradient">ship with AI</span>
           </h2>
           <p className="mt-4 text-muted-foreground text-pretty">
-            From authentication to billing, from request translation to capability
-            enforcement.
+            From the first request to detailed billing — one gateway handles access,
+            metering, and control.
           </p>
         </div>
       </FadeIn>
 
       <FadeInStagger stagger={0.06} className="mt-14 grid gap-5 sm:grid-cols-2">
-        {heroFeatures.map((f) => (
+        {primaryFeatures.map((f) => (
           <FadeInItem key={f.title}>
             <Card className="card-hover h-full overflow-hidden">
               <CardHeader>
@@ -207,9 +209,9 @@ function Features() {
       </FadeInStagger>
 
       <FadeInStagger stagger={0.06} className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {compactFeatures.map((f) => (
+        {gridFeatures.map((f) => (
           <FadeInItem key={f.title}>
-            <div className="card-hover flex gap-3 rounded-xl border bg-card/60 p-4">
+            <div className="card-hover flex h-full gap-3 rounded-xl border bg-card/60 p-4">
               <div className="mt-0.5 shrink-0 text-primary">{f.icon}</div>
               <div>
                 <p className="text-sm font-medium">{f.title}</p>
@@ -231,19 +233,19 @@ function Features() {
 
 const steps = [
   {
-    title: "Bring your 9router",
-    desc: "Connect the gateway to your own 9router instance — any OpenAI-compatible upstream works.",
-    icon: <ServerIcon className="size-5" aria-hidden="true" />,
+    title: "Create your account",
+    desc: "Sign up free and verify your email with a one-time code. No card required to get started.",
+    icon: <UserPlusIcon className="size-5" aria-hidden="true" />,
   },
   {
-    title: "Configure your models",
-    desc: "In the admin panel, map public IDs, set pricing, declare capabilities, and pick image policies.",
-    icon: <BotIcon className="size-5" aria-hidden="true" />,
+    title: "Get a key & add credits",
+    desc: "Create an API key in the console and top up your balance. Set budgets and limits if you like.",
+    icon: <CreditCardIcon className="size-5" aria-hidden="true" />,
   },
   {
-    title: "Issue keys to your users",
-    desc: "Your users get one API key and hit /v1/chat/completions — the standard OpenAI endpoint.",
-    icon: <KeyRoundIcon className="size-5" aria-hidden="true" />,
+    title: "Start building",
+    desc: "Call /v1/chat/completions with any OpenAI-compatible client. Track every request live.",
+    icon: <RocketIcon className="size-5" aria-hidden="true" />,
   },
 ];
 
@@ -261,7 +263,7 @@ function HowItWorks() {
               How it works
             </Badge>
             <h2 className="text-3xl font-semibold tracking-tight text-balance md:text-4xl">
-              Up and running in minutes
+              Up and running in <span className="text-gradient">minutes</span>
             </h2>
           </div>
         </FadeIn>
@@ -288,6 +290,92 @@ function HowItWorks() {
 }
 
 /* ------------------------------------------------------------------ */
+/*                           UNIQUE FEATURE                           */
+/* ------------------------------------------------------------------ */
+
+function UniqueFeature() {
+  return (
+    <section className="relative overflow-hidden py-20">
+      <div
+        className="absolute left-1/2 top-1/2 h-[420px] w-[820px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/10 blur-[120px]"
+        aria-hidden="true"
+      />
+      <div className="relative mx-auto max-w-5xl px-4">
+        <Card className="ring-gradient overflow-hidden p-0">
+          <div className="grid md:grid-cols-[1.2fr_1fr]">
+            <div className="p-8 md:p-12">
+              <Badge variant="outline" className="mb-4 border-primary/30 bg-primary/10">
+                <ShieldCheckIcon className="size-3.5 mr-1" aria-hidden="true" /> Graceful by default
+              </Badge>
+              <h2 className="text-2xl font-semibold tracking-tight text-balance md:text-3xl">
+                Text-only models that receive an image…
+                <br />
+                <span className="text-gradient">reply like a human.</span>
+              </h2>
+              <p className="mt-4 text-muted-foreground text-pretty">
+                Normally, sending an image to a model without vision returns a{" "}
+                <code className="rounded bg-muted px-1.5 py-0.5 text-xs">400 Bad Request</code>{" "}
+                and your agent crashes. Here, each model has a policy you can rely on:
+              </p>
+
+              <ul className="mt-6 space-y-3.5 text-sm">
+                {[
+                  ["Strip & respond", "The image is dropped and the model replies naturally. No error."],
+                  ["Canned response", "A friendly fixed reply is returned without an upstream call."],
+                  ["Reject", "A classic 400 error, for clients that prefer to handle it explicitly."],
+                ].map(([label, desc], i) => (
+                  <li key={label} className="flex gap-3">
+                    <div className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-xs font-semibold text-primary ring-1 ring-primary/25">
+                      {i + 1}
+                    </div>
+                    <div>
+                      <strong className="text-foreground">{label}</strong> — {desc}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="border-t bg-muted/20 p-6 md:border-l md:border-t-0 md:p-8">
+              <div className="mb-2 font-mono text-xs text-muted-foreground">
+                {"// an image is sent to a text-only model"}
+              </div>
+              <pre className="overflow-x-auto rounded-xl bg-card p-4 text-xs leading-relaxed font-mono ring-1 ring-border">
+{`{
+  "model": "mimo-v2.5",
+  "messages": [{
+    "role": "user",
+    "content": [
+      { "type": "text",
+        "text": "What's in this?" },
+      { "type": "image_url",
+        "image_url": { "url": "..." } }
+    ]
+  }]
+}`}
+              </pre>
+              <div className="mb-2 mt-4 font-mono text-xs text-muted-foreground">
+                {"// the gateway responds gracefully:"}
+              </div>
+              <pre className="overflow-x-auto rounded-xl bg-card p-4 text-xs leading-relaxed font-mono ring-1 ring-primary/30">
+{`{ "choices": [{
+  "message": {
+    "content": "I can't actually see
+images in this conversation — could
+you describe what you'd like me to
+help with?"
+  }
+}] }`}
+              </pre>
+            </div>
+          </div>
+        </Card>
+      </div>
+    </section>
+  );
+}
+
+/* ------------------------------------------------------------------ */
 /*                            COMPATIBILITY                           */
 /* ------------------------------------------------------------------ */
 
@@ -301,7 +389,7 @@ const compat = [
 function Compatibility() {
   return (
     <section id="compat" className="mx-auto max-w-6xl px-4 py-20">
-      <div className="grid gap-8 md:gap-12 md:grid-cols-2 md:items-center">
+      <div className="grid gap-8 md:grid-cols-2 md:items-center md:gap-12">
         <div>
           <Badge variant="outline" className="mb-4 border-primary/30 bg-primary/10">
             Compatibility
@@ -310,14 +398,14 @@ function Compatibility() {
             Works with the tools you <span className="text-gradient">already use</span>
           </h2>
           <p className="mt-4 text-muted-foreground text-pretty">
-            Because we expose the standard OpenAI wire protocol, any tool that
-            speaks it will work — no vendor lock-in, no wrapper libraries.
+            Because we speak the standard OpenAI wire protocol, any tool that speaks
+            it just works — no wrapper libraries, no vendor lock-in.
           </p>
 
           <div className="mt-8 space-y-2.5">
             {[
-              "OpenAI-style chat, vision, tools, streaming",
-              "Token-level usage & credit deduction",
+              "OpenAI-style chat, tools, and streaming",
+              "Per-token usage and credit deduction",
               "Transparent SSE passthrough (no buffering)",
             ].map((t) => (
               <div key={t} className="flex items-start gap-2.5 text-sm">
@@ -347,100 +435,13 @@ function Compatibility() {
 }
 
 /* ------------------------------------------------------------------ */
-/*                           UNIQUE FEATURE                           */
-/* ------------------------------------------------------------------ */
-
-function UniqueFeature() {
-  return (
-    <section className="relative overflow-hidden py-20">
-      <div
-        className="absolute left-1/2 top-1/2 h-[420px] w-[820px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/10 blur-[120px]"
-        aria-hidden="true"
-      />
-      <div className="relative mx-auto max-w-5xl px-4">
-        <Card className="ring-gradient overflow-hidden p-0">
-          <div className="grid md:grid-cols-[1.2fr_1fr]">
-            <div className="p-8 md:p-12">
-              <Badge variant="outline" className="mb-4 border-primary/30 bg-primary/10">
-                <ShieldCheckIcon className="size-3.5 mr-1" aria-hidden="true" /> Signature feature
-              </Badge>
-              <h2 className="text-2xl font-semibold tracking-tight text-balance md:text-3xl">
-                Non-vision models that receive an image…
-                <br />
-                <span className="text-gradient">reply like a human.</span>
-              </h2>
-              <p className="mt-4 text-muted-foreground text-pretty">
-                In a normal gateway, sending an image to a text-only model returns
-                a <code className="rounded bg-muted px-1.5 py-0.5 text-xs">400 Bad Request</code>.
-                Your agent crashes. With AI Gateway, you choose the policy
-                <strong className="text-foreground"> per model</strong>:
-              </p>
-
-              <ul className="mt-6 space-y-3.5 text-sm">
-                {[
-                  ["Strip & instruct", "silently drop the image, inject a human-like note, and the model replies naturally. No error."],
-                  ["Canned response", "the gateway replies itself with a friendly canned text. No upstream call."],
-                  ["Reject", "classic 400 error for clients that prefer to handle it explicitly."],
-                ].map(([label, desc], i) => (
-                  <li key={label} className="flex gap-3">
-                    <div className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-xs font-semibold text-primary ring-1 ring-primary/25">
-                      {i + 1}
-                    </div>
-                    <div>
-                      <strong className="text-foreground">{label}</strong> — {desc}
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <div className="border-t md:border-t-0 md:border-l bg-muted/20 p-6 md:p-8">
-              <div className="text-xs text-muted-foreground mb-2 font-mono">
-                {"// opencode sends an image to a text-only model"}
-              </div>
-              <pre className="overflow-x-auto rounded-xl bg-card p-4 text-xs leading-relaxed font-mono ring-1 ring-border">
-{`{
-  "model": "mimo-v2.5",
-  "messages": [{
-    "role": "user",
-    "content": [
-      { "type": "text",
-        "text": "What's in this?" },
-      { "type": "image_url",
-        "image_url": { "url": "..." } }
-    ]
-  }]
-}`}
-              </pre>
-              <div className="mt-4 text-xs text-muted-foreground mb-2 font-mono">
-                {"// gateway strips the image, model replies:"}
-              </div>
-              <pre className="overflow-x-auto rounded-xl bg-card p-4 text-xs leading-relaxed font-mono ring-1 ring-primary/30">
-{`{ "choices": [{
-  "message": {
-    "content": "I can't actually see
-images in this conversation — could
-you describe what you'd like me to
-help with?"
-  }
-}] }`}
-              </pre>
-            </div>
-          </div>
-        </Card>
-      </div>
-    </section>
-  );
-}
-
-/* ------------------------------------------------------------------ */
 /*                                CTA                                 */
 /* ------------------------------------------------------------------ */
 
 function Cta() {
   return (
     <section className="mx-auto max-w-6xl px-4 py-20">
-      <div className="ring-gradient relative overflow-hidden rounded-2xl p-6 sm:p-10 md:p-16 text-center">
+      <div className="ring-gradient relative overflow-hidden rounded-2xl p-6 text-center sm:p-10 md:p-16">
         <div
           className="absolute left-1/2 top-0 h-40 w-[520px] -translate-x-1/2 rounded-full bg-primary/20 blur-[90px]"
           aria-hidden="true"
@@ -450,8 +451,8 @@ function Cta() {
             Ready to <span className="text-gradient">unify your AI stack?</span>
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-muted-foreground">
-            Free to start. Connect your upstream, configure your models, and
-            issue your first API key in under 5 minutes.
+            Free to start. Create an account, grab a key, and make your first request
+            in under five minutes.
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             <Link href="/signup" className={`${buttonVariants({ size: "lg" })} glow-md px-8`}>
