@@ -197,37 +197,35 @@ export function ensureStreamUsage(body: OpenAIChatBody): OpenAIChatBody {
 /**
  * Count the last assistant content in a non-streaming response, or return 0.
  * Upstream usually returns a proper `usage` field; this is a fallback.
+ *
+ * Cached tokens: 9router reports prompt-cache tokens in `prompt_tokens_details`
+ * (`cached_tokens` = read, `cache_creation_tokens` = write) and treats them as
+ * one "cached tokens" bucket. We combine read + write into `cachedTokens`.
  */
 export function extractUsageFromResponse(json: unknown): {
   promptTokens: number;
   completionTokens: number;
-  cacheReadTokens: number;
-  cacheWriteTokens: number;
+  cachedTokens: number;
 } {
   if (!json || typeof json !== "object") {
-    return { promptTokens: 0, completionTokens: 0, cacheReadTokens: 0, cacheWriteTokens: 0 };
+    return { promptTokens: 0, completionTokens: 0, cachedTokens: 0 };
   }
   const usage = (json as { usage?: Record<string, unknown> }).usage;
   if (!usage) {
-    return { promptTokens: 0, completionTokens: 0, cacheReadTokens: 0, cacheWriteTokens: 0 };
+    return { promptTokens: 0, completionTokens: 0, cachedTokens: 0 };
   }
   const u = usage as Record<string, unknown>;
   const promptDetails = (u.prompt_tokens_details ?? {}) as Record<string, unknown>;
+  const cacheRead =
+    Number(promptDetails.cached_tokens ?? u.cache_read_input_tokens ?? 0) || 0;
+  const cacheWrite =
+    Number(
+      promptDetails.cache_creation_tokens ?? u.cache_creation_input_tokens ?? 0,
+    ) || 0;
   return {
     promptTokens: Number(u.prompt_tokens ?? 0) || 0,
     completionTokens: Number(u.completion_tokens ?? 0) || 0,
-    cacheReadTokens:
-      Number(
-        promptDetails.cached_tokens ??
-          u.cache_read_input_tokens ??
-          0,
-      ) || 0,
-    cacheWriteTokens:
-      Number(
-        promptDetails.cache_creation_tokens ??
-          u.cache_creation_input_tokens ??
-          0,
-      ) || 0,
+    cachedTokens: cacheRead + cacheWrite,
   };
 }
 

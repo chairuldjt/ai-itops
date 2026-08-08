@@ -24,6 +24,10 @@ export interface ModelCardData {
   pricing?: {
     per1MInput?: number | null;
     per1MOutput?: number | null;
+    per1MCached?: number | null;
+    /** Legacy split rates — shown as "Cached" when the unified rate is absent. */
+    per1MCacheRead?: number | null;
+    per1MCacheWrite?: number | null;
     perUnit?: number | null;
   } | null;
   capabilities?: Record<string, unknown> | null;
@@ -70,6 +74,11 @@ function buildPriceRows(m: ModelCardData): PriceRow[] {
   }
   if (p.per1MOutput != null) {
     rows.push({ label: "Output", price: `$${p.per1MOutput.toFixed(2)}`, unit: "/ 1M tokens" });
+  }
+  // Cached prompt tokens — unified rate, with a legacy split-rate fallback.
+  const cachedRate = p.per1MCached ?? p.per1MCacheRead ?? p.per1MCacheWrite;
+  if (m.type === "chat" && cachedRate != null) {
+    rows.push({ label: "Cached", price: `$${cachedRate.toFixed(2)}`, unit: "/ 1M tokens" });
   }
   if (m.type !== "chat" && p.perUnit != null) {
     rows.push({ label: "Price", price: `$${p.perUnit.toFixed(4)}`, unit: "/ unit" });

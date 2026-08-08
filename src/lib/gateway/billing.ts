@@ -34,8 +34,11 @@ export type BillingUsage = {
   streamed: boolean;
   promptTokens: number;
   completionTokens: number;
-  cacheReadTokens?: number;
-  cacheWriteTokens?: number;
+  /**
+   * Prompt-cached tokens (read + write combined), as reported by the 9router
+   * upstream. Billed at the single `per1MCached` rate.
+   */
+  cachedTokens?: number;
   status: UsageStatus;
   httpStatus: number;
   errorMessage?: string | null;
@@ -43,6 +46,19 @@ export type BillingUsage = {
   clientIp?: string | null;
   model: Model;
 };
+
+/**
+ * Resolve the cached-token rate (USD per 1M cached tokens).
+ *
+ * Prefers the unified `per1MCached`; falls back to the legacy split rates so
+ * models created before the unified field still bill their cached tokens.
+ */
+export function getCachedRatePer1M(
+  pricing: Model["pricing"] | null | undefined,
+): number {
+  const p = pricing ?? {};
+  return p.per1MCached ?? p.per1MCacheRead ?? p.per1MCacheWrite ?? 0;
+}
 
 export function monthStartUtc(now = new Date()): Date {
   return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
@@ -79,8 +95,9 @@ export function computeReservationMicroUsd(
   const outputTokens = Math.max(0, Math.ceil(
     params.body.max_completion_tokens ?? params.body.max_tokens ?? 0,
   ));
+  // Conservative hold: assume the whole prompt could land in the cache bucket.
   return BigInt(Math.ceil(inputTokens * (pricing.per1MInput ?? 0)))
-    + BigInt(Math.ceil(inputTokens * (pricing.per1MCacheWrite ?? 0)))
+    + BigInt(Math.ceil(inputTokens * getCachedRatePer1M(pricing)))
     + BigInt(Math.ceil(outputTokens * (pricing.per1MOutput ?? 0)));
 }
 
@@ -88,16 +105,17 @@ export function computeActualMicroUsd(params: {
   model: PricedModel;
   promptTokens: number;
   completionTokens: number;
-  cacheReadTokens?: number;
-  cacheWriteTokens?: number;
+  cachedTokens?: number;
 }): bigint {
   const pricing = params.model.pricing ?? {};
-  const cacheReadTokens = Math.max(0, params.cacheReadTokens ?? 0);
-  const nonCachedInputTokens = Math.max(params.promptTokens - cacheReadTokens, 0);
+  // 9router reports `prompt_tokens` cache-inclusively (input + cached), so we
+  // subtract the cached portion to bill the remainder at the input rate, and
+  // bill all cached tokens at the single `per1MCached` rate.
+  const cachedTokens = Math.max(0, params.cachedTokens ?? 0);
+  const nonCachedInputTokens = Math.max(params.promptTokens - cachedTokens, 0);
   return BigInt(Math.round(nonCachedInputTokens * (pricing.per1MInput ?? 0)))
     + BigInt(Math.round(params.completionTokens * (pricing.per1MOutput ?? 0)))
-    + BigInt(Math.round(cacheReadTokens * (pricing.per1MCacheRead ?? 0)))
-    + BigInt(Math.round((params.cacheWriteTokens ?? 0) * (pricing.per1MCacheWrite ?? 0)));
+    + BigInt(Math.round(cachedTokens * getCachedRatePer1M(pricing)));
 }
 
 export function computeSettledMonthlySpend(

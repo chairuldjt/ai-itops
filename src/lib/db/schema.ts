@@ -35,7 +35,18 @@ export interface ModelPricing {
   // For image/tts/stt/rerank, use perUnit / perImage / perMinute / perSecond as needed.
   per1MInput?: number;
   per1MOutput?: number;
+  /**
+   * Price per 1M prompt-cached tokens.
+   *
+   * Aligned with the 9router upstream, which reports prompt-cache tokens in
+   * `usage.prompt_tokens_details` and treats cache read + cache write as a
+   * single "cached tokens" bucket (its `prompt_tokens` is cache-inclusive).
+   * We therefore bill all cached prompt tokens at one combined rate.
+   */
+  per1MCached?: number;
+  /** @deprecated Superseded by `per1MCached`. Kept only to read legacy rows. */
   per1MCacheRead?: number;
+  /** @deprecated Superseded by `per1MCached`. Kept only to read legacy rows. */
   per1MCacheWrite?: number;
   // Flat unit pricing (e.g., per image generated, per second of audio)
   perUnit?: number;

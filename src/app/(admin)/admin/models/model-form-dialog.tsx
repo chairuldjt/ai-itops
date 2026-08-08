@@ -54,8 +54,7 @@ const Schema = z.object({
   pricing: z.object({
     per1MInput: z.coerce.number().min(0).optional(),
     per1MOutput: z.coerce.number().min(0).optional(),
-    per1MCacheRead: z.coerce.number().min(0).optional(),
-    per1MCacheWrite: z.coerce.number().min(0).optional(),
+    per1MCached: z.coerce.number().min(0).optional(),
     perUnit: z.coerce.number().min(0).optional(),
   }),
   capabilities: z.object({
@@ -96,8 +95,13 @@ export function ModelFormDialog({
           pricing: {
             per1MInput: model.pricing?.per1MInput ?? 0,
             per1MOutput: model.pricing?.per1MOutput ?? 0,
-            per1MCacheRead: model.pricing?.per1MCacheRead ?? 0,
-            per1MCacheWrite: model.pricing?.per1MCacheWrite ?? 0,
+            // Legacy rows stored split cache read/write rates — migrate them
+            // into the single cached rate (read rate first, write as fallback).
+            per1MCached:
+              model.pricing?.per1MCached ??
+              model.pricing?.per1MCacheRead ??
+              model.pricing?.per1MCacheWrite ??
+              0,
             perUnit: model.pricing?.perUnit ?? 0,
           },
           capabilities: {
@@ -186,7 +190,7 @@ export function ModelFormDialog({
 
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <Tabs defaultValue="basic" className="mt-2">
-            <TabsList>
+            <TabsList className="max-w-full overflow-x-auto">
               <TabsTrigger value="basic">Basic</TabsTrigger>
               <TabsTrigger value="pricing">Pricing</TabsTrigger>
               <TabsTrigger value="capabilities">Capabilities</TabsTrigger>
@@ -266,12 +270,12 @@ export function ModelFormDialog({
                       <Input type="number" step="0.0001" {...form.register("pricing.per1MOutput")} />
                     </Field>
                     <Field>
-                      <FieldLabel>Cache read ($/1M tokens)</FieldLabel>
-                      <Input type="number" step="0.0001" {...form.register("pricing.per1MCacheRead")} />
-                    </Field>
-                    <Field>
-                      <FieldLabel>Cache write ($/1M tokens)</FieldLabel>
-                      <Input type="number" step="0.0001" {...form.register("pricing.per1MCacheWrite")} />
+                      <FieldLabel>Cached tokens ($/1M tokens)</FieldLabel>
+                      <Input type="number" step="0.0001" {...form.register("pricing.per1MCached")} />
+                      <FieldDescription>
+                        Prompt-cache hits (9router reports read &amp; write cache
+                        combined as cached tokens).
+                      </FieldDescription>
                     </Field>
                   </>
                 ) : (

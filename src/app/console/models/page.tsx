@@ -31,6 +31,9 @@ export default async function ConsoleModelsPage() {
         pricing: (m.pricing ?? {}) as {
           per1MInput?: number;
           per1MOutput?: number;
+          per1MCached?: number;
+          per1MCacheRead?: number;
+          per1MCacheWrite?: number;
           perUnit?: number;
         },
         capabilities: (m.capabilities ?? {}) as {

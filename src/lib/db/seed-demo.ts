@@ -18,6 +18,13 @@ async function main() {
     process.exit(1);
   }
 
+  // Demo data (weak-password user + live demo API key) must never be created
+  // in production unless explicitly requested.
+  if (process.env.NODE_ENV === "production" && process.env.SEED_DEMO !== "1") {
+    console.log("• Skipping demo seed in production (set SEED_DEMO=1 to override).");
+    return;
+  }
+
   // ---- Demo user (user@example.com / user123)
   const demoEmail = "user@example.com";
   let [user] = await db.select().from(users).where(eq(users.email, demoEmail)).limit(1);
@@ -83,7 +90,7 @@ async function main() {
       type: "chat" as const,
       provider: "mimo",
       description: "Demo non-vision chat model. Send an image → graceful reply.",
-      pricing: { per1MInput: 0.15, per1MOutput: 0.6 },
+      pricing: { per1MInput: 0.15, per1MOutput: 0.6, per1MCached: 0.03 },
       capabilities: {
         supportsImageInput: false,
         supportsTools: true,
@@ -99,7 +106,7 @@ async function main() {
       type: "chat" as const,
       provider: "mimo",
       description: "Demo chat model with vision (upstream: mimo/mimo-v2.5).",
-      pricing: { per1MInput: 2.5, per1MOutput: 10 },
+      pricing: { per1MInput: 2.5, per1MOutput: 10, per1MCached: 0.5 },
       capabilities: {
         supportsImageInput: true,
         supportsTools: true,

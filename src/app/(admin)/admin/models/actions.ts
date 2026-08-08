@@ -17,8 +17,7 @@ import { createId } from "@/lib/id";
 const PricingSchema = z.object({
   per1MInput: z.number().min(0).optional(),
   per1MOutput: z.number().min(0).optional(),
-  per1MCacheRead: z.number().min(0).optional(),
-  per1MCacheWrite: z.number().min(0).optional(),
+  per1MCached: z.number().min(0).optional(),
   perUnit: z.number().min(0).optional(),
 });
 

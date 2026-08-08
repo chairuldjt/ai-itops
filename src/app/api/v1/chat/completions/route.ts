@@ -246,8 +246,7 @@ async function handleNonStream(params: {
         streamed: false,
         promptTokens: usage.promptTokens,
         completionTokens: usage.completionTokens,
-        cacheReadTokens: usage.cacheReadTokens,
-        cacheWriteTokens: usage.cacheWriteTokens,
+        cachedTokens: usage.cachedTokens,
         status: isOk ? "ok" : "error",
         httpStatus: upstream.status,
         errorMessage: isOk ? null : JSON.stringify(upstream.json).slice(0, 1000),
@@ -344,7 +343,7 @@ async function handleStream(params: {
 
   // Pass-through the upstream SSE chunks to the client, but intercept the
   // final usage chunk so we can meter after the stream closes.
-  let finalUsage = { promptTokens: 0, completionTokens: 0, cacheReadTokens: 0, cacheWriteTokens: 0 };
+  let finalUsage = { promptTokens: 0, completionTokens: 0, cachedTokens: 0 };
   // Whether any content chunk was actually delivered. Used to decide billing
   // when the stream ends without a usage report: if content was delivered we
   // charge the reserved estimate; if nothing was delivered we refund.
@@ -412,7 +411,10 @@ async function handleStream(params: {
               usage?: {
                 prompt_tokens?: number;
                 completion_tokens?: number;
-                prompt_tokens_details?: { cached_tokens?: number };
+                prompt_tokens_details?: {
+                  cached_tokens?: number;
+                  cache_creation_tokens?: number;
+                };
               };
             };
             // Content-bearing chunks have a non-empty `choices` array (the
@@ -421,12 +423,14 @@ async function handleStream(params: {
               sawContent = true;
             }
             if (obj.usage) {
+              const details = obj.usage.prompt_tokens_details;
               finalUsage = {
                 promptTokens: Number(obj.usage.prompt_tokens ?? 0) || 0,
                 completionTokens: Number(obj.usage.completion_tokens ?? 0) || 0,
-                cacheReadTokens:
-                  Number(obj.usage.prompt_tokens_details?.cached_tokens ?? 0) || 0,
-                cacheWriteTokens: 0,
+                // 9router's "cached tokens" bucket = cache read + cache write.
+                cachedTokens:
+                  (Number(details?.cached_tokens ?? 0) || 0) +
+                  (Number(details?.cache_creation_tokens ?? 0) || 0),
               };
             }
           } catch {

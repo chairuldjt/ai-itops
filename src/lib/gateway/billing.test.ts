@@ -10,6 +10,7 @@ import {
   allocateTopUp,
   createSettlementController,
   createSharedSettlement,
+  getCachedRatePer1M,
   leaseExpiry,
   monthStartUtc,
   shouldReclaimLocked,
@@ -51,35 +52,55 @@ test("computeSettlementDelta charges excess actual cost", () => {
 });
 
 test("computeActualMicroUsd charges cached prompt tokens exactly once", () => {
+  // prompt is cache-inclusive (9router): 10 = 5 non-cached + 5 cached.
   assert.equal(
     computeActualMicroUsd({
       model: {
         pricing: {
           per1MInput: 3,
           per1MOutput: 15,
-          per1MCacheRead: 1,
-          per1MCacheWrite: 4,
+          per1MCached: 2,
         },
       },
       promptTokens: 10,
       completionTokens: 5,
-      cacheReadTokens: 2,
-      cacheWriteTokens: 3,
+      cachedTokens: 5,
     }),
-    113n,
+    100n,
+  );
+});
+
+test("computeActualMicroUsd falls back to legacy split cache rates", () => {
+  // Legacy rows without per1MCached still bill cached tokens (read rate).
+  assert.equal(
+    computeActualMicroUsd({
+      model: { pricing: { per1MInput: 3, per1MCacheRead: 1, per1MCacheWrite: 4 } },
+      promptTokens: 10,
+      completionTokens: 0,
+      cachedTokens: 5,
+    }),
+    20n, // (10-5)*3 + 5*1
   );
 });
 
 test("computeActualMicroUsd clamps cached prompt tokens to prompt total", () => {
   assert.equal(
     computeActualMicroUsd({
-      model: { pricing: { per1MInput: 3, per1MCacheRead: 1 } },
+      model: { pricing: { per1MInput: 3, per1MCached: 1 } },
       promptTokens: 2,
       completionTokens: 0,
-      cacheReadTokens: 5,
+      cachedTokens: 5,
     }),
     5n,
   );
+});
+
+test("getCachedRatePer1M prefers unified rate then legacy read/write", () => {
+  assert.equal(getCachedRatePer1M({ per1MCached: 2, per1MCacheRead: 1 }), 2);
+  assert.equal(getCachedRatePer1M({ per1MCacheRead: 1, per1MCacheWrite: 4 }), 1);
+  assert.equal(getCachedRatePer1M({ per1MCacheWrite: 4 }), 4);
+  assert.equal(getCachedRatePer1M({}), 0);
+  assert.equal(getCachedRatePer1M(null), 0);
 });
 
 test("computeReservationMicroUsd rejects negative explicit amount", () => {
@@ -89,10 +110,10 @@ test("computeReservationMicroUsd rejects negative explicit amount", () => {
   );
 });
 
-test("computeReservationMicroUsd reserves cache writes conservatively", () => {
+test("computeReservationMicroUsd reserves cached tokens conservatively", () => {
   assert.equal(
     computeReservationMicroUsd({
-      model: { pricing: { per1MInput: 3, per1MOutput: 15, per1MCacheWrite: 4 } },
+      model: { pricing: { per1MInput: 3, per1MOutput: 15, per1MCached: 4 } },
       body: { messages: [{ content: [{ type: "image_url", image_url: { url: "data:image/png;base64,12345678" } }] }], max_tokens: 0 },
     }),
     182n,
