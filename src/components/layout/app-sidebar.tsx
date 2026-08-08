@@ -109,11 +109,11 @@ function SidebarProfileHeader() {
         <button
           type="button"
           onClick={toggleSidebar}
-          className="relative hidden size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground after:absolute after:left-1/2 after:top-1/2 after:size-10 after:-translate-1/2 md:flex"
+          className="relative hidden size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground after:absolute after:left-1/2 after:top-1/2 after:size-10 after:-translate-1/2 md:flex"
           aria-label="Expand sidebar"
           title="Expand sidebar"
         >
-          <PanelLeftOpenIcon className="size-4" aria-hidden="true" />
+          <PanelLeftOpenIcon className="size-[18px]" aria-hidden="true" />
         </button>
       </div>
     );
@@ -144,11 +144,11 @@ function SidebarProfileHeader() {
       <button
         type="button"
         onClick={toggleSidebar}
-        className="relative hidden size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground after:absolute after:left-1/2 after:top-1/2 after:size-10 after:-translate-1/2 md:flex"
+        className="relative hidden size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground after:absolute after:left-1/2 after:top-1/2 after:size-10 after:-translate-1/2 md:flex"
         aria-label="Collapse sidebar"
         title="Collapse sidebar"
       >
-        <PanelLeftCloseIcon className="size-4" aria-hidden="true" />
+        <PanelLeftCloseIcon className="size-[18px]" aria-hidden="true" />
       </button>
     </div>
   );

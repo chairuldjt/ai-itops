@@ -154,7 +154,10 @@ function UserDropdown({ user }: { user: UserData }) {
           <AvatarImage src={user.image} alt={user.name} />
           <AvatarFallback>{initials}</AvatarFallback>
         </Avatar>
-        <ChevronsUpDownIcon className="size-3.5 text-muted-foreground" aria-hidden="true" />
+        <ChevronsUpDownIcon
+          className="hidden size-3.5 text-muted-foreground sm:block"
+          aria-hidden="true"
+        />
       </DropdownMenuTrigger>
       <DropdownMenuContent className="min-w-60 rounded-xl" align="end" sideOffset={6}>
         <DropdownMenuGroup>
@@ -519,7 +522,7 @@ export function SiteTopBar({
             </Badge>
           )}
 
-          <div className="hidden md:flex">
+          <div className={inApp ? "flex" : "hidden md:flex"}>
             {user ? (
               <UserDropdown user={{ ...user, creditBalance: displayBalance }} />
             ) : (

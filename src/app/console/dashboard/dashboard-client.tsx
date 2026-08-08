@@ -133,15 +133,15 @@ function DateRangeFilter({
   onRefresh: () => void;
 }) {
   return (
-    <div className="flex items-center gap-2">
-      <div className="relative grid grid-cols-2 gap-1 rounded-xl bg-muted p-1 md:flex md:w-auto md:items-center">
+    <div className="flex w-full items-center gap-2 sm:w-auto">
+      <div className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto rounded-xl bg-muted p-1 sm:flex-none sm:overflow-visible">
         {DATE_PRESETS.map((preset) => (
           <button
             key={preset.value}
             type="button"
             onClick={() => onChange(preset.value)}
             className={cn(
-              "relative z-10 whitespace-nowrap rounded-lg px-3 py-1.5 text-center text-sm transition-colors",
+              "relative z-10 shrink-0 whitespace-nowrap rounded-lg px-3 py-1.5 text-center text-sm transition-colors",
               active === preset.value
                 ? "bg-background font-medium text-foreground shadow-sm"
                 : "text-muted-foreground hover:text-foreground"
@@ -156,6 +156,7 @@ function DateRangeFilter({
         size="icon-sm"
         aria-label="Refresh dashboard"
         onClick={onRefresh}
+        className="shrink-0"
       >
         <RefreshCwIcon className="size-4" aria-hidden="true" />
       </Button>

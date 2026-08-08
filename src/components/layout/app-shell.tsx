@@ -25,7 +25,7 @@ export function AppShell({
       <div className="flex min-h-svh w-full flex-col">
         <SiteTopBar
           section={section}
-          sidebarTrigger={<SidebarTrigger className="-ml-1 md:hidden" />}
+          sidebarTrigger={<SidebarTrigger size="icon-lg" className="md:hidden" />}
         />
         <div className="flex min-w-0 flex-1">
           <AppSidebar section={section} />
