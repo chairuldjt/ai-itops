@@ -36,6 +36,8 @@ import {
 import {
   EmptyState,
 } from "@/components/ui/empty-state";
+import { PageHeader } from "@/components/layout/page-header";
+import { formatNumber } from "@/lib/utils";
 import {
   DownloadIcon,
   CalendarIcon,
@@ -144,6 +146,11 @@ export function UsageClient({
       "Status",
       "Latency (ms)",
     ];
+    // RFC 4180: quote fields containing commas, quotes, or newlines.
+    const esc = (v: string | number) => {
+      const s = String(v);
+      return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
     const rows = logs.map((l) => [
       l.createdAt.toISOString(),
       l.modelPublicId,
@@ -155,7 +162,7 @@ export function UsageClient({
       l.status,
       l.latencyMs ?? "",
     ]);
-    const csv = [headers, ...rows].map((r) => r.join(",")).join("\n");
+    const csv = [headers, ...rows].map((r) => r.map(esc).join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -173,38 +180,41 @@ export function UsageClient({
 
   return (
     <div className="flex flex-col gap-4">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Usage Logs</h1>
-        <p className="text-sm text-muted-foreground">
-          Detailed API request logs and token consumption.
-        </p>
-      </div>
+      <PageHeader
+        title="Usage Logs"
+        description="Detailed API request logs and token consumption."
+        actions={
+          <Button variant="outline" size="sm" onClick={exportCsv}>
+            <DownloadIcon className="size-4 mr-1.5" /> Export CSV
+          </Button>
+        }
+      />
 
       <Card>
         <CardContent className="pt-6">
-          <div className="flex flex-wrap items-end gap-3">
-            <div className="space-y-1 w-full sm:w-auto">
-              <label className="text-xs text-muted-foreground">From</label>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">From</label>
               <Input
                 type="date"
                 value={dateFrom}
                 onChange={(e) => setDateFrom(e.target.value)}
-                className="w-full sm:w-[160px]"
+                className="w-full"
               />
             </div>
-            <div className="space-y-1 w-full sm:w-auto">
-              <label className="text-xs text-muted-foreground">To</label>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">To</label>
               <Input
                 type="date"
                 value={dateTo}
                 onChange={(e) => setDateTo(e.target.value)}
-                className="w-full sm:w-[160px]"
+                className="w-full"
               />
             </div>
-            <div className="space-y-1 w-full sm:w-auto">
-              <label className="text-xs text-muted-foreground">Model</label>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">Model</label>
               <Select value={modelFilter} onValueChange={(v) => v && setModelFilter(v)}>
-                <SelectTrigger className="w-full sm:w-[180px]">
+                <SelectTrigger className="w-full">
                   <SelectValue placeholder="All Models" />
                 </SelectTrigger>
                 <SelectContent>
@@ -217,10 +227,10 @@ export function UsageClient({
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-1 w-full sm:w-auto">
-              <label className="text-xs text-muted-foreground">API Key</label>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">API Key</label>
               <Select value={keyFilter} onValueChange={(v) => v && setKeyFilter(v)}>
-                <SelectTrigger className="w-full sm:w-[180px]">
+                <SelectTrigger className="w-full">
                   <SelectValue placeholder="All Keys" />
                 </SelectTrigger>
                 <SelectContent>
@@ -233,15 +243,14 @@ export function UsageClient({
                 </SelectContent>
               </Select>
             </div>
+          </div>
+
+          <div className="mt-4 flex flex-wrap items-center gap-2 border-t pt-4">
             <Button size="sm" onClick={applyFilters}>
-              <CalendarIcon className="size-4 mr-1" /> Search
+              <CalendarIcon className="size-4 mr-1.5" /> Apply filters
             </Button>
             <Button variant="outline" size="sm" onClick={resetFilters}>
               Reset
-            </Button>
-            <div className="flex-1" />
-            <Button variant="outline" size="sm" onClick={exportCsv}>
-              <DownloadIcon className="size-4 mr-1" /> Export CSV
             </Button>
           </div>
         </CardContent>
@@ -298,15 +307,15 @@ export function UsageClient({
                             {l.apiFormat}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-xs">
-                          {l.promptTokens.toLocaleString()} /{" "}
-                          {l.completionTokens.toLocaleString()}
+                        <TableCell className="text-xs tabular-nums">
+                          {formatNumber(l.promptTokens)} /{" "}
+                          {formatNumber(l.completionTokens)}
                         </TableCell>
                         <TableCell className="font-mono text-xs">
                           ${(l.costMicroUsd / 1_000_000).toFixed(6)}
                         </TableCell>
                         <TableCell>{statusBadge(l.status)}</TableCell>
-                        <TableCell className="text-xs text-muted-foreground">
+                        <TableCell className="text-xs text-muted-foreground tabular-nums">
                           {l.latencyMs != null ? `${l.latencyMs}ms` : "—"}
                         </TableCell>
                       </TableRow>

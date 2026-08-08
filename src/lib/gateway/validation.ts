@@ -9,7 +9,6 @@ const VALUE_BYTES_MAX = 200_000;
 const finite = (min: number, max: number) => z.number().finite().min(min).max(max);
 const text = z.string().max(TEXT_MAX);
 const knownOpenAI = new Set(["text", "image_url", "input_audio"]);
-const knownAnthropic = new Set(["text", "image", "tool_use", "tool_result"]);
 
 function bounded(value: unknown, depth = 0): boolean {
   if (depth > 4) return false;
@@ -44,21 +43,4 @@ export const openAIChatRequestSchema = z.object({
   temperature: finite(0, 2).optional(), top_p: finite(0, 1).optional(), frequency_penalty: finite(-2, 2).optional(), presence_penalty: finite(-2, 2).optional(),
   n: z.number().int().positive().max(16).optional(), seed: z.number().int().min(-2_147_483_648).max(2_147_483_647).optional(),
   stop: z.union([z.string().max(1000), z.array(z.string().max(1000)).max(16)]).optional(), tools, tool_choice: z.unknown().refine(bounded).optional(), response_format: z.unknown().refine(bounded).optional(),
-}).passthrough();
-
-const anthropicText = z.object({ type: z.literal("text"), text }).passthrough();
-const anthropicImage = z.object({ type: z.literal("image"), source: z.discriminatedUnion("type", [
-  z.object({ type: z.literal("base64"), media_type: z.string().min(1).max(100), data: z.string().max(DATA_MAX) }).passthrough(),
-  z.object({ type: z.literal("url"), url: z.string().min(1).max(URL_MAX) }).passthrough(),
-]) }).passthrough();
-const toolUse = z.object({ type: z.literal("tool_use"), id: z.string().min(1).max(256), name: z.string().min(1).max(256), input: z.unknown().refine(bounded) }).passthrough();
-const nestedPart: z.ZodType = z.lazy(() => z.union([anthropicText, fallback(knownAnthropic)]));
-const toolResult = z.object({ type: z.literal("tool_result"), tool_use_id: z.string().min(1).max(256), content: z.union([text, z.array(nestedPart).max(64)]) }).passthrough();
-const anthropicPart = z.union([anthropicText, anthropicImage, toolUse, toolResult, fallback(knownAnthropic)]);
-
-export const anthropicRequestSchema = z.object({
-  model: z.string().trim().min(1).max(256), max_tokens: z.number().int().positive().max(1_000_000),
-  messages: z.array(z.object({ role: z.enum(["user", "assistant"]), content: z.union([text, z.array(anthropicPart).min(1).max(64)]) }).passthrough()).min(1).max(MESSAGES_MAX),
-  system: z.union([text, z.array(z.union([anthropicText, fallback(knownAnthropic)])).max(64)]).optional(), tools, stream: z.boolean().optional(),
-  temperature: finite(0, 1).optional(), top_p: finite(0, 1).optional(), top_k: z.number().int().positive().max(1_000_000).optional(), stop_sequences: z.array(z.string().max(1000)).max(16).optional(),
 }).passthrough();

@@ -24,9 +24,9 @@ export function EmptyState({
       <div className="mb-4 flex size-16 items-center justify-center rounded-2xl bg-muted/50 text-muted-foreground">
         {icon ?? <FileXIcon className="size-7" />}
       </div>
-      <h3 className="text-lg font-semibold">{title}</h3>
+      <h3 className="text-lg font-semibold text-balance">{title}</h3>
       {description && (
-        <p className="mt-1 max-w-sm text-sm text-muted-foreground">
+        <p className="mt-1 max-w-sm text-sm text-muted-foreground text-pretty">
           {description}
         </p>
       )}

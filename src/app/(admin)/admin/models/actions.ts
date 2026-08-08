@@ -99,7 +99,6 @@ export async function createModel(input: ModelFormInput) {
     tags: parsed.data.tags,
   });
   revalidatePath("/admin/models");
-  revalidatePath("/dashboard/models");
   revalidatePath("/models");
   return { ok: true, id };
 }
@@ -134,7 +133,6 @@ export async function updateModel(id: string, input: ModelFormInput) {
     })
     .where(eq(models.id, id));
   revalidatePath("/admin/models");
-  revalidatePath("/dashboard/models");
   revalidatePath("/models");
   return { ok: true };
 }
@@ -173,12 +171,10 @@ export async function deleteModel(id: string) {
       .set({ enabled: false, updatedAt: new Date() })
       .where(eq(models.id, validId.data));
     revalidatePath("/admin/models");
-    revalidatePath("/dashboard/models");
     revalidatePath("/models");
     return { ok: true, deleted: false, reason: "has_usage_logs" };
   }
   revalidatePath("/admin/models");
-  revalidatePath("/dashboard/models");
   revalidatePath("/models");
   return { ok: true, deleted: true };
 }

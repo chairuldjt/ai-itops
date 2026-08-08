@@ -43,9 +43,9 @@ export function PageHeader({
             </BreadcrumbList>
           </Breadcrumb>
         )}
-        <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-balance">{title}</h1>
         {description && (
-          <p className="mt-1 text-sm text-muted-foreground">{description}</p>
+          <p className="mt-1 text-sm text-muted-foreground text-pretty">{description}</p>
         )}
       </div>
       {actions && <div className="mt-3 shrink-0 sm:mt-0">{actions}</div>}

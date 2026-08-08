@@ -6,6 +6,7 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import type { Model } from "@/lib/db/schema";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import {
   Table,
@@ -20,18 +21,30 @@ import {
   toggleModelEnabled,
 } from "@/app/(admin)/admin/models/actions";
 import { ModelFormDialog } from "./model-form-dialog";
-import { PencilIcon, Trash2Icon } from "lucide-react";
+import { PencilIcon, Trash2Icon, SearchIcon } from "lucide-react";
 
 export function ModelsTable({ initialModels }: { initialModels: Model[] }) {
   const [prevModels, setPrevModels] = React.useState(initialModels);
   const [models, setModels] = React.useState(initialModels);
   const [busyId, setBusyId] = React.useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = React.useState<string | null>(null);
+  const [search, setSearch] = React.useState("");
 
   if (prevModels !== initialModels) {
     setPrevModels(initialModels);
     setModels(initialModels);
   }
+
+  const filtered = models.filter((m) => {
+    if (!search) return true;
+    const q = search.toLowerCase();
+    return (
+      m.publicId.toLowerCase().includes(q) ||
+      m.upstreamId.toLowerCase().includes(q) ||
+      (m.provider ?? "").toLowerCase().includes(q) ||
+      m.type.toLowerCase().includes(q)
+    );
+  });
 
   const onToggle = async (id: string, enabled: boolean) => {
     setBusyId(id);
@@ -71,11 +84,24 @@ export function ModelsTable({ initialModels }: { initialModels: Model[] }) {
 
   return (
     <>
+    <div className="flex flex-col gap-3 p-4">
+      <div className="relative w-full max-w-sm">
+        <SearchIcon className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          placeholder="Search by name, upstream, provider, or type..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="pl-9"
+        />
+      </div>
+
+    <div className="rounded-lg border overflow-x-auto">
     <Table>
       <TableHeader>
         <TableRow>
           <TableHead>Public ID</TableHead>
           <TableHead>Upstream</TableHead>
+          <TableHead>Provider</TableHead>
           <TableHead>Type</TableHead>
           <TableHead>Pricing (per 1M)</TableHead>
           <TableHead>Capabilities</TableHead>
@@ -85,14 +111,16 @@ export function ModelsTable({ initialModels }: { initialModels: Model[] }) {
         </TableRow>
       </TableHeader>
       <TableBody>
-        {models.length === 0 && (
+        {filtered.length === 0 && (
           <TableRow>
-            <TableCell colSpan={8} className="text-center py-10 text-muted-foreground">
-              No models yet. Click &ldquo;Add Model&rdquo; to create one.
+            <TableCell colSpan={9} className="text-center py-10 text-muted-foreground">
+              {models.length === 0
+                ? <>No models yet. Click &ldquo;Add Model&rdquo; to create one.</>
+                : "No models match your search."}
             </TableCell>
           </TableRow>
         )}
-        {models.map((m) => {
+        {filtered.map((m) => {
           const p = m.pricing ?? {};
           const c = m.capabilities ?? {};
           return (
@@ -101,6 +129,7 @@ export function ModelsTable({ initialModels }: { initialModels: Model[] }) {
               <TableCell className="font-mono text-xs text-muted-foreground">
                 {m.upstreamId}
               </TableCell>
+              <TableCell className="text-sm">{m.provider ?? "—"}</TableCell>
               <TableCell>
                 <Badge variant="secondary">{m.type}</Badge>
               </TableCell>
@@ -169,6 +198,8 @@ export function ModelsTable({ initialModels }: { initialModels: Model[] }) {
         })}
       </TableBody>
     </Table>
+    </div>
+    </div>
 
       <ConfirmDialog
         open={deleteTarget !== null}

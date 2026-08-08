@@ -34,6 +34,32 @@ export function apiKeyAccessDecision(
 }
 
 /**
+ * Check whether an API key is allowed to use a given model.
+ *
+ * `allowedModels === null` means the key can use every model.
+ * A non-null array is a strict whitelist of public model ids.
+ */
+export function isModelAllowed(
+  key: Pick<ApiKey, "allowedModels">,
+  modelPublicId: string,
+): boolean {
+  if (key.allowedModels == null) return true;
+  return key.allowedModels.includes(modelPublicId);
+}
+
+export function modelAccessDecision(
+  key: Pick<ApiKey, "allowedModels">,
+  modelPublicId: string,
+): { ok: true } | { ok: false; status: 403; message: string } {
+  if (isModelAllowed(key, modelPublicId)) return { ok: true };
+  return {
+    ok: false,
+    status: 403,
+    message: `This API key is not allowed to use model '${modelPublicId}'`,
+  };
+}
+
+/**
  * Validate an API key, returning the user + key record if valid.
  *
  * Checks:

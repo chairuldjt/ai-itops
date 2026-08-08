@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
 import { useSession, signOut } from "@/lib/auth/client";
 import { cn } from "@/lib/utils";
+import { IconSwap } from "@/components/motion";
 import { buttonVariants } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -33,6 +34,8 @@ import {
   ChevronsUpDownIcon,
   SunIcon,
   MoonIcon,
+  WalletIcon,
+  BookOpenIcon,
 } from "lucide-react";
 
 /* ------------------------------------------------------------------ */
@@ -47,7 +50,6 @@ export function ThemeToggle() {
     () => false,
   );
 
-  // Prevent hydration mismatch — render empty until mounted
   if (!mounted) {
     return <div className="h-8 w-8" />;
   }
@@ -58,17 +60,26 @@ export function ThemeToggle() {
     <button
       type="button"
       onClick={() => setTheme(isDark ? "light" : "dark")}
-      className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+      className="relative flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground after:absolute after:left-1/2 after:top-1/2 after:size-10 after:-translate-1/2"
       aria-label={isDark ? "Switch to light theme" : "Switch to dark theme"}
       title={isDark ? "Switch to light theme" : "Switch to dark theme"}
     >
-      {isDark ? <SunIcon className="size-4" /> : <MoonIcon className="size-4" />}
+      <IconSwap
+        activeKey={isDark ? "sun" : "moon"}
+        className="flex items-center justify-center"
+      >
+        {isDark ? (
+          <SunIcon className="size-4" aria-hidden="true" />
+        ) : (
+          <MoonIcon className="size-4" aria-hidden="true" />
+        )}
+      </IconSwap>
     </button>
   );
 }
 
 /* ------------------------------------------------------------------ */
-/*                          NAV ITEM CONFIG                           */
+/*                          NAV CONFIG                                */
 /* ------------------------------------------------------------------ */
 
 export type SiteSection = "public" | "console" | "admin";
@@ -78,56 +89,34 @@ interface NavItem {
   href: string;
 }
 
-const BASE_NAV: NavItem[] = [
+const NAV_ITEMS: NavItem[] = [
   { label: "Models", href: "/models" },
   { label: "Docs", href: "/docs" },
   { label: "Blog", href: "/blog" },
 ];
 
-function buildNavItems(section: SiteSection, isAdmin: boolean): NavItem[] {
-  const items: NavItem[] = [...BASE_NAV];
-
-  // Release Notes — always show except on public (where it's in mobile menu only)
-  if (section !== "public") {
-    items.push({ label: "Release Notes", href: "/release-notes" });
-  }
-
-  if (section === "admin") {
-    // On admin pages: show Console link (to switch back), but NOT "Admin"
-    items.push({ label: "Console", href: "/console/dashboard" });
-  } else if (isAdmin) {
-    // On non-admin pages: show Admin link
-    items.push({ label: "Admin", href: "/admin" });
-
-    // On non-console pages: show Console link
-    if (section !== "console") {
-      items.push({ label: "Console", href: "/console/dashboard" });
-    }
-  } else if (section !== "console") {
-    // Non-admin users on non-console pages: show Console link
-    items.push({ label: "Console", href: "/console/dashboard" });
-  }
-
-  return items;
-}
-
 /* ------------------------------------------------------------------ */
-/*                          LOGO COMPONENT                            */
+/*                          LOGO                                      */
 /* ------------------------------------------------------------------ */
 
 function SiteLogo() {
   return (
-    <Link href="/" className="flex items-center gap-2 font-semibold">
-      <span className="flex size-8 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
-        <WorkflowIcon className="size-4" aria-hidden="true" />
+    <Link
+      href="/"
+      className="flex items-center gap-2.5 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring"
+    >
+      <span className="glow-sm flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+        <WorkflowIcon className="size-4.5" aria-hidden="true" />
       </span>
-      <span className="hidden sm:inline">AI Gateway</span>
+      <span className="text-[15px] font-semibold tracking-tight">
+        AI Gateway
+      </span>
     </Link>
   );
 }
 
 /* ------------------------------------------------------------------ */
-/*                       AUTHENTICATED USER NAV                       */
+/*                       USER DROPDOWN                                */
 /* ------------------------------------------------------------------ */
 
 type UserData = {
@@ -148,7 +137,7 @@ function getInitials(name: string) {
     .toUpperCase();
 }
 
-function UserDropdown({ user, side }: { user: UserData; side?: "bottom" | "right" }) {
+function UserDropdown({ user }: { user: UserData }) {
   const initials = getInitials(user.name);
 
   return (
@@ -156,7 +145,7 @@ function UserDropdown({ user, side }: { user: UserData; side?: "bottom" | "right
       <DropdownMenuTrigger
         render={
           <button
-            className="flex items-center gap-2 rounded-xl px-2 py-1.5 text-sm outline-none hover:bg-accent transition-colors"
+            className="flex items-center gap-2 rounded-xl px-1.5 py-1.5 outline-none transition-colors hover:bg-accent"
             aria-label="User menu"
           />
         }
@@ -165,26 +154,24 @@ function UserDropdown({ user, side }: { user: UserData; side?: "bottom" | "right
           <AvatarImage src={user.image} alt={user.name} />
           <AvatarFallback>{initials}</AvatarFallback>
         </Avatar>
-        <span className="hidden max-w-[100px] truncate text-sm md:inline">
-          {user.email}
-        </span>
         <ChevronsUpDownIcon className="size-3.5 text-muted-foreground" aria-hidden="true" />
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="min-w-56 rounded-lg" side={side ?? "bottom"} align="end" sideOffset={4}>
+      <DropdownMenuContent className="min-w-60 rounded-xl" align="end" sideOffset={6}>
         <DropdownMenuGroup>
           <DropdownMenuLabel className="p-0 font-normal">
-            <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
+            <div className="flex items-center gap-2.5 px-2 py-2 text-left">
               <Avatar>
                 <AvatarImage src={user.image} alt={user.name} />
                 <AvatarFallback>{initials}</AvatarFallback>
               </Avatar>
-              <div className="grid flex-1 text-left text-sm leading-tight min-w-0">
-                <span className="truncate font-medium">{user.name}</span>
+              <div className="grid flex-1 text-left leading-tight min-w-0">
+                <span className="truncate text-sm font-medium">{user.name}</span>
                 <span className="truncate text-xs text-muted-foreground">{user.email}</span>
               </div>
             </div>
-            <div className="px-1 pb-1">
-              <Badge variant="outline" className="font-mono">
+            <div className="px-2 pb-2">
+              <Badge variant="outline" className="gap-1.5 font-mono text-xs">
+                <WalletIcon className="size-3" aria-hidden="true" />
                 ${user.creditBalance.toFixed(2)} credit
               </Badge>
             </div>
@@ -199,6 +186,10 @@ function UserDropdown({ user, side }: { user: UserData; side?: "bottom" | "right
           <DropdownMenuItem render={<Link href="/console/settings" />}>
             <SettingsIcon />
             Settings
+          </DropdownMenuItem>
+          <DropdownMenuItem render={<Link href="/docs" />}>
+            <BookOpenIcon />
+            Documentation
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
@@ -223,13 +214,13 @@ function UserDropdown({ user, side }: { user: UserData; side?: "bottom" | "right
 }
 
 /* ------------------------------------------------------------------ */
-/*                       AUTH BUTTONS (GUEST)                         */
+/*                       AUTH ACTIONS                                 */
 /* ------------------------------------------------------------------ */
 
 function GuestActions({ variant }: { variant: "desktop" | "mobile" }) {
   if (variant === "mobile") {
     return (
-      <div className="border-t pt-4 mt-4 space-y-2">
+      <div className="mt-4 space-y-2 border-t pt-4">
         <Link
           href="/login"
           className={cn(buttonVariants({ variant: "outline", size: "lg" }), "w-full justify-center")}
@@ -251,32 +242,9 @@ function GuestActions({ variant }: { variant: "desktop" | "mobile" }) {
       <Link href="/login" className={buttonVariants({ variant: "ghost", size: "sm" })}>
         Log in
       </Link>
-      <Link href="/signup" className={buttonVariants({ size: "sm" })}>
+      <Link href="/signup" className={`${buttonVariants({ size: "sm" })} glow-sm`}>
         Get started
       </Link>
-    </div>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/*                    AUTHENTICATED ACTIONS (DESKTOP)                 */
-/* ------------------------------------------------------------------ */
-
-function AuthenticatedActions({ user, hideLinks = [] }: { user: UserData; hideLinks?: string[] }) {
-  return (
-    <div className="flex items-center gap-1">
-      {!hideLinks.includes("Console") && (
-        <Link
-          href="/console/dashboard"
-          className={cn(
-            buttonVariants({ size: "sm" }),
-            "rounded-full px-4 text-xs"
-          )}
-        >
-          Console
-        </Link>
-      )}
-      <UserDropdown user={user} side="bottom" />
     </div>
   );
 }
@@ -285,13 +253,7 @@ function AuthenticatedActions({ user, hideLinks = [] }: { user: UserData; hideLi
 /*                         MOBILE MENU                                */
 /* ------------------------------------------------------------------ */
 
-function MobileMenu({
-  navItems,
-  user,
-}: {
-  navItems: NavItem[];
-  user: UserData | null;
-}) {
+function MobileMenu({ user }: { user: UserData | null }) {
   const [open, setOpen] = React.useState(false);
   const pathname = usePathname();
   const [prevPathname, setPrevPathname] = React.useState(pathname);
@@ -306,7 +268,7 @@ function MobileMenu({
       <SheetTrigger
         render={
           <button
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-foreground transition-colors hover:bg-accent md:hidden"
+            className="flex h-9 w-9 items-center justify-center rounded-lg text-foreground transition-colors hover:bg-accent"
             type="button"
             aria-label="Open navigation menu"
           />
@@ -314,69 +276,61 @@ function MobileMenu({
       >
         <MenuIcon className="size-5" aria-hidden="true" />
       </SheetTrigger>
-      <SheetContent side="left" className="w-[280px] sm:w-[320px] flex flex-col p-4">
+      <SheetContent side="left" className="flex w-[280px] flex-col p-4 sm:w-[320px]">
         <SheetTitle className="sr-only">Site navigation</SheetTitle>
 
-        {/* Logo */}
-        <div className="flex items-center gap-2 pb-4 border-b">
+        <div className="flex items-center gap-2 border-b pb-4">
           <SiteLogo />
         </div>
 
-        {/* Nav items */}
         <nav className="flex-1 overflow-y-auto py-4" aria-label="Mobile navigation">
           <div className="space-y-1">
-            {navItems.map((item) => (
+            {NAV_ITEMS.map((item) => {
+              const active = pathname === item.href || pathname.startsWith(item.href + "/");
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={cn(
+                    "flex items-center rounded-lg px-3 py-2.5 text-sm transition-colors",
+                    active
+                      ? "bg-primary/10 font-medium text-primary"
+                      : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                  )}
+                >
+                  {item.label}
+                </Link>
+              );
+            })}
+          </div>
+
+          {user && (
+            <div className="mt-4 space-y-1 border-t pt-4">
               <Link
-                key={item.href}
-                href={item.href}
-                className={cn(
-                  "flex items-center rounded-lg px-3 py-2.5 text-sm transition-colors",
-                  pathname === item.href || pathname.startsWith(item.href + "/")
-                    ? "bg-primary/10 font-medium text-primary"
-                    : "text-muted-foreground hover:bg-accent hover:text-foreground"
-                )}
+                href="/console/dashboard"
+                className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-accent"
               >
-                {item.label}
+                <LayoutDashboardIcon className="size-4" aria-hidden="true" />
+                Console
               </Link>
-            ))}
-          </div>
+              <Link
+                href="/console/settings"
+                className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-accent"
+              >
+                <SettingsIcon className="size-4" aria-hidden="true" />
+                Settings
+              </Link>
+            </div>
+          )}
 
-          {/* Extra links */}
-          <div className="mt-4 space-y-1 border-t pt-4">
-            <Link
-              href="/release-notes"
-              className={cn(
-                "flex items-center rounded-lg px-3 py-2.5 text-sm transition-colors",
-                pathname === "/release-notes"
-                  ? "bg-primary/10 font-medium text-primary"
-                  : "text-muted-foreground hover:bg-accent hover:text-foreground"
-              )}
-            >
-              Release Notes
-            </Link>
-            <Link
-              href="/contact-us"
-              className={cn(
-                "flex items-center rounded-lg px-3 py-2.5 text-sm transition-colors",
-                pathname === "/contact-us"
-                  ? "bg-primary/10 font-medium text-primary"
-                  : "text-muted-foreground hover:bg-accent hover:text-foreground"
-              )}
-            >
-              Contact us
-            </Link>
-          </div>
-
-          {/* Theme toggle in mobile */}
-          <div className="mt-4 border-t pt-4 flex items-center gap-3 px-3 py-2 text-sm text-muted-foreground">
+          <div className="mt-4 flex items-center gap-3 border-t px-3 py-2 text-sm text-muted-foreground">
             <ThemeToggle />
             <span>Toggle theme</span>
           </div>
         </nav>
 
-        {/* Auth section */}
         {user ? (
-          <div className="border-t pt-4 mt-4">
+          <div className="mt-4 border-t pt-4">
             <div className="flex items-center gap-3 px-2 pb-3">
               <Avatar className="size-9">
                 <AvatarImage src={user.image} alt={user.name} />
@@ -387,38 +341,22 @@ function MobileMenu({
                 <div className="truncate text-xs text-muted-foreground">{user.email}</div>
               </div>
             </div>
-            <div className="space-y-1">
-              <Link
-                href="/console/dashboard"
-                className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm hover:bg-accent transition-colors"
-              >
-                <LayoutDashboardIcon className="size-4" aria-hidden="true" />
-                Console
-              </Link>
-              <Link
-                href="/console/settings"
-                className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm hover:bg-accent transition-colors"
-              >
-                <SettingsIcon className="size-4" aria-hidden="true" />
-                Settings
-              </Link>
-              <button
-                onClick={() =>
-                  signOut({
-                    fetchOptions: {
-                      onSuccess: () => {
-                        document.cookie = "ba_role=; Path=/; Max-Age=0";
-                        window.location.href = "/login";
-                      },
+            <button
+              onClick={() =>
+                signOut({
+                  fetchOptions: {
+                    onSuccess: () => {
+                      document.cookie = "ba_role=; Path=/; Max-Age=0";
+                      window.location.href = "/login";
                     },
-                  })
-                }
-                className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors"
-              >
-                <LogOutIcon className="size-4" aria-hidden="true" />
-                Log out
-              </button>
-            </div>
+                  },
+                })
+              }
+              className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-destructive transition-colors hover:bg-destructive/10"
+            >
+              <LogOutIcon className="size-4" aria-hidden="true" />
+              Log out
+            </button>
           </div>
         ) : (
           <GuestActions variant="mobile" />
@@ -434,17 +372,14 @@ function MobileMenu({
 
 export function SiteTopBar({
   section = "public",
-  hideLinks = [],
   sidebarTrigger,
 }: {
   section?: SiteSection;
-  hideLinks?: string[];
   sidebarTrigger?: React.ReactNode;
-} = {}) {
+}) {
   const pathname = usePathname();
   const { data: session } = useSession();
 
-  // Compute user data
   const rawUser = session?.user as
     | {
         id: string;
@@ -472,31 +407,69 @@ export function SiteTopBar({
       }
     : null;
 
-  // Build nav items based on section + role
-  const navItems: NavItem[] = React.useMemo(() => {
-    return buildNavItems(section, user?.role === "admin").filter(
-      (item) => !hideLinks.includes(item.label)
-    );
-  }, [section, user?.role, hideLinks]);
+  // Fetch the live credit balance (the session doesn't carry custom fields).
+  // The result is tagged with the email it belongs to, so a stale fetch from
+  // a previous session is never displayed.
+  const userEmail = user?.email ?? null;
+  const [fetchedBalance, setFetchedBalance] = React.useState<{
+    email: string;
+    usd: number;
+  } | null>(null);
+  React.useEffect(() => {
+    if (!userEmail) return;
+    let cancelled = false;
+    fetch("/api/me/balance")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (!cancelled && d && typeof d.creditUsd === "number") {
+          setFetchedBalance({ email: userEmail, usd: d.creditUsd });
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [userEmail]);
+
+  const balanceUsd =
+    fetchedBalance && fetchedBalance.email === userEmail
+      ? fetchedBalance.usd
+      : null;
+  const displayBalance = balanceUsd ?? user?.creditBalance ?? 0;
+
+  const inApp = section === "console" || section === "admin";
+
+  // Blend with the page at the very top; gain a glass background once the
+  // page scrolls beneath the bar. The bottom border stays constant so the
+  // topbar always reads as a clean edge (including on sidebar pages).
+  const [scrolled, setScrolled] = React.useState(false);
+  React.useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   return (
-    <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur">
-      <div className="flex h-topbar w-full items-center justify-between px-4">
-        {/* Left: Sidebar trigger (console) + Mobile hamburger + Logo */}
-        <div className="flex items-center gap-2">
+    <header
+      className={cn(
+        // One consistent bottom border (same token as sidebar borders) so the
+        // topbar reads as a clean horizontal edge on sidebar pages too.
+        "sticky top-0 z-40 border-b border-border transition-[background-color,box-shadow] duration-300 motion-reduce:transition-none",
+        scrolled
+          ? "bg-background/75 shadow-sm backdrop-blur-md supports-[backdrop-filter]:bg-background/60"
+          : "bg-transparent"
+      )}
+    >
+      <div className="flex h-topbar w-full items-center justify-between gap-3 px-4 sm:px-6">
+        {/* Left: trigger + logo + nav */}
+        <div className="flex min-w-0 items-center gap-1">
           {sidebarTrigger}
-          <MobileMenu navItems={navItems} user={user} />
           <SiteLogo />
-        </div>
 
-        {/* Right: Desktop nav + Theme + Balance + Divider + Auth */}
-        <div className="flex items-center gap-1">
-          {/* Desktop nav links */}
-          <nav
-            className="hidden items-center gap-1 md:flex"
-            aria-label="Primary navigation"
-          >
-            {navItems.map((item) => {
+          {/* Desktop nav */}
+          <nav className="ml-4 hidden items-center gap-1 md:flex" aria-label="Primary navigation">
+            {NAV_ITEMS.map((item) => {
               const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
               return (
                 <Link
@@ -504,42 +477,62 @@ export function SiteTopBar({
                   href={item.href}
                   aria-current={isActive ? "page" : undefined}
                   className={cn(
-                    "rounded-full px-4 py-1.5 text-sm transition-colors hover:bg-accent hover:text-foreground",
-                    isActive
-                      ? "text-foreground font-medium"
-                      : "text-muted-foreground"
+                    "relative rounded-md px-3 py-1.5 text-sm transition-colors hover:text-foreground",
+                    isActive ? "font-medium text-foreground" : "text-muted-foreground"
                   )}
                 >
                   {item.label}
+                  {isActive && (
+                    <span
+                      className="absolute inset-x-3 -bottom-[13px] h-0.5 rounded-full bg-primary"
+                      aria-hidden="true"
+                    />
+                  )}
                 </Link>
               );
             })}
           </nav>
+        </div>
 
-          {/* Theme toggle */}
-          <div className="hidden md:flex ml-2">
+        {/* Right: actions */}
+        <div className="flex items-center gap-1.5">
+          <div className="hidden md:flex">
             <ThemeToggle />
           </div>
 
-          {/* Balance badge — only when logged in */}
+          {user && !inApp && (
+            <Link
+              href="/console/dashboard"
+              className={`${buttonVariants({ size: "sm" })} hidden md:inline-flex`}
+            >
+              Console
+            </Link>
+          )}
+
           {user && (
-            <Badge variant="outline" className="hidden md:inline-flex font-mono text-xs ml-2">
-              <span className="hidden lg:inline">Balance </span>
-              ${user.creditBalance.toFixed(2)}
+            <Badge
+              variant="outline"
+              className="hidden h-8 gap-2 rounded-lg px-3 font-mono text-sm md:inline-flex"
+            >
+              <WalletIcon className="size-4 text-primary" aria-hidden="true" />
+              {balanceUsd != null ? `$${displayBalance.toFixed(2)}` : "…"}
             </Badge>
           )}
 
-          {/* Divider */}
-          <div className="mx-3 hidden h-6 w-px bg-border md:block" aria-hidden="true" />
-
-          {/* Auth section */}
           <div className="hidden md:flex">
             {user ? (
-              <AuthenticatedActions user={user} hideLinks={hideLinks} />
+              <UserDropdown user={{ ...user, creditBalance: displayBalance }} />
             ) : (
               <GuestActions variant="desktop" />
             )}
           </div>
+
+          {/* Mobile hamburger (public only; in-app uses the sidebar trigger) */}
+          {!inApp && (
+            <div className="md:hidden">
+              <MobileMenu user={user} />
+            </div>
+          )}
         </div>
       </div>
     </header>

@@ -1,10 +1,15 @@
 "use client";
 import * as React from "react";
-import { motion, useReducedMotion, type Variants } from "framer-motion";
+import {
+  AnimatePresence,
+  motion,
+  useReducedMotion,
+  type Variants,
+} from "framer-motion";
 
 const fadeUp: Variants = {
-  hidden: { opacity: 0, y: 24 },
-  visible: { opacity: 1, y: 0 },
+  hidden: { opacity: 0, y: 24, filter: "blur(4px)" },
+  visible: { opacity: 1, y: 0, filter: "blur(0px)" },
 };
 
 /** Hook: returns true only after client-side hydration is complete */
@@ -37,8 +42,8 @@ export function FadeIn({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y }}
-      whileInView={{ opacity: 1, y: 0 }}
+      initial={{ opacity: 0, y, filter: "blur(4px)" }}
+      whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
       viewport={{ once: true, margin: "-60px" }}
       transition={{ duration, delay, ease: "easeOut" }}
       className={className}
@@ -52,7 +57,7 @@ export function FadeIn({
 export function FadeInStagger({
   children,
   className,
-  stagger = 0.08,
+  stagger = 0.1,
   ...props
 }: React.ComponentProps<typeof motion.div> & { stagger?: number }) {
   const prefersReduced = useReducedMotion();
@@ -155,5 +160,41 @@ export function ScaleIn({
     >
       {children}
     </motion.div>
+  );
+}
+
+/**
+ * Contextual icon swap: cross-fades between two icons with opacity + scale +
+ * blur instead of a hard toggle. `initial={false}` so nothing animates on
+ * first page load — only on state changes.
+ */
+export function IconSwap({
+  activeKey,
+  children,
+  className,
+}: {
+  activeKey: string;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  const prefersReduced = useReducedMotion();
+
+  if (prefersReduced) {
+    return <span className={className}>{children}</span>;
+  }
+
+  return (
+    <AnimatePresence mode="popLayout" initial={false}>
+      <motion.span
+        key={activeKey}
+        initial={{ opacity: 0, scale: 0.25, filter: "blur(4px)" }}
+        animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+        exit={{ opacity: 0, scale: 0.25, filter: "blur(4px)" }}
+        transition={{ type: "spring", duration: 0.3, bounce: 0 }}
+        className={className}
+      >
+        {children}
+      </motion.span>
+    </AnimatePresence>
   );
 }

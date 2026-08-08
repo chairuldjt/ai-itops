@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Card,
   CardContent,
@@ -21,16 +22,14 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart";
 import {
-  BarChart,
-  Bar,
-  LineChart,
-  Line,
+  AreaChart,
+  Area,
   XAxis,
   YAxis,
   CartesianGrid,
 } from "recharts";
 import { EmptyState } from "@/components/ui/empty-state";
-import { cn } from "@/lib/utils";
+import { cn, formatNumber } from "@/lib/utils";
 import {
   DollarSignIcon,
   ActivityIcon,
@@ -58,6 +57,7 @@ function getGreeting() {
 type Props = {
   userName: string;
   creditBalance: number;
+  range: RangeValue;
   stats: {
     totalSpend: number;
     totalRequests: number;
@@ -76,7 +76,15 @@ const chartConfig = {
   requests: { label: "Requests", color: "var(--chart-2)" },
 };
 
-const DATE_PRESETS = ["All", "Last 30 Days", "Last 7 Days", "Today"] as const;
+/** Preset label -> ?range= query value understood by the server page. */
+const DATE_PRESETS = [
+  { label: "All", value: "all" },
+  { label: "Last 30 Days", value: "30d" },
+  { label: "Last 7 Days", value: "7d" },
+  { label: "Today", value: "today" },
+] as const;
+
+export type RangeValue = (typeof DATE_PRESETS)[number]["value"];
 
 /* ------------------------------------------------------------------ */
 /*                      METRIC TILE COMPONENT                         */
@@ -96,12 +104,14 @@ function MetricTile({
   className?: string;
 }) {
   return (
-    <div className={cn("rounded-xl border p-4", className)}>
+    <div className={cn("card-hover rounded-md border bg-card/60 p-4", className)}>
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <Icon className="size-4 shrink-0 text-primary" aria-hidden="true" />
+        <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary ring-1 ring-primary/20">
+          <Icon className="size-4" aria-hidden="true" />
+        </span>
         <span className="truncate">{label}</span>
       </div>
-      <div className="mt-2 text-xl font-semibold leading-tight tracking-tight">
+      <div className="mt-2.5 text-xl font-semibold leading-tight tracking-tight tabular-nums">
         {value}
       </div>
       <div className="mt-0.5 text-xs text-muted-foreground">{subtitle}</div>
@@ -116,30 +126,37 @@ function MetricTile({
 function DateRangeFilter({
   active,
   onChange,
+  onRefresh,
 }: {
-  active: string;
-  onChange: (v: string) => void;
+  active: RangeValue;
+  onChange: (v: RangeValue) => void;
+  onRefresh: () => void;
 }) {
   return (
     <div className="flex items-center gap-2">
       <div className="relative grid grid-cols-2 gap-1 rounded-xl bg-muted p-1 md:flex md:w-auto md:items-center">
         {DATE_PRESETS.map((preset) => (
           <button
-            key={preset}
+            key={preset.value}
             type="button"
-            onClick={() => onChange(preset)}
+            onClick={() => onChange(preset.value)}
             className={cn(
               "relative z-10 whitespace-nowrap rounded-lg px-3 py-1.5 text-center text-sm transition-colors",
-              active === preset
+              active === preset.value
                 ? "bg-background font-medium text-foreground shadow-sm"
                 : "text-muted-foreground hover:text-foreground"
             )}
           >
-            {preset}
+            {preset.label}
           </button>
         ))}
       </div>
-      <Button variant="ghost" size="icon-sm" aria-label="Refresh dashboard">
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        aria-label="Refresh dashboard"
+        onClick={onRefresh}
+      >
         <RefreshCwIcon className="size-4" aria-hidden="true" />
       </Button>
     </div>
@@ -169,12 +186,12 @@ function AccountBalanceCard({ creditBalance }: { creditBalance: number }) {
 
         <div className="mt-3.5 grid grid-cols-1 gap-3.5">
           {/* Cash Balance */}
-          <div className="rounded-xl border p-4">
+          <div className="ring-gradient glow-sm rounded-md p-4">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <WalletIcon className="size-4 shrink-0 text-primary" aria-hidden="true" />
               <span>Cash Balance</span>
             </div>
-            <div className="mt-2 text-xl font-semibold leading-tight">
+            <div className="mt-2 text-2xl font-semibold leading-tight tracking-tight tabular-nums">
               ${creditBalance.toFixed(2)}
             </div>
             <div className="mt-0.5 text-xs text-muted-foreground">
@@ -183,12 +200,12 @@ function AccountBalanceCard({ creditBalance }: { creditBalance: number }) {
           </div>
 
           {/* Voucher Balance */}
-          <div className="rounded-xl border p-4">
+          <div className="rounded-md border bg-card/60 p-4">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <GiftIcon className="size-4 shrink-0 text-primary" aria-hidden="true" />
               <span>Voucher Balance</span>
             </div>
-            <div className="mt-2 text-xl font-semibold leading-tight">
+            <div className="mt-2 text-xl font-semibold leading-tight tabular-nums">
               $0.00
             </div>
             <div className="mt-0.5 text-xs text-muted-foreground">
@@ -216,7 +233,7 @@ function UsageSummaryCard({ stats }: { stats: Props["stats"] }) {
     {
       icon: ActivityIcon,
       label: "API Requests",
-      value: stats.totalRequests.toLocaleString(),
+      value: formatNumber(stats.totalRequests),
       subtitle: "All requests sent",
     },
     {
@@ -228,13 +245,13 @@ function UsageSummaryCard({ stats }: { stats: Props["stats"] }) {
     {
       icon: CoinsIcon,
       label: "Total Tokens",
-      value: stats.totalTokens.toLocaleString(),
+      value: formatNumber(stats.totalTokens),
       subtitle: "Tokens consumed in selected range",
     },
     {
       icon: CheckCircleIcon,
       label: "Successful Requests",
-      value: stats.successfulRequests.toLocaleString(),
+      value: formatNumber(stats.successfulRequests),
       subtitle: "Successfully returned responses",
     },
     {
@@ -283,54 +300,17 @@ function ModelAnalysisCard({
     <Card>
       <CardHeader className="border-b pb-3">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <CardTitle>Model Data Analysis</CardTitle>
+          <CardTitle>Usage Analytics</CardTitle>
         </div>
       </CardHeader>
       <CardContent className="p-0">
-        <Tabs defaultValue="consumption">
+        <Tabs defaultValue="trend">
           <div className="border-b px-4 pt-2">
             <TabsList variant="line">
-              <TabsTrigger value="consumption">Consumption Distribution</TabsTrigger>
-              <TabsTrigger value="trend">Consumption Trend</TabsTrigger>
-              <TabsTrigger value="ranking">Models Call Ranking</TabsTrigger>
+              <TabsTrigger value="trend">Spending Trend</TabsTrigger>
+              <TabsTrigger value="ranking">Models Ranking</TabsTrigger>
             </TabsList>
           </div>
-
-          <TabsContent value="consumption" className="p-4 pt-3">
-            {modelConsumption.length === 0 ? (
-              <EmptyState
-                title="No data yet"
-                description="Start making API calls to see consumption data."
-              >
-                <Button variant="outline" size="sm" render={<Link href="/console/api-keys" />}>
-                  Create an API key
-                </Button>
-              </EmptyState>
-            ) : (
-              <ChartContainer config={chartConfig} className="h-[300px] w-full">
-                <BarChart data={modelConsumption}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                  <XAxis
-                    dataKey="model"
-                    tick={{ fontSize: 12 }}
-                    tickLine={false}
-                    axisLine={false}
-                  />
-                  <YAxis
-                    tick={{ fontSize: 12 }}
-                    tickLine={false}
-                    axisLine={false}
-                  />
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                  <Bar
-                    dataKey="cost"
-                    fill="var(--color-cost)"
-                    radius={[4, 4, 0, 0]}
-                  />
-                </BarChart>
-              </ChartContainer>
-            )}
-          </TabsContent>
 
           <TabsContent value="trend" className="p-4 pt-3">
             {dailyTrend.length === 0 ? (
@@ -343,36 +323,39 @@ function ModelAnalysisCard({
                 </Button>
               </EmptyState>
             ) : (
-              <ChartContainer config={chartConfig} className="h-[300px] w-full">
-                <LineChart data={dailyTrend}>
+              <ChartContainer config={chartConfig} className="h-[320px] w-full">
+                <AreaChart data={dailyTrend} margin={{ left: 4, right: 8 }}>
+                  <defs>
+                    <linearGradient id="fillCost" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="var(--color-cost)" stopOpacity={0.7} />
+                      <stop offset="95%" stopColor="var(--color-cost)" stopOpacity={0.05} />
+                    </linearGradient>
+                  </defs>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} />
                   <XAxis
                     dataKey="date"
                     tick={{ fontSize: 12 }}
                     tickLine={false}
                     axisLine={false}
+                    tickMargin={8}
                   />
                   <YAxis
                     tick={{ fontSize: 12 }}
                     tickLine={false}
                     axisLine={false}
+                    width={44}
+                    tickFormatter={(v) => `$${Number(v).toFixed(2)}`}
                   />
                   <ChartTooltip content={<ChartTooltipContent />} />
-                  <Line
+                  <Area
                     type="monotone"
                     dataKey="cost"
                     stroke="var(--color-cost)"
                     strokeWidth={2}
-                    dot={false}
+                    fill="url(#fillCost)"
+                    activeDot={{ r: 4 }}
                   />
-                  <Line
-                    type="monotone"
-                    dataKey="requests"
-                    stroke="var(--color-requests)"
-                    strokeWidth={2}
-                    dot={false}
-                  />
-                </LineChart>
+                </AreaChart>
               </ChartContainer>
             )}
           </TabsContent>
@@ -398,13 +381,13 @@ function ModelAnalysisCard({
                           <span className="text-sm font-medium truncate">
                             {m.model}
                           </span>
-                          <span className="text-xs text-muted-foreground">
+                          <span className="text-xs text-muted-foreground tabular-nums">
                             ${m.cost.toFixed(4)} · {m.requests} reqs
                           </span>
                         </div>
                         <div className="h-2 rounded-full bg-muted overflow-hidden">
                           <div
-                            className="h-full rounded-full bg-primary transition-all"
+                            className="h-full rounded-full bg-primary transition-[width] duration-300 ease-out"
                             style={{ width: `${pct}%` }}
                           />
                         </div>
@@ -428,20 +411,32 @@ function ModelAnalysisCard({
 export function DashboardClient({
   userName,
   creditBalance,
+  range,
   stats,
   modelConsumption,
   dailyTrend,
 }: Props) {
-  const [datePreset, setDatePreset] = React.useState<string>("Last 30 Days");
+  const router = useRouter();
+
+  // Greeting depends on the local clock, so it must not render on the
+  // server — otherwise server/client hours can differ and hydration breaks.
+  const [greeting, setGreeting] = React.useState<string | null>(null);
+  React.useEffect(() => {
+    setGreeting(getGreeting());
+  }, []);
 
   return (
     <div className="flex flex-col gap-4">
       {/* Header row */}
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <h1 className="min-w-0 text-2xl font-medium leading-8" title={`${getGreeting()}, ${userName}`}>
-          {getGreeting()}, {userName}
+        <h1 className="min-w-0 text-2xl font-medium leading-8">
+          {greeting ?? "Welcome"}, {userName}
         </h1>
-        <DateRangeFilter active={datePreset} onChange={setDatePreset} />
+        <DateRangeFilter
+          active={range}
+          onChange={(v) => router.push(`/console/dashboard?range=${v}`)}
+          onRefresh={() => router.refresh()}
+        />
       </div>
 
       {/* Two-column grid: Balance (left) + Usage Summary (right) */}

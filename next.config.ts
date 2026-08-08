@@ -11,16 +11,11 @@ const nextConfig: NextConfig = {
   // This lets clients point at the canonical paths:
   //   POST https://your-domain/v1/chat/completions
   //   GET  https://your-domain/v1/models
-  //   POST https://your-domain/anthropic/v1/messages
   async rewrites() {
     return [
       {
         source: "/v1/:path*",
         destination: "/api/v1/:path*",
-      },
-      {
-        source: "/anthropic/v1/:path*",
-        destination: "/api/anthropic/v1/:path*",
       },
     ];
   },

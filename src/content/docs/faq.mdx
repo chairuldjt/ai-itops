@@ -1,7 +1,7 @@
 export const metadata = {
   title: "FAQ",
-  description: "Frequently asked questions about AI Gateway.",
-  order: 11,
+  description: "Frequently asked questions.",
+  order: 5,
 }
 
 # FAQ
@@ -10,80 +10,63 @@ export const metadata = {
 
 ### What is AI Gateway?
 
-AI Gateway is a unified AI model hub that converts leading LLMs into OpenAI and Anthropic compatible APIs. One API key unlocks your entire model catalog.
+AI Gateway gives you one API key that works with many AI models. Instead of signing up for each provider separately, you use a single endpoint and a single key.
 
-### How is this different from OpenAI's API?
+### Do I need a different key for each model?
 
-AI Gateway sits in front of your own model fleet (via 9router). You control the models, pricing, and policies. It's your own AI API, not a reselling service.
+No. One API key works with every model in the catalog. You just change the model name in your request.
 
-### Is there a free tier?
+### Is there a free trial?
 
-Yes. New accounts get free credits. No credit card required to start.
+New accounts may receive starter credits. Check your balance in the console under **Billing**.
 
-## API & Integration
+## Using the API
 
-### Which endpoints are supported?
+### Which endpoint do I use?
 
-- OpenAI: `/v1/chat/completions`, `/v1/models`
-- Anthropic: `/anthropic/v1/messages`
+Send requests to `POST /v1/chat/completions` and list models with `GET /v1/models`. See [Connect your tools](/docs/openai-setup).
 
 ### Does streaming work?
 
-Yes. Full SSE streaming passthrough for both OpenAI and Anthropic formats.
+Yes. Add `"stream": true` to your request to get the answer as it's generated.
 
-### Can I use tool/function calling?
+### Can I use tools / function calling?
 
-Yes, if the upstream model supports it. The gateway passes tool calls through transparently.
-
-## Models
-
-### How do I add a new model?
-
-Use the admin panel under **Admin → Models**, or use the [Management API](/docs/management-api).
-
-### Can I set custom pricing?
-
-Yes. Each model has `input_cost_per_1k` and `output_cost_per_1k` in micro-USD.
-
-### What happens if I send an image to a text-only model?
-
-The gateway applies the model's **image policy**. By default, it strips the image and the model replies naturally. See [Capability Handling](/docs/capability-handling).
+Yes, for models that support it. Tool calls are passed through automatically.
 
 ## Billing
 
-### How does credit deduction work?
+### How am I charged?
 
-Credits are deducted per request based on token usage and the model's cost settings. Deduction happens after the response is complete.
+Each request costs a small amount based on the model and the number of tokens used. The cost is deducted from your balance automatically.
 
-### What happens when my credits run out?
+### What happens when my balance runs out?
 
-Requests return `402 Payment Required`. Top up via the dashboard or admin API.
+New requests are blocked until you top up. You'll see a clear message telling you to add credit.
 
-### Can I set a monthly budget?
+### Where do I see my spending?
 
-Yes. Set a per-user monthly budget in the dashboard or via the Management API.
+Open **Usage** in the console to see every request and its cost, or **Billing** for your balance.
 
 ## Troubleshooting
 
 ### I get `401 Unauthorized`
 
-Check that your API key is correct and not revoked. Ensure the `Authorization` header format is `Bearer sk_live_YOUR_KEY`.
+Check that your API key is correct and that the header is formatted as `Authorization: Bearer sk_live_YOUR_KEY`.
 
 ### I get `404 Not Found`
 
-Verify your base URL:
-- OpenAI: `https://your-domain.com/v1`
-- Anthropic: `https://your-domain.com/anthropic/v1`
+Make sure your base URL is `https://your-domain.com/v1` and that the model name exists on the [Models](/models) page.
+
+### I get `402 Payment Required`
+
+Your balance is empty. Top up in the console under **Billing**.
 
 ### I get `429 Too Many Requests`
 
-You've hit a rate limit. Wait for the `retry_after` period, or upgrade your tier.
-
-### The model I need isn't listed
-
-Add it in the admin panel. You'll need the upstream model ID and a public name.
+You're sending requests too quickly. Wait a moment and try again.
 
 ## Next steps
 
-- [Privacy Policy](/docs/privacy-policy) — how we handle data
-- [Terms of Use](/docs/terms-of-use) — usage terms
+- [Privacy Policy](/docs/privacy-policy)
+- [Terms of Use](/docs/terms-of-use)

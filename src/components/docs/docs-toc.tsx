@@ -24,7 +24,7 @@ export function DocsToc({ headings }: { headings: TocItem[] }) {
       { rootMargin: "-80px 0px -80% 0px", threshold: 0 }
     );
 
-    const headingElements = document.querySelectorAll("h2, h3");
+    const headingElements = document.querySelectorAll("article h2, article h3, #docs-content h2, #docs-content h3");
     headingElements.forEach((el) => observer.observe(el));
 
     return () => observer.disconnect();
@@ -33,29 +33,31 @@ export function DocsToc({ headings }: { headings: TocItem[] }) {
   if (headings.length === 0) return null;
 
   return (
-    <nav className="py-6 pl-4">
-      <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+    <nav className="py-6" aria-label="On this page">
+      <p className="mb-3 font-mono text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground/80">
         On this page
       </p>
-      <ul className="space-y-1.5">
-        {headings.map((heading) => (
-          <li
-            key={heading.id}
-            style={{ paddingLeft: `${(heading.level - 2) * 12}px` }}
-          >
-            <a
-              href={`#${heading.id}`}
-              className={cn(
-                "block text-[13px] leading-snug transition-colors",
-                activeId === heading.id
-                  ? "font-medium text-primary"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              {heading.text}
-            </a>
-          </li>
-        ))}
+      <ul className="border-l border-border">
+        {headings.map((heading) => {
+          const isActive = activeId === heading.id;
+          return (
+            <li key={heading.id}>
+              <a
+                href={`#${heading.id}`}
+                style={{ paddingLeft: `${16 + (heading.level - 2) * 12}px` }}
+                aria-current={isActive ? "location" : undefined}
+                className={cn(
+                  "-ml-px block border-l-2 py-1 pr-2 text-[13px] leading-snug transition-colors",
+                  isActive
+                    ? "border-primary bg-primary/5 font-medium text-primary"
+                    : "border-transparent text-muted-foreground hover:border-border hover:text-foreground"
+                )}
+              >
+                {heading.text}
+              </a>
+            </li>
+          );
+        })}
       </ul>
     </nav>
   );

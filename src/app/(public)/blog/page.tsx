@@ -30,9 +30,9 @@ const placeholderPosts = [
     date: "Coming soon",
   },
   {
-    title: "OpenAI + Anthropic: One Key to Rule Them All",
+    title: "One Key, Every Model: Routing with 9router",
     description:
-      "A deep dive into protocol translation between OpenAI and Anthropic wire formats.",
+      "How a single OpenAI-compatible endpoint fronts your 9router upstream with auto-fallback across providers.",
     date: "Coming soon",
   },
 ];

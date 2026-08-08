@@ -1,55 +1,31 @@
 export const metadata = {
   title: "Introduction",
-  description: "What is AI Gateway and how it works.",
+  description: "What AI Gateway is and what you can do with it.",
   order: 1,
 }
 
 # Introduction
 
-AI Gateway is a **unified AI model hub** that converts leading LLMs into OpenAI and Anthropic compatible APIs. One API key unlocks your entire model catalog.
+Welcome! AI Gateway gives you **one API key for many AI models**. Instead of signing up for each AI provider separately, you use a single key and a single endpoint to access every model in the catalog.
 
-## What it does
+## What you get
 
-| Feature | Description |
-|---------|-------------|
-| Unified API | OpenAI `/v1` and Anthropic `/anthropic/v1` endpoints |
-| One key | Single API key for every model in your catalog |
-| Capability handling | Non-vision models receive images gracefully — no crashes |
-| Usage tracking | Per-request token metering, credit balance, audit logs |
-| Admin control | Map model names, set pricing, declare capabilities |
+- **One key, many models** — a single API key works with every model we offer.
+- **Works with your tools** — compatible with the OpenAI format, so it plugs into OpenAI SDK, opencode, Cursor, Windsurf, and more.
+- **Pay as you go** — top up a credit balance and only pay for what you actually use.
+- **See your usage** — every request is tracked, with tokens and cost clearly shown.
 
 ## How it works
 
-```
-Client (opencode / Claude Code / SDK)
-        │
-        ▼
-   AI Gateway
-   ┌─────────────────────────────┐
-   │  Auth  │ Translate │ Meter  │
-   └─────────────────────────────┘
-        │
-        ▼
-   9router upstream (OpenAI-compatible)
-```
+1. **Create an account** and top up your balance.
+2. **Create an API key** from the console.
+3. **Point your app or tool** at the gateway using your key.
+4. **Start calling any model** — usage is metered automatically.
 
-1. Your client sends a request to the gateway
-2. The gateway authenticates your API key
-3. It translates the request to the upstream model format
-4. Capability enforcement runs (e.g., image stripping for text-only models)
-5. The response streams back through the gateway
-6. Tokens are metered and credits deducted
-
-## Key concepts
-
-- **API Key** — issued from the dashboard, maps to a user with a credit balance
-- **Model** — a public name (e.g. `gpt-4o`) mapped to an upstream model ID
-- **Capability** — declared per model: vision, streaming, tool use, etc.
-- **Image policy** — what happens when a non-vision model receives an image
-- **Credit** — micro-USD balance, deducted per request based on token usage
+That's it. No per-provider setup, no juggling multiple keys.
 
 ## Next steps
 
-- [Quickstart](/docs/quickstart) — get running in 5 minutes
-- [OpenAI Setup](/docs/openai-setup) — configure OpenAI-compatible tools
-- [Models](/docs/image-models) — browse the model catalog
+- [Quickstart](/docs/quickstart) — get your first answer in minutes
+- [Connect your tools](/docs/openai-setup) — use the gateway with your favorite app
+- [Usage & limits](/docs/rate-limits) — understand credits and limits

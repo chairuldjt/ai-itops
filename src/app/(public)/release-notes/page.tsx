@@ -56,9 +56,9 @@ const releases: ReleaseEntry[] = [
   {
     version: "v1.1.1",
     date: "2026-08-01",
-    title: "Anthropic Compatibility",
+    title: "Per-Key Model Access",
     description:
-      "Added /anthropic/v1/messages endpoint with full tool_use support, streaming events, and Claude SDK drop-in compatibility.",
+      "Restrict each API key to a specific set of models with an allowlist, enforced on every request and editable from the console.",
     tags: ["Feature"],
   },
   {

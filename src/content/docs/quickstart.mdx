@@ -1,44 +1,49 @@
 export const metadata = {
   title: "Quickstart",
-  description: "Get running with AI Gateway in 5 minutes.",
+  description: "Get your first answer in minutes.",
   order: 2,
 }
 
 # Quickstart
 
-Get your first API call working in under 5 minutes.
+Get your first AI response working in under 5 minutes.
 
 ## Step 1 — Create an account
 
-Go to the **Sign Up** page and create your account. You get free credits to start.
+Go to the **Sign up** page and create your account.
 
-## Step 2 — Get your API key
+## Step 2 — Top up your balance
 
-After logging in, navigate to **Dashboard → Keys** and generate a new API key.
+Add credit to your account so you can pay for usage. Go to **Billing** in the console to top up.
 
-Your key looks like this:
+## Step 3 — Create your API key
+
+In the console, open **API Keys** and create a new key. It looks like this:
 
 ```
 sk_live_YOUR_KEY_HERE
 ```
 
 <Callout type="warning">
-  Keep your API key secret. Never commit it to version control.
+  Your key is shown only once — copy it right away and keep it secret. Never
+  share it or commit it to code repositories.
 </Callout>
 
-## Step 3 — Test with curl
+## Step 4 — Make your first request
+
+Use the key to ask a model a question:
 
 ```bash
 curl https://your-domain.com/v1/chat/completions \
   -H "Authorization: Bearer sk_live_YOUR_KEY" \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "gpt-4o",
+    "model": "MODEL_NAME",
     "messages": [{"role": "user", "content": "Hello!"}]
   }'
 ```
 
-You should get a response like:
+Replace `MODEL_NAME` with a model from the [Models](/models) page. You'll get a response like:
 
 ```json
 {
@@ -52,28 +57,11 @@ You should get a response like:
 }
 ```
 
-## Step 4 — Try streaming
+## Step 5 — See your usage
 
-```bash
-curl https://your-domain.com/v1/chat/completions \
-  -H "Authorization: Bearer sk_live_YOUR_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "model": "gpt-4o",
-    "stream": true,
-    "messages": [{"role": "user", "content": "Count to 5"}]
-  }'
-```
-
-## Step 5 — Browse models
-
-```bash
-curl https://your-domain.com/v1/models \
-  -H "Authorization: Bearer sk_live_YOUR_KEY"
-```
+Open **Usage** in the console to see the request, the tokens it used, and the cost.
 
 ## Next steps
 
-- [OpenAI Setup](/docs/openai-setup) — configure opencode, Cursor, or any OpenAI SDK
-- [Claude Code Setup](/docs/claude-code-setup) — point Claude Code at the gateway
-- [Capability Handling](/docs/capability-handling) — understand image policies
+- [Connect your tools](/docs/openai-setup) — use the gateway with opencode, Cursor, or any OpenAI SDK
+- [Usage & limits](/docs/rate-limits) — understand credits and limits

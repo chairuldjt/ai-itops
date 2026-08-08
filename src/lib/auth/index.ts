@@ -3,6 +3,7 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { admin } from "better-auth/plugins";
 import { db } from "@/lib/db";
 import * as schema from "@/lib/db/schema";
+import { getAppBaseUrl } from "@/lib/site";
 
 // FIX #4: Throw in production if secret is missing instead of using weak fallback.
 const FALLBACK_SECRET = "dev-only-fallback-secret-please-override";
@@ -17,7 +18,7 @@ if (
 
 export const auth = betterAuth({
   appName: "AI Gateway",
-  baseURL: process.env.BETTER_AUTH_URL ?? "http://localhost:3000",
+  baseURL: process.env.BETTER_AUTH_URL ?? getAppBaseUrl(),
   secret: process.env.BETTER_AUTH_SECRET ?? FALLBACK_SECRET,
 
   database: drizzleAdapter(db, {

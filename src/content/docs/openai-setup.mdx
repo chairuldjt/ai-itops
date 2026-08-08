@@ -1,26 +1,17 @@
 export const metadata = {
-  title: "OpenAI Compatible Setup",
-  description: "Configure opencode, Cursor, or any OpenAI SDK to use AI Gateway.",
+  title: "Connect your tools",
+  description: "Use the gateway with opencode, Cursor, or any OpenAI SDK.",
   order: 3,
 }
 
-# OpenAI Compatible Setup
+# Connect your tools
 
-The gateway exposes a full **OpenAI-compatible** API. Any tool that speaks the OpenAI wire protocol works out of the box.
+The gateway uses the standard **OpenAI format**, so any tool that works with OpenAI can be pointed at the gateway with no code changes.
 
-## Base URL
+You only need two things:
 
-```
-https://your-domain.com/v1
-```
-
-## Authentication
-
-Pass your API key in the `Authorization` header:
-
-```
-Authorization: Bearer sk_live_YOUR_KEY
-```
+- **Base URL:** `https://your-domain.com/v1`
+- **API key:** `sk_live_YOUR_KEY` (created in the console)
 
 ## opencode (CLI)
 
@@ -38,7 +29,7 @@ Create or edit `~/.config/opencode/config.json`:
 }
 ```
 
-Then use it:
+Then run:
 
 ```bash
 opencode --provider aigateway
@@ -47,11 +38,9 @@ opencode --provider aigateway
 ## Cursor
 
 1. Open **Cursor Settings → Models**
-2. Click **+ Add model**
-3. Enter the model name (e.g. `gpt-4o`)
-4. Set **API Base URL** to `https://your-domain.com/v1`
-5. Paste your API key
-6. Set as default
+2. Click **+ Add model** and enter a model name from the [Models](/models) page
+3. Set **API Base URL** to `https://your-domain.com/v1`
+4. Paste your API key and set it as default
 
 ## Python (OpenAI SDK)
 
@@ -64,7 +53,7 @@ client = OpenAI(
 )
 
 response = client.chat.completions.create(
-    model="gpt-4o",
+    model="MODEL_NAME",
     messages=[{"role": "user", "content": "Hello!"}]
 )
 print(response.choices[0].message.content)
@@ -81,22 +70,21 @@ const client = new OpenAI({
 });
 
 const response = await client.chat.completions.create({
-  model: "gpt-4o",
+  model: "MODEL_NAME",
   messages: [{ role: "user", content: "Hello!" }],
 });
 
 console.log(response.choices[0].message.content);
 ```
 
-## Supported endpoints
+## Available endpoints
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/v1/chat/completions` | POST | Chat completions (streaming + non-streaming) |
-| `/v1/models` | GET | List available models |
-| `/v1/images/generations` | POST | Image generation (if supported) |
+| Endpoint | What it does |
+|----------|--------------|
+| `POST /v1/chat/completions` | Chat with a model (streaming or not) |
+| `GET /v1/models` | List the models you can use |
 
 ## Next steps
 
-- [Anthropic Setup](/docs/anthropic-setup) — configure the Anthropic SDK
-- [Claude Code Setup](/docs/claude-code-setup) — set up Claude Code
+- [Usage & limits](/docs/rate-limits) — understand credits and limits
+- [FAQ](/docs/faq) — common questions

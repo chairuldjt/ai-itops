@@ -57,3 +57,58 @@ export async function adminTopUp(input: z.infer<typeof Schema>) {
   revalidatePath("/admin/billing");
   return { ok: true, newBalance: Number(result.creditBalance) / 1_000_000 };
 }
+
+/* -------------------------------------------------------------------------- */
+/*                                  BAN / UNBAN                               */
+/* -------------------------------------------------------------------------- */
+
+const BanSchema = z.object({
+  userId: z.string().min(1),
+  banned: z.boolean(),
+  banReason: z.string().max(500).optional(),
+});
+
+export async function setUserBanned(input: z.infer<typeof BanSchema>) {
+  await requireAdmin();
+  const parsed = BanSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.flatten().fieldErrors };
+  }
+  await db
+    .update(users)
+    .set({
+      banned: parsed.data.banned,
+      banReason: parsed.data.banned ? parsed.data.banReason ?? null : null,
+      banExpires: null,
+      updatedAt: new Date(),
+    })
+    .where(eq(users.id, parsed.data.userId));
+  revalidatePath("/admin/users");
+  return { ok: true };
+}
+
+/* -------------------------------------------------------------------------- */
+/*                                    ROLE                                    */
+/* -------------------------------------------------------------------------- */
+
+const RoleSchema = z.object({
+  userId: z.string().min(1),
+  role: z.enum(["user", "admin"]),
+});
+
+export async function setUserRole(input: z.infer<typeof RoleSchema>) {
+  const admin = await requireAdmin();
+  const parsed = RoleSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.flatten().fieldErrors };
+  }
+  if (parsed.data.userId === admin.user.id) {
+    return { ok: false, error: { role: ["You cannot change your own role."] } };
+  }
+  await db
+    .update(users)
+    .set({ role: parsed.data.role, updatedAt: new Date() })
+    .where(eq(users.id, parsed.data.userId));
+  revalidatePath("/admin/users");
+  return { ok: true };
+}

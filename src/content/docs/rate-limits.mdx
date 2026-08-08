@@ -1,89 +1,66 @@
 export const metadata = {
-  title: "Rate Limits",
-  description: "Rate limiting, RPM, quotas, and budget caps.",
-  order: 9,
+  title: "Usage & limits",
+  description: "Understand credits, balance, and usage limits.",
+  order: 4,
 }
 
-# Rate Limits
+# Usage & limits
 
-AI Gateway enforces rate limits to protect upstream providers and ensure fair usage.
+You pay for what you use. This page explains how credits work and what limits apply.
 
-## Rate limit types
+## Credits & balance
 
-### Requests per minute (RPM)
+- Your account has a **credit balance** (in USD).
+- Every request costs a small amount based on the model and how many tokens it uses.
+- The cost is deducted from your balance automatically after each request.
 
-Each API key has a configurable RPM limit:
+You can see your balance at any time in the console under **Billing**, and top up when it runs low.
 
-| Tier | Default RPM | Max RPM |
-|------|:-----------:|:-------:|
-| Free | 60 | 120 |
-| Pro | 300 | 1,000 |
-| Enterprise | Custom | Custom |
+## What happens when you run out
 
-### Tokens per minute (TPM)
-
-A secondary limit on token throughput:
-
-| Tier | Default TPM |
-|------|:-----------:|
-| Free | 40,000 |
-| Pro | 200,000 |
-| Enterprise | Custom |
-
-### Budget caps
-
-Per-user credit limits prevent runaway costs:
-
-```
-User balance: $10.00
-Monthly budget: $50.00
-```
-
-When the balance or budget is exhausted, requests return `429 Too Many Requests`.
-
-## Error response
+If your balance reaches zero, new requests are blocked until you top up. You'll get a clear error telling you to add credit:
 
 ```json
 {
   "error": {
-    "message": "Rate limit exceeded. Please wait before retrying.",
-    "type": "rate_limit_exceeded",
-    "code": "rate_limit_exceeded",
-    "retry_after": 30
+    "message": "Insufficient credit balance. Please top up to continue.",
+    "type": "billing_error",
+    "code": "insufficient_balance"
   }
 }
 ```
 
-The `retry_after` field indicates seconds until the limit resets.
+## Rate limits
 
-## Headers
+To keep things fair, each API key can make a limited number of requests per minute. If you go too fast, you'll briefly be asked to slow down:
 
-Rate limit info is included in response headers:
-
-```
-X-RateLimit-Limit: 300
-X-RateLimit-Remaining: 287
-X-RateLimit-Reset: 1700000060
-```
-
-## Best practices
-
-- **Implement exponential backoff** — respect the `retry_after` value
-- **Cache responses** — reduce unnecessary API calls
-- **Use streaming** — better for long responses, lower timeout risk
-- **Monitor usage** — check the dashboard for real-time usage stats
-
-## Checking your limits
-
-```bash
-curl https://your-domain.com/v1/models \
-  -H "Authorization: Bearer sk_live_YOUR_KEY" \
-  -D -
+```json
+{
+  "error": {
+    "message": "Rate limit exceeded. Try again later.",
+    "type": "rate_limit_error",
+    "code": "rate_limit_exceeded"
+  }
+}
 ```
 
-Headers in the response show your current rate limit status.
+Just wait a moment and try again.
+
+## Tracking your usage
+
+Open **Usage** in the console to see every request, including:
+
+- The model used
+- Tokens consumed
+- Cost
+- Whether it succeeded
+
+## Tips
+
+- **Watch your balance** — top up before it hits zero to avoid interruptions.
+- **Use the right model** — cheaper models cost less per request.
+- **Check Usage** — spot anything unexpected early.
 
 ## Next steps
 
-- [Management API](/docs/management-api) — adjust limits programmatically
-- [FAQ](/docs/faq) — common rate limit questions
+- [FAQ](/docs/faq) — common questions

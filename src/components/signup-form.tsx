@@ -8,6 +8,7 @@ import { z } from "zod";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { signUp } from "@/lib/auth/client";
+import { AuthBrandPanel } from "@/components/auth-brand-panel";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -60,7 +61,7 @@ export function SignupForm({
       return;
     }
     toast.success("Account created! Redirecting…");
-    router.push("/dashboard");
+    router.push("/console/dashboard");
     router.refresh();
   };
 
@@ -152,17 +153,10 @@ export function SignupForm({
               </FieldDescription>
             </FieldGroup>
           </form>
-          <div className="relative hidden bg-muted md:block">
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="text-center px-8">
-                <h2 className="text-3xl font-bold mb-2">One Key, Every Model</h2>
-                <p className="text-muted-foreground">
-                  OpenAI, Anthropic, and 300+ more — one unified API with
-                  centralized credit management.
-                </p>
-              </div>
-            </div>
-          </div>
+          <AuthBrandPanel
+            title="Start building today."
+            subtitle="Create an account, grab a single API key, and call every model in the catalog — OpenAI compatible, metered to the micro-dollar."
+          />
         </CardContent>
       </Card>
       <FieldDescription className="px-6 text-center">

@@ -1,17 +1,16 @@
 # AI Gateway
 
-A unified AI gateway that sits in front of your **9router** (or any OpenAI-compatible upstream) and exposes **OpenAI + Anthropic compatible** APIs. Full control over models, pricing, capabilities, and user credits — your users only see one clean endpoint and one API key.
+A unified AI gateway that sits in front of your **9router** (or any OpenAI-compatible upstream) and exposes an **OpenAI-compatible** API. Full control over models, pricing, capabilities, and user credits — your users only see one clean endpoint and one API key.
 
 Inspired by [TokenRouter](https://tokenrouter.com).
 
 ## Features
 
 ### Gateway
-- **Dual-protocol API**
+- **OpenAI-compatible API**
   - `POST /v1/chat/completions` — OpenAI-compatible (stream & non-stream)
   - `GET  /v1/models` — model catalog
-  - `POST /anthropic/v1/messages` — Anthropic-compatible (full request/response/stream translator)
-- Works with **OpenAI SDK**, **Anthropic SDK**, **opencode**, **Claude Code**, **Cursor**, **Windsurf**, and any HTTP client
+- Works with **OpenAI SDK**, **opencode**, **Cursor**, **Windsurf**, and any HTTP client
 
 ### Admin Control
 - **Per-model management** — public ID mapping, type (`chat`/`image`/`tts`/`stt`/`embedding`/`rerank`), pricing, capabilities, tags
@@ -84,14 +83,6 @@ pnpm dev              # http://localhost:9003
 }
 ```
 
-### Using with Claude Code
-
-```bash
-export ANTHROPIC_BASE_URL=http://localhost:9003/anthropic/v1
-export ANTHROPIC_API_KEY=sk_live_...
-claude
-```
-
 ## Deployment
 
 ### Option A: Linux Server with PM2 (Recommended)
@@ -145,14 +136,13 @@ src/
     (public)/                         # Public pages with SiteTopBar + SiteFooter
       page.tsx                        # Landing page
       models/                         # Model catalog (search, filter, sort)
-      pricing/                        # Pricing tiers + per-model table
       blog/                           # Blog (coming soon)
       contact-us/                     # Contact form
       release-notes/                  # Release timeline
     (auth)/login, signup              # Auth pages
-    (dashboard)/dashboard             # User dashboard (sidebar + ConsoleTopBar)
-    (admin)/admin                     # Admin panel (sidebar + ConsoleTopBar)
-    console/                          # Advanced console UI
+    (dashboard)/dashboard             # Legacy area — redirects to /console/dashboard
+    (admin)/admin                     # Admin panel (overview, models, users, billing)
+    console/                          # Main console UI
       dashboard/                      # Usage analytics + charts
       models/                         # Model browser
       chat/                           # Chat playground
@@ -163,17 +153,17 @@ src/
     docs/                             # MDX-powered documentation
     api/
       auth/[...all]                   # Better-Auth routes
-      v1/chat/completions             # OpenAI gateway
+      v1/chat/completions             # OpenAI gateway (also served at /v1/chat/completions)
       v1/models                       # Model list
-      anthropic/v1/messages           # Anthropic gateway
+      me/balance                      # Current user's live credit balance
   components/
     layout/
       site-topbar                     # Adaptive public topbar
       site-footer                     # Consistent footer
-      dashboard-sidebar               # Sidebar for admin/dashboard
-      layout-header                   # Dynamic breadcrumb header
+      app-shell                       # Authenticated app shell
+      app-sidebar                     # Console/admin sidebar
       page-header                     # Reusable page header
-    ui/                               # 35+ shadcn/ui components
+    ui/                               # shadcn/ui components
     motion/                           # Framer Motion wrappers
     docs/                             # Documentation sidebar + TOC
   lib/
@@ -183,12 +173,14 @@ src/
       api-key                         # SHA-256 key hashing + auth
       model-resolver                  # publicId → upstreamId
       capability-enforcer             # 3 image policies + tool stripping
-      meter                           # Token cost calc + credit deduction
+      billing                         # Reservation/settlement billing (micro-USD)
+      rate-limit                      # DB-backed token bucket (RPM)
+      validation                      # Bounded request body schemas
       upstream                        # 9router HTTP client
-      openai                          # OpenAI helpers
-      anthropic                       # Anthropic ↔ OpenAI translator
+      openai                          # OpenAI helpers + SSE utilities
+      response, errors                # Response + error formatting
 scripts/
-  init-db.mjs                         # Auto-create DB + migrate + seed
+  init-db.mjs                         # Auto-create DB + push schema + seed
   deploy.sh                           # Full deployment script
 ```
 
@@ -199,6 +191,7 @@ scripts/
 | `pnpm dev` | Dev server (Turbopack) |
 | `pnpm build` | Production build |
 | `pnpm start` | Start production server |
+| `pnpm lint` | ESLint |
 | `pnpm db:init` | Auto-create DB + push schema + seed admin |
 | `pnpm db:push` | Push schema to DB (dev) |
 | `pnpm db:generate` | Generate Drizzle migrations |

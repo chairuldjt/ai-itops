@@ -8,6 +8,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/layout/page-header";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -245,14 +246,10 @@ export function ChatClient({
 
   return (
     <div className="flex flex-col gap-4 h-[calc(100vh-8rem)] min-h-[500px]">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">
-          Chat Playground
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          Test models with a chat interface.
-        </p>
-      </div>
+      <PageHeader
+        title="Chat Playground"
+        description="Test models with a chat interface."
+      />
 
       <div className="flex flex-1 flex-col lg:flex-row gap-4 min-h-0">
         {/* Left config panel */}

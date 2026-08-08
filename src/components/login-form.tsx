@@ -8,6 +8,7 @@ import { z } from "zod";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { signInAndSetRoleCookie } from "@/lib/auth/client";
+import { AuthBrandPanel } from "@/components/auth-brand-panel";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -28,7 +29,7 @@ type FormData = z.infer<typeof schema>;
 export function LoginForm({ className, ...props }: React.ComponentProps<"div">) {
   const router = useRouter();
   const sp = useSearchParams();
-  const redirect = sp.get("redirect") || "/dashboard";
+  const redirect = sp.get("redirect") || "/console/dashboard";
   const [loading, setLoading] = useState(false);
 
   const {
@@ -120,17 +121,10 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
               </FieldDescription>
             </FieldGroup>
           </form>
-          <div className="relative hidden bg-muted md:block">
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="text-center px-8">
-                <h2 className="text-3xl font-bold mb-2">AI Gateway</h2>
-                <p className="text-muted-foreground">
-                  A unified API for OpenAI, Anthropic and more. One key, every
-                  model.
-                </p>
-              </div>
-            </div>
-          </div>
+          <AuthBrandPanel
+            title="One key, every model."
+            subtitle="Access OpenAI-compatible endpoints through a single, clean API — with centralized credit and usage tracking."
+          />
         </CardContent>
       </Card>
       <FieldDescription className="px-6 text-center">

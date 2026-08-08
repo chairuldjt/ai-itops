@@ -1,6 +1,7 @@
 import { listAllModels } from "./actions";
 import { ModelsTable } from "./models-table";
 import { ModelFormDialog } from "./model-form-dialog";
+import { PageHeader } from "@/components/layout/page-header";
 import {
   Card,
   CardContent,
@@ -17,15 +18,11 @@ export default async function AdminModelsPage() {
   const models = await listAllModels();
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Models</h1>
-          <p className="text-sm text-muted-foreground">
-            Full control: name mapping, pricing, capabilities, image policy.
-          </p>
-        </div>
-        <ModelFormDialog />
-      </div>
+      <PageHeader
+        title="Models"
+        description="Full control: name mapping, pricing, capabilities, image policy."
+        actions={<ModelFormDialog />}
+      />
       <Card>
         <CardHeader className="pb-3">
           <CardTitle>All Models ({models.length})</CardTitle>

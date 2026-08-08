@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Card,
   CardContent,
@@ -53,7 +54,13 @@ const Schema = z.object({
   monthlyBudgetUsd: z.coerce.number().min(0).optional(),
 });
 
-export function ApiKeysClient({ initialKeys }: { initialKeys: ApiKey[] }) {
+export function ApiKeysClient({
+  initialKeys,
+  availableModels = [],
+}: {
+  initialKeys: ApiKey[];
+  availableModels?: { id: string; provider: string }[];
+}) {
   const [keys, setKeys] = React.useState(initialKeys);
   const [open, setOpen] = React.useState(false);
   const [newKey, setNewKey] = React.useState<string | null>(null);
@@ -61,6 +68,8 @@ export function ApiKeysClient({ initialKeys }: { initialKeys: ApiKey[] }) {
   const [busyId, setBusyId] = React.useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = React.useState<string | null>(null);
   const [copiedUrl, setCopiedUrl] = React.useState<string | null>(null);
+  const [allModels, setAllModels] = React.useState(true);
+  const [selectedModels, setSelectedModels] = React.useState<Set<string>>(new Set());
 
   const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
 
@@ -70,12 +79,19 @@ export function ApiKeysClient({ initialKeys }: { initialKeys: ApiKey[] }) {
   });
 
   const onCreate = async (values: z.infer<typeof Schema>) => {
-    const res = await createApiKey(values);
+    if (!allModels && selectedModels.size === 0) {
+      toast.error("Select at least one model, or enable 'All models'");
+      return;
+    }
+    const allowedModels = allModels ? undefined : [...selectedModels];
+    const res = await createApiKey({ ...values, allowedModels });
     if (res.ok && "key" in res) {
       toast.success("API key created");
       setNewKey(res.key as string);
       setOpen(false);
       form.reset();
+      setAllModels(true);
+      setSelectedModels(new Set());
       setKeys((prev) => [
         {
           id: res.id as string,
@@ -89,6 +105,7 @@ export function ApiKeysClient({ initialKeys }: { initialKeys: ApiKey[] }) {
             : null,
           monthlySpent: 0n,
           monthStartedAt: null,
+          allowedModels: allowedModels ?? null,
           enabled: true,
           expiresAt: null,
           lastUsedAt: null,
@@ -189,24 +206,6 @@ export function ApiKeysClient({ initialKeys }: { initialKeys: ApiKey[] }) {
               )}
             </Button>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="w-24 shrink-0 text-xs font-medium text-muted-foreground">Anthropic</span>
-            <code className="flex-1 truncate rounded bg-muted px-2 py-1.5 font-mono text-xs">
-              {baseUrl}/anthropic/v1
-            </code>
-            <Button
-              size="sm"
-              variant="ghost"
-              className="shrink-0"
-              onClick={() => copyUrl(`${baseUrl}/anthropic/v1`, "anthropic")}
-            >
-              {copiedUrl === "anthropic" ? (
-                <><CheckIcon className="size-3.5 mr-1" /> Copied</>
-              ) : (
-                <><CopyIcon className="size-3.5 mr-1" /> Copy</>
-              )}
-            </Button>
-          </div>
         </CardContent>
       </Card>
 
@@ -240,6 +239,46 @@ export function ApiKeysClient({ initialKeys }: { initialKeys: ApiKey[] }) {
                 <Field>
                   <FieldLabel>Monthly budget (USD, optional)</FieldLabel>
                   <Input type="number" step="0.01" {...form.register("monthlyBudgetUsd")} placeholder="10.00" />
+                </Field>
+                <Field>
+                  <div className="flex items-center justify-between">
+                    <FieldLabel>Allowed models</FieldLabel>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">All models</span>
+                      <Switch
+                        checked={allModels}
+                        onCheckedChange={setAllModels}
+                        size="sm"
+                      />
+                    </div>
+                  </div>
+                  {!allModels && (
+                    <div className="max-h-48 overflow-y-auto rounded-lg border p-2 space-y-1">
+                      {availableModels.length === 0 && (
+                        <p className="text-xs text-muted-foreground">No enabled models available.</p>
+                      )}
+                      {availableModels.map((m) => (
+                        <label
+                          key={m.id}
+                          className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted cursor-pointer"
+                        >
+                          <Checkbox
+                            checked={selectedModels.has(m.id)}
+                            onCheckedChange={() =>
+                              setSelectedModels((prev) => {
+                                const next = new Set(prev);
+                                if (next.has(m.id)) next.delete(m.id);
+                                else next.add(m.id);
+                                return next;
+                              })
+                            }
+                          />
+                          <span className="font-mono text-xs">{m.id}</span>
+                          <span className="ml-auto text-xs text-muted-foreground">{m.provider}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
                 </Field>
               </FieldGroup>
               <DialogFooter className="mt-4">
@@ -281,6 +320,15 @@ export function ApiKeysClient({ initialKeys }: { initialKeys: ApiKey[] }) {
                 {k.monthlyBudget != null && (
                   <Badge variant="outline" className="ml-1">
                     ${(Number(k.monthlyBudget) / 1_000_000).toFixed(2)}/mo
+                  </Badge>
+                )}
+                {k.allowedModels != null && (
+                  <Badge
+                    variant="outline"
+                    className="ml-1"
+                    title={k.allowedModels.join(", ")}
+                  >
+                    {k.allowedModels.length} model{k.allowedModels.length === 1 ? "" : "s"}
                   </Badge>
                 )}
               </TableCell>

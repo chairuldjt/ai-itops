@@ -16,7 +16,7 @@ web
 
 ## Product Purpose
 
-AI Gateway is a unified proxy that sits in front of any OpenAI-compatible upstream (like 9router) and exposes both OpenAI and Anthropic compatible APIs. It gives teams a single endpoint, a single API key, and full admin control over models, pricing, capabilities, and user credits — so developers integrate once and platform teams manage cost and access without touching provider consoles.
+AI Gateway is a unified proxy that sits in front of any OpenAI-compatible upstream (like 9router) and exposes an OpenAI-compatible API. It gives teams a single endpoint, a single API key, and full admin control over models, pricing, capabilities, and user credits — so developers integrate once and platform teams manage cost and access without touching provider consoles.
 
 Success looks like: a developer generates a key and starts calling models in under 5 minutes. A platform admin can see who is spending what, set budgets, and add or remove models without downtime.
 
@@ -32,7 +32,7 @@ One endpoint, one key, full control — AI Gateway is the simplest way to unify 
 - **Belief ladder:**
   1. I can unify my AI providers behind one endpoint.
   2. My team gets full control over models, pricing, and budgets.
-  3. It works with the tools I already use (OpenAI SDK, Claude Code, Cursor).
+  3. It works with the tools I already use (OpenAI SDK, opencode, Cursor).
   4. I can start in 5 minutes, not 5 hours.
 - **Proof on hand:** None yet — no testimonials, case studies, or press. As proof accumulates, add here.
 

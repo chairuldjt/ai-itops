@@ -165,6 +165,10 @@ export const apiKeys = pgTable(
     keyPrefix: text("key_prefix").notNull(),
     // Per-key rate limit (requests/minute). null = use default
     rpmLimit: integer("rpm_limit"),
+    // Model allowlist (public model ids). null = all models allowed.
+    // A non-null array is a strict whitelist: requests for models not in
+    // the list are rejected with 403.
+    allowedModels: text("allowed_models").array(),
     // Monthly budget in micro USD. null = unlimited
     monthlyBudget: bigint("monthly_budget", { mode: "bigint" }),
     // How much has been spent this month (reset on 1st of month)

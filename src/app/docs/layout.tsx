@@ -18,20 +18,16 @@ export default function DocsLayout({ children }: { children: ReactNode }) {
       <SiteTopBar />
 
       <div className="mx-auto flex w-full max-w-7xl flex-1">
-        {/* Left sidebar */}
-        <aside className="hidden w-[260px] shrink-0 border-r lg:block">
+        {/* Left sidebar — sticky, scrolls independently */}
+        <aside className="sticky top-[var(--topbar-height)] hidden max-h-[calc(100svh-var(--topbar-height))] w-[260px] shrink-0 overflow-hidden border-r lg:block">
           <DocsSidebar />
         </aside>
 
         {/* Main content */}
-        <main id="docs-content" className="flex-1 overflow-hidden">
-          <div className="flex">
-            <article className="min-w-0 flex-1 px-6 py-10 lg:px-12">
-              {children}
-            </article>
-
-            {/* Right TOC — rendered by page component via client component */}
-          </div>
+        <main id="docs-content" className="min-w-0 flex-1">
+          <article className="px-6 py-10 lg:px-12">
+            {children}
+          </article>
         </main>
       </div>
 

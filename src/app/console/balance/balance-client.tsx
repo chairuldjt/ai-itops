@@ -12,8 +12,6 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import {
   Tabs,
   TabsContent,
@@ -35,11 +33,12 @@ import {
   FadeInStagger,
   FadeInItem,
 } from "@/components/motion";
+import { PageHeader } from "@/components/layout/page-header";
 import {
   CoinsIcon,
   TicketIcon,
-  SettingsIcon,
   ExternalLinkIcon,
+  InfoIcon,
 } from "lucide-react";
 
 type Transaction = {
@@ -82,6 +81,12 @@ function txTypeBadge(type: string) {
           Bonus
         </Badge>
       );
+    case "adjustment":
+      return (
+        <Badge className="bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20">
+          Adjustment
+        </Badge>
+      );
     default:
       return <Badge variant="secondary">{type}</Badge>;
   }
@@ -89,7 +94,6 @@ function txTypeBadge(type: string) {
 
 export function BalanceClient({ creditBalance, transactions }: Props) {
   const [voucherCode, setVoucherCode] = React.useState("");
-  const [emailAlerts, setEmailAlerts] = React.useState(false);
 
   const topupHistory = transactions.filter((t) =>
     ["topup", "refund", "signup_bonus", "adjustment"].includes(t.type)
@@ -100,39 +104,40 @@ export function BalanceClient({ creditBalance, transactions }: Props) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-semibold tracking-tight">
-              Billing
-            </h1>
-          </div>
-          <p className="text-sm text-muted-foreground mt-1">
-            Manage your balance, top-ups, and vouchers.
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        title="Billing"
+        description="Manage your balance, top-ups, and vouchers."
+      />
 
-      <div className="rounded-lg border border-blue-500/20 bg-blue-500/5 p-4 text-sm text-blue-600 dark:text-blue-400">
+      <div className="flex items-center gap-2.5 rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-sm text-foreground/80">
+        <InfoIcon className="size-4 shrink-0 text-primary" aria-hidden="true" />
         Top-ups and vouchers are only for the personal account.
       </div>
 
-      <FadeInStagger className="grid gap-4 md:grid-cols-2">
-        <FadeInItem>
-          <Card className="bg-primary/5">
-            <CardHeader className="pb-2">
+      <FadeInStagger className="grid items-stretch gap-4 md:grid-cols-2">
+        <FadeInItem className="h-full">
+          <Card className="ring-gradient glow-sm relative flex h-full flex-col overflow-hidden">
+            <div
+              className="pointer-events-none absolute -top-16 -right-16 size-40 rounded-full bg-primary/20 blur-3xl"
+              aria-hidden="true"
+            />
+            <CardHeader className="relative pb-2">
               <div className="flex items-center gap-2">
-                <CoinsIcon className="size-5 text-blue-500" />
-                <CardTitle>
-                  Cash Balance
-                </CardTitle>
+                <span className="flex size-8 items-center justify-center rounded-lg bg-primary/15 text-primary ring-1 ring-primary/25">
+                  <CoinsIcon className="size-4" aria-hidden="true" />
+                </span>
+                <CardTitle className="text-base">Cash Balance</CardTitle>
               </div>
-              <CardDescription className="text-3xl font-bold text-foreground">
+              <CardDescription className="mt-2 text-3xl font-semibold tracking-tight text-foreground">
                 ${creditBalance.toFixed(2)}
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <Button className="w-full" size="sm">
+            <CardContent className="relative mt-auto">
+              <Button
+                className="w-full"
+                size="sm"
+                onClick={() => toast.info("Top-ups are coming soon")}
+              >
                 <ExternalLinkIcon className="size-4 mr-1" /> Top-up Personal
                 Account
               </Button>
@@ -140,23 +145,20 @@ export function BalanceClient({ creditBalance, transactions }: Props) {
           </Card>
         </FadeInItem>
 
-        <FadeInItem>
-          <Card>
+        <FadeInItem className="h-full">
+          <Card className="flex h-full flex-col">
             <CardHeader className="pb-2">
               <div className="flex items-center gap-2">
-                <TicketIcon className="size-5 text-amber-500" />
-                <CardTitle>
-                  Voucher Balance
-                </CardTitle>
+                <span className="flex size-8 items-center justify-center rounded-lg bg-amber-500/15 text-amber-500 ring-1 ring-amber-500/25">
+                  <TicketIcon className="size-4" aria-hidden="true" />
+                </span>
+                <CardTitle className="text-base">Voucher Balance</CardTitle>
               </div>
-              <CardDescription className="text-3xl font-bold text-foreground">
+              <CardDescription className="mt-2 text-3xl font-semibold tracking-tight text-foreground">
                 $0.00
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-3">
-              <p className="text-xs text-muted-foreground">
-                0 valid vouchers available
-              </p>
+            <CardContent className="mt-auto space-y-3">
               <div className="flex gap-2">
                 <Input
                   placeholder="Enter voucher code"
@@ -179,24 +181,6 @@ export function BalanceClient({ creditBalance, transactions }: Props) {
           </Card>
         </FadeInItem>
       </FadeInStagger>
-
-      <Card>
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <CardTitle>Balance Alert Settings</CardTitle>
-            <div className="flex items-center gap-2">
-              <Label className="text-xs text-muted-foreground">
-                Email reminders
-              </Label>
-              <Switch
-                checked={emailAlerts}
-                onCheckedChange={setEmailAlerts}
-                size="sm"
-              />
-            </div>
-          </div>
-        </CardHeader>
-      </Card>
 
       <Card>
         <CardContent className="pt-6">

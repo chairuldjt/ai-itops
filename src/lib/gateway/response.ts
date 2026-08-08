@@ -34,34 +34,6 @@ export function openaiErrorResponse(
   });
 }
 
-/**
- * Build an Anthropic-style error response body.
- * { type: "error", error: { type, message } }
- */
-export function anthropicErrorBody(status: number, message: string) {
-  return {
-    type: "error",
-    error: {
-      type: typeForStatus(status),
-      message,
-    },
-  };
-}
-
-export function anthropicErrorResponse(
-  status: number,
-  message: string,
-  headers?: Record<string, string>,
-  requestId?: string,
-): NextResponse {
-  const body = anthropicErrorBody(status, message) as ReturnType<typeof anthropicErrorBody> & { request_id?: string };
-  if (requestId) body.request_id = requestId;
-  return NextResponse.json(body, {
-    status,
-    headers: { ...errorHeaders(), ...headers, ...(requestId ? { "X-Request-ID": requestId, "request-id": requestId } : {}) },
-  });
-}
-
 /* -------------------------------------------------------------------------- */
 /*                              Stream helpers                                */
 /* -------------------------------------------------------------------------- */

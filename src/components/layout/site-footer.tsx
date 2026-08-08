@@ -3,7 +3,6 @@ import { WorkflowIcon } from "lucide-react";
 
 const FOOTER_LINKS = [
   { label: "Models", href: "/models" },
-  { label: "Pricing", href: "/pricing" },
   { label: "Docs", href: "/docs" },
   { label: "Blog", href: "/blog" },
   { label: "Release Notes", href: "/release-notes" },
@@ -29,8 +28,8 @@ export function SiteFooter() {
               <span>AI Gateway</span>
             </Link>
             <p className="mt-3 text-sm text-muted-foreground leading-relaxed max-w-xs">
-              A unified AI gateway that exposes OpenAI and Anthropic compatible
-              APIs with centralized credit and usage tracking.
+              A unified AI gateway that exposes an OpenAI-compatible API with
+              centralized credit and usage tracking.
             </p>
           </div>
 
@@ -38,7 +37,7 @@ export function SiteFooter() {
           <div>
             <h3 className="text-sm font-semibold">Product</h3>
             <nav className="mt-3 space-y-2" aria-label="Product links">
-              {FOOTER_LINKS.slice(0, 4).map((link) => (
+              {FOOTER_LINKS.slice(0, 3).map((link) => (
                 <Link
                   key={link.href}
                   href={link.href}
@@ -54,7 +53,7 @@ export function SiteFooter() {
           <div>
             <h3 className="text-sm font-semibold">Resources</h3>
             <nav className="mt-3 space-y-2" aria-label="Resource links">
-              {FOOTER_LINKS.slice(4).map((link) => (
+              {FOOTER_LINKS.slice(3).map((link) => (
                 <Link
                   key={link.href}
                   href={link.href}

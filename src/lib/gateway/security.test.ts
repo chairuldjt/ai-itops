@@ -2,10 +2,10 @@ import "dotenv/config";
 import assert from "node:assert/strict";
 import test from "node:test";
 import { extractApiKey, apiKeyAccessDecision, normalizeRpmLimit } from "./api-key";
-import { anthropicErrorResponse, MAX_JSON_BODY_BYTES, openaiErrorResponse, parseJsonBody } from "./response";
+import { MAX_JSON_BODY_BYTES, openaiErrorResponse, parseJsonBody } from "./response";
 import { getClient } from "../db";
 import { consumeRateLimit } from "./rate-limit";
-import { anthropicRequestSchema, openAIChatRequestSchema } from "./validation";
+import { openAIChatRequestSchema } from "./validation";
 import { safeUpstreamMessage, internalErrorMessage } from "./errors";
 import { tokenBucketState } from "./rate-limit";
 
@@ -56,16 +56,6 @@ test("OpenAI schema validates trust-boundary shape and bounds", () => {
   assert.equal(openAIChatRequestSchema.safeParse({ model: "m", messages: [{ role: "user", content: [tooDeep] }] }).success, false);
 });
 
-test("Anthropic schema requires max_tokens and bounds tools/base64", () => {
-  assert.equal(anthropicRequestSchema.safeParse({ model: "m", messages: [{ role: "user", content: "x" }] }).success, false);
-  assert.equal(anthropicRequestSchema.safeParse({ model: "m", max_tokens: 0, messages: [{ role: "user", content: "x" }] }).success, false);
-  assert.equal(anthropicRequestSchema.safeParse({ model: "m", max_tokens: 10, messages: [{ role: "user", content: [{ type: "image", source: { type: "base64", media_type: "image/png", data: "x".repeat(800_000) } }] }] }).success, false);
-  assert.equal(anthropicRequestSchema.safeParse({ model: "m", max_tokens: 10, messages: [{ role: "user", content: "x" }], extra: true }).success, true);
-  assert.equal(anthropicRequestSchema.safeParse({ model: "m", max_tokens: 10, messages: [{ role: "assistant", content: [{ type: "thinking", thinking: "x", signature: "s" }, { type: "redacted_thinking", data: "x" }] }] }).success, true);
-  assert.equal(anthropicRequestSchema.safeParse({ model: "m", max_tokens: 10, messages: [{ role: "user", content: [{ type: "document", source: { type: "base64", media_type: "application/pdf", data: "x" } }] }, { role: "user", content: [{ type: "tool_result", tool_use_id: "t", content: [{ type: "future", value: "x" }] }] }] }).success, true);
-  assert.equal(anthropicRequestSchema.safeParse({ model: "m", max_tokens: 10, messages: [{ role: "user", content: [{ type: "future", payload: "x".repeat(250_000) }] }] }).success, false);
-});
-
 test("upstream message allowlist passes only structured safe 4xx", () => {
   assert.equal(internalErrorMessage(500), "Internal server error");
   assert.equal(internalErrorMessage(502), "Upstream service error");
@@ -92,13 +82,6 @@ test("internal OpenAI errors expose matching request ID in body and header", asy
   assert.equal(response.headers.get("x-request-id"), "req-test");
   assert.equal(response.headers.get("request-id"), "req-test");
   assert.equal((await response.json()).request_id, "req-test");
-});
-
-test("Anthropic errors expose matching request ID in body and both headers", async () => {
-  const response = anthropicErrorResponse(502, internalErrorMessage(502), undefined, "req-anthropic");
-  assert.equal(response.headers.get("x-request-id"), "req-anthropic");
-  assert.equal(response.headers.get("request-id"), "req-anthropic");
-  assert.equal((await response.json()).request_id, "req-anthropic");
 });
 
 test("PostgreSQL token bucket is atomic across boundary and refill", async () => {

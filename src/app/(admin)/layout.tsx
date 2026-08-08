@@ -1,8 +1,9 @@
 import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth/session";
-import { DashboardSidebar } from "@/components/layout/dashboard-sidebar";
-import { SidebarShell } from "@/components/layout/sidebar-shell";
+import { AppShell } from "@/components/layout/app-shell";
+
+export const dynamic = "force-dynamic";
 
 export default async function AdminLayout({
   children,
@@ -11,14 +12,7 @@ export default async function AdminLayout({
 }) {
   const session = await getSession();
   if (!session?.user) redirect("/login");
-  if (session.user.role !== "admin") redirect("/dashboard");
+  if (session.user.role !== "admin") redirect("/console/dashboard");
 
-  return (
-    <SidebarShell
-      section="admin"
-      sidebar={<DashboardSidebar mode="admin" />}
-    >
-      {children}
-    </SidebarShell>
-  );
+  return <AppShell section="admin">{children}</AppShell>;
 }

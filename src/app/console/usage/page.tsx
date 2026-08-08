@@ -32,10 +32,13 @@ export default async function ConsoleUsagePage({
     filters.push(eq(usageLogs.apiKeyId, params.key as string));
   }
   if (params.from) {
-    filters.push(gte(usageLogs.createdAt, new Date(params.from as string)));
+    // Date-only input ("YYYY-MM-DD") — treat as start of day (UTC).
+    filters.push(gte(usageLogs.createdAt, new Date(`${params.from}T00:00:00.000Z`)));
   }
   if (params.to) {
-    filters.push(lte(usageLogs.createdAt, new Date(params.to as string)));
+    // Make the end date INCLUSIVE: bare "YYYY-MM-DD" parses as midnight,
+    // which would silently exclude the entire selected end date.
+    filters.push(lte(usageLogs.createdAt, new Date(`${params.to}T23:59:59.999Z`)));
   }
 
   const [countResult] = await db

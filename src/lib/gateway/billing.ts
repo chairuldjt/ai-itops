@@ -198,12 +198,30 @@ export function computeSettlementDelta(reserved: bigint, actual: bigint): bigint
   return reserved - actual;
 }
 
+// Reclaiming expired reservations runs at most once per interval across all
+// requests (instead of on every preflight), to keep the hot path cheap.
+const RECLAIM_INTERVAL_MS = 60_000;
+let lastReclaimAt = 0;
+
 async function reclaimExpiredReservations(now: Date): Promise<void> {
   const expired = await db.select({ id: billingReservations.id })
     .from(billingReservations)
     .where(and(isNull(billingReservations.finalizedAt), lt(billingReservations.expiresAt, now)))
     .limit(25);
   for (const { id } of expired) await settleReservation(id, 0n, null, now, true);
+}
+
+async function maybeReclaimExpiredReservations(now: Date): Promise<void> {
+  const t = now.getTime();
+  if (t - lastReclaimAt < RECLAIM_INTERVAL_MS) return;
+  lastReclaimAt = t;
+  try {
+    await reclaimExpiredReservations(now);
+  } catch (err) {
+    // Reclaim is best-effort housekeeping; never fail the request because of it.
+    lastReclaimAt = 0;
+    console.error("[billing] reclaimExpiredReservations failed:", err);
+  }
 }
 
 export async function preflightBilling(params: {
@@ -221,7 +239,7 @@ export async function preflightBilling(params: {
     ? computeReservationMicroUsd({ model: params.model!, body: params.body! })
     : computeReservationMicroUsd({ amountMicroUsd: params.amountMicroUsd });
   const now = new Date();
-  await reclaimExpiredReservations(now);
+  await maybeReclaimExpiredReservations(now);
   const id = createId("res");
   const period = monthStartUtc(now);
   const expiresAt = leaseExpiry(now, 30 * 60_000);
@@ -383,6 +401,32 @@ export async function extendBillingLease(
     eq(billingReservations.id, reservationId),
     isNull(billingReservations.finalizedAt),
   ));
+}
+
+/**
+ * Throttled lease extender for streaming responses.
+ *
+ * Streams can deliver hundreds of chunks; extending the lease on every chunk
+ * would mean hundreds of DB writes per request. The lease is 30 minutes, so
+ * extending at most once per `intervalMs` is more than enough headroom.
+ */
+export function createLeaseExtender(
+  reservationId: string,
+  intervalMs = 60_000,
+): () => Promise<void> {
+  let lastExtend = 0;
+  let pending: Promise<void> | null = null;
+  return () => {
+    const now = Date.now();
+    if (now - lastExtend < intervalMs) return Promise.resolve();
+    lastExtend = now;
+    if (pending) return pending;
+    pending = extendBillingLease(reservationId, new Date(now)).then(
+      () => { pending = null; },
+      (error) => { pending = null; throw error; },
+    );
+    return pending;
+  };
 }
 
 export async function finalizeBilling(

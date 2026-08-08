@@ -1,39 +1,6 @@
-import { listMyApiKeys } from "./actions";
-import { ApiKeysClient } from "./client";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 
-export const metadata: Metadata = { title: "API Keys" };
-export const dynamic = "force-dynamic";
-
-export default async function KeysPage() {
-  const keys = await listMyApiKeys();
-  return (
-    <div className="flex flex-col gap-4">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">API Keys</h1>
-        <p className="text-sm text-muted-foreground">
-          Create and manage keys for OpenAI / Anthropic compatible endpoints.
-        </p>
-      </div>
-      <Card>
-        <CardHeader>
-          <CardTitle>Your keys</CardTitle>
-          <CardDescription>
-            Keys are shown once at creation — copy them immediately. Use them as{" "}
-            <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">Authorization: Bearer sk_live_...</code>
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="p-0">
-          <ApiKeysClient initialKeys={keys} />
-        </CardContent>
-      </Card>
-    </div>
-  );
+// The legacy /dashboard/keys page has been merged into the unified console.
+export default function DashboardKeysPage() {
+  redirect("/console/api-keys");
 }

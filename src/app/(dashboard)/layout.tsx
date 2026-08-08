@@ -1,9 +1,8 @@
 import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth/session";
-import { DashboardSidebar } from "@/components/layout/dashboard-sidebar";
-import { SidebarShell } from "@/components/layout/sidebar-shell";
 
+// Legacy dashboard area — pages redirect into the unified /console shell.
 export default async function DashboardLayout({
   children,
 }: {
@@ -11,13 +10,5 @@ export default async function DashboardLayout({
 }) {
   const session = await getSession();
   if (!session?.user) redirect("/login");
-
-  return (
-    <SidebarShell
-      section="console"
-      sidebar={<DashboardSidebar mode="dashboard" />}
-    >
-      {children}
-    </SidebarShell>
-  );
+  return <>{children}</>;
 }

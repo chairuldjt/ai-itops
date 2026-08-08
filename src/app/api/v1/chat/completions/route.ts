@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { authenticateApiKey, extractApiKey } from "@/lib/gateway/api-key";
+import { authenticateApiKey, extractApiKey, isModelAllowed, modelAccessDecision } from "@/lib/gateway/api-key";
 import { resolveModel, listEnabledModels } from "@/lib/gateway/model-resolver";
 import type { Model } from "@/lib/db/schema";
 import {
   enforceCapabilities,
   type OpenAIChatBody,
 } from "@/lib/gateway/capability-enforcer";
-import { createSettlementController, extendBillingLease, finalizeBilling, preflightBilling } from "@/lib/gateway/billing";
+import { createLeaseExtender, createSettlementController, finalizeBilling, preflightBilling } from "@/lib/gateway/billing";
 import { callUpstream, callUpstreamStream } from "@/lib/gateway/openai";
 import {
   buildCannedCompletionResponse,
@@ -36,7 +36,9 @@ export async function GET(request: NextRequest) {
   const auth = await authenticateApiKey(raw);
   if (!auth.ok) return openaiErrorResponse(auth.status, auth.message);
 
-  const rows = await listEnabledModels();
+  const rows = (await listEnabledModels()).filter((m) =>
+    isModelAllowed(auth.apiKey, m.publicId),
+  );
   return NextResponse.json({
     object: "list",
     data: rows.map((m) => ({
@@ -81,6 +83,10 @@ export async function POST(request: NextRequest) {
   const resolved = await resolveModel(String(body.model));
   if (!resolved.ok) return openaiErrorResponse(resolved.status, resolved.message);
   const model = resolved.model;
+
+  // 3b) Per-key model allowlist
+  const modelAccess = modelAccessDecision(auth.apiKey, model.publicId);
+  if (!modelAccess.ok) return openaiErrorResponse(modelAccess.status, modelAccess.message);
 
   // 4) Capability enforcement
   const enforce = enforceCapabilities(body, model);
@@ -339,9 +345,14 @@ async function handleStream(params: {
   // Pass-through the upstream SSE chunks to the client, but intercept the
   // final usage chunk so we can meter after the stream closes.
   let finalUsage = { promptTokens: 0, completionTokens: 0, cacheReadTokens: 0, cacheWriteTokens: 0 };
+  // Whether any content chunk was actually delivered. Used to decide billing
+  // when the stream ends without a usage report: if content was delivered we
+  // charge the reserved estimate; if nothing was delivered we refund.
+  let sawContent = false;
   const reader = upstream.stream.getReader();
   const decoder = new TextDecoder();
   let sseBuffer = "";
+  const extendLease = createLeaseExtender(reservationId);
   const settlement = createSettlementController(async (usage: typeof finalUsage) => {
     await finalizeBilling(reservationId, {
       modelId: model.id,
@@ -355,7 +366,7 @@ async function handleStream(params: {
       latencyMs: Date.now() - startMs,
       clientIp,
       model,
-    }, { chargeReserved: usage.promptTokens === 0 && usage.completionTokens === 0 });
+    }, { chargeReserved: usage.promptTokens === 0 && usage.completionTokens === 0 && sawContent });
   });
   const recordFinalUsage = () => {
     billingState.canRelease = false;
@@ -372,7 +383,7 @@ async function handleStream(params: {
           return;
         }
 
-        await extendBillingLease(reservationId);
+        await extendLease();
         // Decode and parse the chunks so we can capture the final usage.
         sseBuffer += decoder.decode(value, { stream: true });
 
@@ -397,12 +408,18 @@ async function handleStream(params: {
           if (joined === "[DONE]") continue;
           try {
             const obj = JSON.parse(joined) as {
+              choices?: unknown[];
               usage?: {
                 prompt_tokens?: number;
                 completion_tokens?: number;
                 prompt_tokens_details?: { cached_tokens?: number };
               };
             };
+            // Content-bearing chunks have a non-empty `choices` array (the
+            // final usage-only chunk has `choices: []`).
+            if (Array.isArray(obj.choices) && obj.choices.length > 0) {
+              sawContent = true;
+            }
             if (obj.usage) {
               finalUsage = {
                 promptTokens: Number(obj.usage.prompt_tokens ?? 0) || 0,

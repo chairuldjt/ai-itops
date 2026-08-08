@@ -47,3 +47,7 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 graphify-out/
+
+# agent + analysis artifacts
+.claude/
+analysis_outputs/

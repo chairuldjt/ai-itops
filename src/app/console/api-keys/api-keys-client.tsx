@@ -2,7 +2,8 @@
 
 import * as React from "react";
 import { toast } from "sonner";
-import { createApiKey, deleteApiKey, toggleApiKeyEnabled } from "@/app/(dashboard)/dashboard/keys/actions";
+import { createApiKey, deleteApiKey, toggleApiKeyEnabled, updateApiKeyModels } from "@/app/(dashboard)/dashboard/keys/actions";
+import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -46,6 +47,7 @@ import {
   EmptyState,
 } from "@/components/ui/empty-state";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { IconSwap } from "@/components/motion";
 import {
   PlusIcon,
   SearchIcon,
@@ -57,6 +59,7 @@ import {
   EyeIcon,
   EyeOffIcon,
   KeyRoundIcon,
+  ListChecksIcon,
 } from "lucide-react";
 
 type KeyRow = {
@@ -67,6 +70,7 @@ type KeyRow = {
   rpmLimit: number | null;
   monthlyBudget: number | null;
   monthlySpent: number;
+  allowedModels: string[] | null;
   enabled: boolean;
   expiresAt: Date | null;
   lastUsedAt: Date | null;
@@ -77,6 +81,41 @@ type Props = {
   initialKeys: KeyRow[];
   availableModels: { id: string; provider: string }[];
 };
+
+function ModelCheckList({
+  models,
+  selected,
+  onToggle,
+}: {
+  models: { id: string; provider: string }[];
+  selected: Set<string>;
+  onToggle: (id: string) => void;
+}) {
+  if (models.length === 0) {
+    return (
+      <p className="text-xs text-muted-foreground">
+        No enabled models available. Ask an admin to enable models first.
+      </p>
+    );
+  }
+  return (
+    <div className="max-h-56 overflow-y-auto rounded-lg border p-2 space-y-1">
+      {models.map((m) => (
+        <label
+          key={m.id}
+          className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted cursor-pointer"
+        >
+          <Checkbox
+            checked={selected.has(m.id)}
+            onCheckedChange={() => onToggle(m.id)}
+          />
+          <span className="font-mono text-xs">{m.id}</span>
+          <span className="ml-auto text-xs text-muted-foreground">{m.provider}</span>
+        </label>
+      ))}
+    </div>
+  );
+}
 
 export function ApiKeysClient({ initialKeys, availableModels }: Props) {
   const [keys, setKeys] = React.useState(initialKeys);
@@ -94,6 +133,38 @@ export function ApiKeysClient({ initialKeys, availableModels }: Props) {
   const [deleteTarget, setDeleteTarget] = React.useState<string | null>(null);
   const [showBulkDelete, setShowBulkDelete] = React.useState(false);
   const [copiedUrl, setCopiedUrl] = React.useState<string | null>(null);
+  // Create-sheet model allowlist state
+  const [allModels, setAllModels] = React.useState(true);
+  const [selectedModels, setSelectedModels] = React.useState<Set<string>>(new Set());
+  // Edit-models dialog state
+  const [editTarget, setEditTarget] = React.useState<KeyRow | null>(null);
+  const [editAllModels, setEditAllModels] = React.useState(true);
+  const [editSelectedModels, setEditSelectedModels] = React.useState<Set<string>>(new Set());
+  const [editBusy, setEditBusy] = React.useState(false);
+
+  const openEditModels = (k: KeyRow) => {
+    setEditTarget(k);
+    setEditAllModels(k.allowedModels == null);
+    setEditSelectedModels(new Set(k.allowedModels ?? []));
+  };
+
+  const toggleModel = (id: string) => {
+    setSelectedModels((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleEditModel = (id: string) => {
+    setEditSelectedModels((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
   const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
 
@@ -125,9 +196,14 @@ export function ApiKeysClient({ initialKeys, availableModels }: Props) {
 
   const onCreate = async () => {
     if (!newKeyName.trim()) return;
+    if (!allModels && selectedModels.size === 0) {
+      toast.error("Select at least one model, or enable 'All models'");
+      return;
+    }
     setBusy(true);
 
     const budget = !unlimitedQuota && quotaAmount ? Number(quotaAmount) : undefined;
+    const allowedModels = allModels ? undefined : [...selectedModels];
 
     // Compute expiration date
     let expiresAt: Date | undefined;
@@ -149,6 +225,7 @@ export function ApiKeysClient({ initialKeys, availableModels }: Props) {
           name: newKeyName.trim(),
           monthlyBudgetUsd: budget,
           expiresAt,
+          allowedModels,
         })
       )
     );
@@ -172,6 +249,7 @@ export function ApiKeysClient({ initialKeys, availableModels }: Props) {
             rpmLimit: null,
             monthlyBudget: budget ? Math.round(budget * 1_000_000) : null,
             monthlySpent: 0,
+            allowedModels: allModels ? null : [...selectedModels],
             enabled: true,
             expiresAt: expiresAt ?? null,
             lastUsedAt: null,
@@ -179,11 +257,18 @@ export function ApiKeysClient({ initialKeys, availableModels }: Props) {
           })),
         ...prev,
       ]);
+    } else {
+      const firstError = results.find((r) => !r.ok) as
+        | { ok: false; error?: unknown }
+        | undefined;
+      toast.error("Failed to create key: " + JSON.stringify(firstError?.error ?? "unknown error"));
     }
 
     setSheetOpen(false);
     setNewKeyName("");
     setQuantity(1);
+    setAllModels(true);
+    setSelectedModels(new Set());
     setBusy(false);
   };
 
@@ -218,6 +303,27 @@ export function ApiKeysClient({ initialKeys, availableModels }: Props) {
     toast.success(enabled ? "API key enabled" : "API key disabled");
   };
 
+  const onSaveModels = async () => {
+    if (!editTarget) return;
+    if (!editAllModels && editSelectedModels.size === 0) {
+      toast.error("Select at least one model, or enable 'All models'");
+      return;
+    }
+    setEditBusy(true);
+    const next = editAllModels ? null : [...editSelectedModels];
+    const res = await updateApiKeyModels(editTarget.id, next);
+    setEditBusy(false);
+    if (!res.ok) {
+      toast.error("Failed: " + JSON.stringify(res.error));
+      return;
+    }
+    setKeys((prev) =>
+      prev.map((k) => (k.id === editTarget.id ? { ...k, allowedModels: next } : k))
+    );
+    setEditTarget(null);
+    toast.success("Allowed models updated");
+  };
+
   const copyKey = (text: string) => {
     navigator.clipboard.writeText(text);
     toast.success("API key copied to clipboard");
@@ -232,12 +338,10 @@ export function ApiKeysClient({ initialKeys, availableModels }: Props) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">API Keys</h1>
-        <p className="text-sm text-muted-foreground">
-          Create and manage keys for OpenAI-compatible endpoints.
-        </p>
-      </div>
+      <PageHeader
+        title="API Keys"
+        description="Create and manage keys for OpenAI-compatible endpoints."
+      />
 
       <Card>
         <CardHeader>
@@ -258,29 +362,17 @@ export function ApiKeysClient({ initialKeys, availableModels }: Props) {
               className="shrink-0"
               onClick={() => copyUrl(`${baseUrl}/v1`, "openai")}
             >
-              {copiedUrl === "openai" ? (
-                <><CheckIcon className="size-3.5 mr-1" /> Copied</>
-              ) : (
-                <><CopyIcon className="size-3.5 mr-1" /> Copy</>
-              )}
-            </Button>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="w-24 shrink-0 text-xs font-medium text-muted-foreground">Anthropic</span>
-            <code className="flex-1 truncate rounded bg-muted px-2 py-1.5 font-mono text-xs">
-              {baseUrl}/anthropic/v1
-            </code>
-            <Button
-              size="sm"
-              variant="ghost"
-              className="shrink-0"
-              onClick={() => copyUrl(`${baseUrl}/anthropic/v1`, "anthropic")}
-            >
-              {copiedUrl === "anthropic" ? (
-                <><CheckIcon className="size-3.5 mr-1" /> Copied</>
-              ) : (
-                <><CopyIcon className="size-3.5 mr-1" /> Copy</>
-              )}
+              <IconSwap
+                activeKey={copiedUrl === "openai" ? "check" : "copy"}
+                className="mr-1 flex items-center justify-center"
+              >
+                {copiedUrl === "openai" ? (
+                  <CheckIcon className="size-3.5" aria-hidden="true" />
+                ) : (
+                  <CopyIcon className="size-3.5" aria-hidden="true" />
+                )}
+              </IconSwap>
+              {copiedUrl === "openai" ? "Copied" : "Copy"}
             </Button>
           </div>
         </CardContent>
@@ -367,6 +459,7 @@ export function ApiKeysClient({ initialKeys, availableModels }: Props) {
                   </TableHead>
                   <TableHead>Name</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Models</TableHead>
                   <TableHead>Base URL</TableHead>
                   <TableHead>Key</TableHead>
                   <TableHead>Remaining/Total</TableHead>
@@ -378,7 +471,7 @@ export function ApiKeysClient({ initialKeys, availableModels }: Props) {
               <TableBody>
                 {filteredKeys.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={9}>
+                    <TableCell colSpan={10}>
                       <EmptyState
                         icon={<KeyRoundIcon className="size-7" />}
                         title="No Results Found"
@@ -407,6 +500,20 @@ export function ApiKeysClient({ initialKeys, availableModels }: Props) {
                         >
                           {k.enabled ? "Enabled" : "Disabled"}
                         </Badge>
+                      </TableCell>
+                      <TableCell className="text-xs">
+                        {k.allowedModels == null ? (
+                          <Badge variant="outline">All models</Badge>
+                        ) : (
+                          <Badge
+                            variant="outline"
+                            className="cursor-pointer"
+                            title={k.allowedModels.join(", ")}
+                            onClick={() => openEditModels(k)}
+                          >
+                            {k.allowedModels.length} model{k.allowedModels.length === 1 ? "" : "s"}
+                          </Badge>
+                        )}
                       </TableCell>
                       <TableCell className="text-xs text-muted-foreground font-mono">
                         {typeof window !== "undefined"
@@ -457,6 +564,10 @@ export function ApiKeysClient({ initialKeys, availableModels }: Props) {
                                 <EyeIcon className="size-4" />
                               )}
                               {k.enabled ? "Disable" : "Enable"}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => openEditModels(k)}>
+                              <ListChecksIcon className="size-4" />
+                              Edit allowed models
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
@@ -559,6 +670,34 @@ export function ApiKeysClient({ initialKeys, availableModels }: Props) {
               )}
             </div>
 
+            <Separator />
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label>Allowed Models</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Restrict which models this key can use.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground">All models</span>
+                  <Switch
+                    checked={allModels}
+                    onCheckedChange={setAllModels}
+                    size="sm"
+                  />
+                </div>
+              </div>
+              {!allModels && (
+                <ModelCheckList
+                  models={availableModels}
+                  selected={selectedModels}
+                  onToggle={toggleModel}
+                />
+              )}
+            </div>
+
           </div>
 
           <SheetFooter>
@@ -591,6 +730,46 @@ export function ApiKeysClient({ initialKeys, availableModels }: Props) {
         confirmLabel="Delete keys"
         variant="destructive"
       />
+
+      {/* Edit allowed models dialog */}
+      <Dialog
+        open={editTarget !== null}
+        onOpenChange={(v) => { if (!v) setEditTarget(null); }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Allowed models — {editTarget?.name}</DialogTitle>
+            <DialogDescription>
+              Requests using models outside this list will be rejected with 403.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <Label>Allow all models</Label>
+              <Switch
+                checked={editAllModels}
+                onCheckedChange={setEditAllModels}
+                size="sm"
+              />
+            </div>
+            {!editAllModels && (
+              <ModelCheckList
+                models={availableModels}
+                selected={editSelectedModels}
+                onToggle={toggleEditModel}
+              />
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditTarget(null)}>
+              Cancel
+            </Button>
+            <Button onClick={onSaveModels} disabled={editBusy}>
+              {editBusy ? "Saving..." : "Save"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
