@@ -204,7 +204,7 @@ export function ModelFormDialog({
 
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <Tabs defaultValue="basic" className="mt-2">
-            <TabsList className="max-w-full overflow-x-auto">
+            <TabsList className="w-full min-w-0 justify-start overflow-x-auto">
               <TabsTrigger value="basic">Basic</TabsTrigger>
               <TabsTrigger value="pricing">Pricing</TabsTrigger>
               <TabsTrigger value="capabilities">Capabilities</TabsTrigger>
