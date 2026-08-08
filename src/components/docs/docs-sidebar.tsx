@@ -45,7 +45,7 @@ const navigation: NavGroup[] = [
   },
 ];
 
-export function DocsSidebar() {
+export function DocsSidebar({ onNavigate }: { onNavigate?: () => void } = {}) {
   const pathname = usePathname();
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(
     Object.fromEntries(navigation.map((g) => [g.title, true]))
@@ -60,6 +60,7 @@ export function DocsSidebar() {
       <nav className="py-6 pr-4" aria-label="Documentation navigation">
         <Link
           href="/docs"
+          onClick={onNavigate}
           className="mb-7 flex items-center gap-2 rounded-lg px-3 text-[15px] font-semibold tracking-tight outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <span className="flex size-6 items-center justify-center rounded-md bg-primary/10 text-primary ring-1 ring-primary/20">
@@ -94,6 +95,7 @@ export function DocsSidebar() {
                     <Link
                       key={item.href}
                       href={item.href}
+                      onClick={onNavigate}
                       aria-current={isActive ? "page" : undefined}
                       className={cn(
                         "-ml-px block border-l-2 py-1.5 pl-4 pr-3 text-sm transition-colors",

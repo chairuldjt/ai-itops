@@ -245,7 +245,7 @@ export function ChatClient({
   };
 
   return (
-    <div className="flex flex-col gap-4 h-[calc(100vh-8rem)] min-h-[500px]">
+    <div className="flex flex-col gap-4 lg:h-[calc(100vh-8rem)] lg:min-h-[500px]">
       <PageHeader
         title="Chat Playground"
         description="Test models with a chat interface."
@@ -350,7 +350,7 @@ export function ChatClient({
         {/* Center chat area */}
         <Card className="flex-1 flex flex-col min-w-0">
           <CardContent className="flex-1 flex flex-col p-0 min-h-0">
-            <ScrollArea className="flex-1 p-4">
+            <ScrollArea className="flex-1 p-4 min-h-[420px] lg:min-h-0">
               <div className="flex flex-col gap-4">
                 {messages.length === 0 && (
                   <div className="flex flex-col items-center justify-center py-20 text-center">
