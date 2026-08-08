@@ -19,11 +19,16 @@ const KNOWN_WEAK_SECRETS = new Set([
   FALLBACK_SECRET,
   "change-me-to-a-long-random-secret-at-least-32-chars",
 ]);
-if (process.env.NODE_ENV === "production") {
+// `next build` evaluates this module with NODE_ENV=production while collecting
+// page data, so a runtime-only guard must not fire there. Enforce at runtime
+// (next start / pm2), not at build time.
+const IS_BUILD_PHASE = process.env.NEXT_PHASE === "phase-production-build";
+if (process.env.NODE_ENV === "production" && !IS_BUILD_PHASE) {
   const secret = process.env.BETTER_AUTH_SECRET;
   if (!secret || KNOWN_WEAK_SECRETS.has(secret) || secret.length < 32) {
     throw new Error(
-      "BETTER_AUTH_SECRET must be set to a unique random value of at least 32 characters in production. Refusing to start.",
+      "BETTER_AUTH_SECRET must be a unique random value of at least 32 characters in production. " +
+        "Generate one with `openssl rand -base64 48`, set BETTER_AUTH_SECRET in .env, then restart. Refusing to start.",
     );
   }
 }

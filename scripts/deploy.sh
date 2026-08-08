@@ -54,6 +54,21 @@ if [ ! -f "$APP_DIR/.env" ]; then
 fi
 echo "   ✅ .env found"
 
+# ── 2b. Validate BETTER_AUTH_SECRET (must be strong in production) ──
+AUTH_SECRET=$(grep -E '^BETTER_AUTH_SECRET=' "$APP_DIR/.env" | head -n1 | cut -d= -f2- || true)
+if [ -z "$AUTH_SECRET" ] || [ "${#AUTH_SECRET}" -lt 32 ] || [ "$AUTH_SECRET" = "change-me-to-a-long-random-secret-at-least-32-chars" ]; then
+  echo ""
+  echo "❌ BETTER_AUTH_SECRET is missing or too weak in .env."
+  echo "   Production refuses to start with a weak/known secret (session-forgery risk)."
+  echo ""
+  echo "   Fix it with one command (replaces the current value):"
+  echo "     sed -i \"s|^BETTER_AUTH_SECRET=.*|BETTER_AUTH_SECRET=\$(openssl rand -base64 48)|\" .env"
+  echo ""
+  echo "   ⚠️  Changing the secret signs out all existing sessions."
+  exit 1
+fi
+echo "   ✅ BETTER_AUTH_SECRET looks strong"
+
 cd "$APP_DIR"
 
 # ── 3. Git pull ───────────────────────────────────────────────
