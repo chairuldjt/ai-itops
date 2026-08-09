@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   postgres:
     image: postgres:16-alpine
@@ -26,6 +24,9 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    # Resolve host.docker.internal on Linux too (default UPSTREAM_BASE_URL).
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     environment:
       DATABASE_URL: postgres://postgres:postgres@postgres:5432/ai_gateway
       # Required — the app refuses to boot in production without a strong,
@@ -38,10 +39,18 @@ services:
       RESEND_API_KEY: ${RESEND_API_KEY:-}
       EMAIL_FROM: ${EMAIL_FROM:-AI Gateway <onboarding@resend.dev>}
       SEED_ADMIN_EMAIL: ${SEED_ADMIN_EMAIL:-admin@example.com}
-      SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:-change-me-admin-123}
+      # Required — production seeding refuses weak/known passwords, so the
+      # compose default must not be a placeholder that guarantees boot failure.
+      SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:?"Set SEED_ADMIN_PASSWORD to a strong unique value (>=12 chars)"}
       SEED_ADMIN_NAME: ${SEED_ADMIN_NAME:-Administrator}
     ports:
       - "9003:9003"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:9003/api/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 4
+      start_period: 30s
 
 volumes:
   pgdata:

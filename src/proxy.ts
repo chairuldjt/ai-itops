@@ -14,6 +14,8 @@ const PUBLIC_PATHS = [
   "/release-notes",
   "/docs",
   "/api/auth",
+  // Deploy/container liveness probe — returns no sensitive data.
+  "/api/health",
   // OpenAI Responses API alias (Codex/OpenAI SDK clients without the /v1 prefix).
   "/responses",
 ];

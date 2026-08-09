@@ -97,6 +97,16 @@ else
   echo "⏭️  Skipping build (--skip-build)"
 fi
 
+# ── 5b. Ship .env into the standalone bundle ─────────────────
+# The standalone server chdirs to .next/standalone, so Next's loadEnvConfig
+# and dotenv both resolve .env from THERE — not from the repo root. Without
+# this copy the app boots without DATABASE_URL/BETTER_AUTH_SECRET and every
+# DB/auth route 500s even though the deploy "succeeded".
+if [ -d "$APP_DIR/.next/standalone" ]; then
+  install -m 600 "$APP_DIR/.env" "$APP_DIR/.next/standalone/.env"
+  echo "   ✅ .env copied into standalone output"
+fi
+
 # ── 6. Database migrate + seed ────────────────────────────────
 if [ "$SKIP_DB" = false ]; then
   echo ""
@@ -116,7 +126,9 @@ echo ""
 echo "🔄 Restarting PM2..."
 
 if pm2 describe "$APP_NAME" >/dev/null 2>&1; then
-  pm2 restart "$APP_NAME"
+  # --update-env: pick up changed env vars from ecosystem.config.cjs;
+  # without it PM2 keeps the environment captured at first start.
+  pm2 restart "$APP_NAME" --update-env
   echo "   ✅ Restarted (same pm2 id)"
 else
   # First time — start from ecosystem config
@@ -126,12 +138,38 @@ else
   echo "   ✅ Started (new pm2 id)"
 fi
 
+# ── 9. Post-restart health check ──────────────────────────────
+PORT=$(grep -E "^PORT=" "$APP_DIR/.env" | cut -d= -f2 || echo "9003")
+echo ""
+echo "🩺 Health check on http://localhost:${PORT}/api/health ..."
+
+if command -v curl >/dev/null 2>&1; then
+  HEALTH_OK=false
+  for _ in $(seq 1 15); do
+    if curl -fsS --max-time 5 "http://localhost:${PORT}/api/health" >/dev/null 2>&1; then
+      HEALTH_OK=true
+      break
+    fi
+    sleep 2
+  done
+  if [ "$HEALTH_OK" = true ]; then
+    echo "   ✅ App is healthy"
+  else
+    echo ""
+    echo "❌ Health check FAILED — the app did not become healthy within ~30s."
+    echo "   The deploy is NOT verified. Inspect logs:"
+    echo "     pm2 logs $APP_NAME --lines 50"
+    exit 1
+  fi
+else
+  echo "   ⚠️  curl not found — skipping health check (verify manually)"
+fi
+
 echo ""
 echo "========================================"
 echo "  ✅ Deploy complete!"
 echo "========================================"
 
-PORT=$(grep -E "^PORT=" "$APP_DIR/.env" | cut -d= -f2 || echo "9003")
 echo ""
 echo "  App:     http://localhost:${PORT}"
 echo "  Status:  pm2 status"
