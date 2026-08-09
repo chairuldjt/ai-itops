@@ -123,11 +123,16 @@ export function anthropicToOpenAI(a: AnthropicBody): OpenAIChatBody {
     }
   }
 
+  // Repair orphaned tool_calls before sending: OpenAI rejects an assistant
+  // tool_call that has no matching tool response (agents produce these after
+  // interrupts). Insert an empty tool result for each orphan.
+  repairOrphanedToolCalls(messages);
+
   const out: OpenAIChatBody = {
     model: a.model,
     messages,
     stream: a.stream ?? false,
-    max_tokens: a.max_tokens,
+    max_tokens: a.max_tokens ?? DEFAULT_MAX_TOKENS,
   };
   if (tools?.length) out.tools = tools;
   if (tool_choice) out.tool_choice = tool_choice;
@@ -135,6 +140,37 @@ export function anthropicToOpenAI(a: AnthropicBody): OpenAIChatBody {
   if (a.top_p != null) out.top_p = a.top_p;
   if (a.stop_sequences?.length) out.stop = a.stop_sequences;
   return out;
+}
+
+/** Fallback output budget when a client omits max_tokens (it's required upstream). */
+const DEFAULT_MAX_TOKENS = 8192;
+
+/**
+ * Insert an empty `tool` response for any assistant tool_call that lacks one.
+ * OpenAI-compatible upstreams 400 on unmatched tool_calls; agents frequently
+ * leave them dangling after an interrupt.
+ */
+function repairOrphanedToolCalls(messages: OpenAIMessage[]): void {
+  const responded = new Set<string>();
+  for (const m of messages) {
+    if (m.role === "tool" && m.tool_call_id) responded.add(m.tool_call_id);
+  }
+  for (let i = 0; i < messages.length; i++) {
+    const m = messages[i];
+    if (m.role !== "assistant" || !Array.isArray(m.tool_calls) || m.tool_calls.length === 0) continue;
+    const inserts: OpenAIMessage[] = [];
+    for (const tc of m.tool_calls as Array<{ id?: string }>) {
+      const id = tc?.id;
+      if (id && !responded.has(id)) {
+        inserts.push({ role: "tool", tool_call_id: id, content: "" });
+        responded.add(id);
+      }
+    }
+    if (inserts.length > 0) {
+      messages.splice(i + 1, 0, ...inserts);
+      i += inserts.length;
+    }
+  }
 }
 
 /**
@@ -192,7 +228,8 @@ export function convertUserMessage(m: AnthropicMessage): OpenAIMessage | OpenAIM
     return messages;
   }
 
-  return { role: "user", content: textOrImageParts };
+  // Empty content arrays are rejected by OpenAI-compatible upstreams; send "".
+  return { role: "user", content: textOrImageParts.length > 0 ? textOrImageParts : "" };
 }
 
 function convertAssistantMessage(m: AnthropicMessage): OpenAIMessage {
@@ -216,7 +253,7 @@ function convertAssistantMessage(m: AnthropicMessage): OpenAIMessage {
   }
   const msg: OpenAIMessage = {
     role: "assistant",
-    content: text || null as unknown as string,
+    content: text,
   };
   if (tool_calls.length) msg.tool_calls = tool_calls;
   return msg;
@@ -260,6 +297,13 @@ export function openAIToAnthropic(
   const content: AnthropicResponseContent[] = [];
   let stop_reason: "end_turn" | "tool_use" | "max_tokens" | "stop_sequence" | null =
     "end_turn";
+
+  // Reasoning content (GLM/DeepSeek/Qwen style) -> Anthropic thinking block.
+  const reasoning = (choice?.message as { reasoning_content?: string } | undefined)
+    ?.reasoning_content;
+  if (reasoning) {
+    content.push({ type: "thinking", thinking: reasoning });
+  }
 
   if (choice?.message?.content) {
     content.push({ type: "text", text: choice.message.content });
@@ -308,6 +352,7 @@ export function openAIToAnthropic(
 
 export type AnthropicResponseContent =
   | { type: "text"; text: string }
+  | { type: "thinking"; thinking: string }
   | { type: "tool_use"; id: string; name: string; input: unknown };
 
 /* -------------------------------------------------------------------------- */
@@ -340,7 +385,7 @@ export function transformOpenAIStreamToAnthropic(
   let inputTokens = 0;
   let outputTokens = 0;
   let blockIndex = -1;
-  let currentBlockType: "text" | "tool_use" | null = null;
+  let currentBlockType: "text" | "tool_use" | "thinking" | null = null;
   let toolCallIndex = -1;
   let toolCallId: string | null = null;
   let started = false;
@@ -497,6 +542,8 @@ interface OpenAIStreamChunk {
     delta: {
       role?: string;
       content?: string;
+      reasoning_content?: string;
+      reasoning?: string;
       tool_calls?: Array<{
         index: number;
         id?: string;
@@ -515,7 +562,7 @@ interface TranslationState {
   messageId: string;
   modelPublicId: string;
   blockIndex: number;
-  currentBlockType: "text" | "tool_use" | null;
+  currentBlockType: "text" | "tool_use" | "thinking" | null;
   toolCallIndex: number;
   toolCallId: string | null;
   started: boolean;
@@ -527,7 +574,7 @@ interface TranslationState {
 interface TranslationStateUpdate {
   messageId?: string;
   blockIndex?: number;
-  currentBlockType?: "text" | "tool_use" | null;
+  currentBlockType?: "text" | "tool_use" | "thinking" | null;
   toolCallIndex?: number;
   toolCallId?: string | null;
   started?: boolean;
@@ -592,9 +639,44 @@ function translateChunk(
 
   const delta = choice.delta ?? {};
 
+  // Reasoning delta (GLM/DeepSeek/Qwen reasoning_content, or `reasoning`) ->
+  // Anthropic thinking block, opened before any text block.
+  const reasoningText =
+    (typeof delta.reasoning_content === "string" ? delta.reasoning_content : "") ||
+    (typeof delta.reasoning === "string" ? delta.reasoning : "");
+  if (reasoningText.length > 0) {
+    if (state.currentBlockType !== "thinking") {
+      if (state.currentBlockType != null) {
+        lines.push(
+          emit("content_block_stop", {
+            type: "content_block_stop",
+            index: state.blockIndex,
+          }),
+        );
+      }
+      const idx = (next.blockIndex ?? state.blockIndex) + 1;
+      lines.push(
+        emit("content_block_start", {
+          type: "content_block_start",
+          index: idx,
+          content_block: { type: "thinking", thinking: "" },
+        }),
+      );
+      next.blockIndex = idx;
+      next.currentBlockType = "thinking";
+    }
+    lines.push(
+      emit("content_block_delta", {
+        type: "content_block_delta",
+        index: next.blockIndex ?? state.blockIndex,
+        delta: { type: "thinking_delta", thinking: reasoningText },
+      }),
+    );
+  }
+
   // Text delta
   if (typeof delta.content === "string" && delta.content.length > 0) {
-    // Start a text block if we're currently in tool_use or nothing
+    // Start a text block if we're currently in tool_use/thinking or nothing
     if (state.currentBlockType !== "text") {
       // Close previous block if open
       if (state.currentBlockType != null) {

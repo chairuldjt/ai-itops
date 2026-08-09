@@ -33,6 +33,20 @@ import { internalErrorMessage, safeUpstreamMessage } from "@/lib/gateway/errors"
 /*                      POST /api/anthropic/v1/messages                       */
 /* -------------------------------------------------------------------------- */
 
+// CORS preflight for browser-based agents (Cline webview, Claude Code web, SDKs
+// using direct browser access). CLI clients ignore these headers.
+export function OPTIONS() {
+  return new NextResponse(null, {
+    status: 204,
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "POST, OPTIONS",
+      "Access-Control-Allow-Headers": "*",
+      "Access-Control-Max-Age": "86400",
+    },
+  });
+}
+
 export async function POST(request: NextRequest) {
   const startMs = Date.now();
   const requestId = crypto.randomUUID();
@@ -55,6 +69,13 @@ export async function POST(request: NextRequest) {
   const validated = anthropicRequestSchema.safeParse(parsed.body);
   if (!validated.success) return anthropicErrorResponse(400, validated.error.issues[0]?.message ?? "Invalid request body");
   const aBody = validated.data as AnthropicBody;
+
+  // Accept-header negotiation: some clients (e.g. Vercel AI SDK) send
+  // stream:true but only accept application/json. Force non-streaming for them.
+  const accept = request.headers.get("accept") ?? "";
+  const wantsStream =
+    aBody.stream === true &&
+    !(accept.includes("application/json") && !accept.includes("text/event-stream"));
 
   // 3) Resolve model
   const resolved = await resolveModel(String(aBody.model));
@@ -86,7 +107,7 @@ export async function POST(request: NextRequest) {
     modelPublicId: model.publicId,
     apiFormat: "anthropic",
     endpoint: "messages",
-    streamed: aBody.stream === true,
+    streamed: wantsStream,
     promptTokens: 0,
     completionTokens: 0,
     status: "error",
@@ -104,7 +125,7 @@ export async function POST(request: NextRequest) {
       modelPublicId: model.publicId,
       apiFormat: "anthropic",
       endpoint: "messages",
-      streamed: aBody.stream === true,
+      streamed: wantsStream,
       promptTokens: 0,
       completionTokens: Math.ceil(enforce.text.length / 4),
       status: "canned",
@@ -113,7 +134,7 @@ export async function POST(request: NextRequest) {
       clientIp,
       model,
     }, { actualMicroUsd: 0n });
-    if (aBody.stream) {
+    if (wantsStream) {
       return new Response(
         cannedAnthropicStream(model.publicId, enforce.text),
         { status: 200, headers: SSE_HEADERS },
@@ -126,9 +147,10 @@ export async function POST(request: NextRequest) {
   const forwardBody: OpenAIChatBody = {
     ...(enforce.kind === "stripped" ? enforce.body : openaiBody),
     model: model.upstreamId,
+    stream: wantsStream,
   };
 
-  if (aBody.stream) {
+  if (wantsStream) {
     return await handleStream({
       request,
       auth,

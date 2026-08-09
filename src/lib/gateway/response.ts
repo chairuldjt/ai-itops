@@ -62,7 +62,7 @@ export function anthropicErrorResponse(
   if (requestId) body.request_id = requestId;
   return NextResponse.json(body, {
     status,
-    headers: { ...errorHeaders(), ...headers, ...(requestId ? { "X-Request-ID": requestId, "request-id": requestId } : {}) },
+    headers: { ...errorHeaders(), "Access-Control-Allow-Origin": "*", ...headers, ...(requestId ? { "X-Request-ID": requestId, "request-id": requestId } : {}) },
   });
 }
 
@@ -78,6 +78,9 @@ export const SSE_HEADERS: Record<string, string> = {
   "Cache-Control": "no-cache, no-transform",
   Connection: "keep-alive",
   "X-Accel-Buffering": "no",
+  // Browser-based agents (Cline webview, Claude Code web, direct-browser SDKs)
+  // need CORS on streamed responses. Harmless for CLI clients.
+  "Access-Control-Allow-Origin": "*",
 };
 
 export function errorHeaders(): Record<string, string> {

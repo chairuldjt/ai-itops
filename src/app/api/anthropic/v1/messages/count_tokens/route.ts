@@ -1,6 +1,19 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
+/** CORS preflight for browser-based agents. */
+export function OPTIONS() {
+  return new NextResponse(null, {
+    status: 204,
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "POST, OPTIONS",
+      "Access-Control-Allow-Headers": "*",
+      "Access-Control-Max-Age": "86400",
+    },
+  });
+}
+
 /**
  * POST /api/anthropic/v1/messages/count_tokens
  *
@@ -15,9 +28,10 @@ export async function POST(request: NextRequest) {
   } catch {
     totalChars = 0;
   }
-  return NextResponse.json({
-    input_tokens: Math.max(1, Math.ceil(totalChars / 4)),
-  });
+  return NextResponse.json(
+    { input_tokens: Math.max(1, Math.ceil(totalChars / 4)) },
+    { headers: { "Access-Control-Allow-Origin": "*" } },
+  );
 }
 
 /** Recursively sum string lengths of a JSON-ish value (bounded depth). */
