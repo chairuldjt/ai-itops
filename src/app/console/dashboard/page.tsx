@@ -68,6 +68,15 @@ export default async function ConsoleDashboardPage({
     .from(usageLogs)
     .where(and(...timeFilters));
 
+  // Postgres count(*)/sum() come back as bigint, which the driver returns as
+  // STRINGS (drizzle's sql<number> is a type hint, not a conversion). Coerce
+  // before ANY arithmetic — otherwise "2" + "3" concatenates and comparisons
+  // misbehave, and the UI renders zeros.
+  const totalRequests = Number(usageStats.totalRequests ?? 0);
+  const totalPromptTokens = Number(usageStats.totalPromptTokens ?? 0);
+  const totalCompletionTokens = Number(usageStats.totalCompletionTokens ?? 0);
+  const successfulRequests = Number(usageStats.successfulRequests ?? 0);
+
   const [keyCount] = await db
     .select({ count: sql<number>`coalesce(count(*), 0)` })
     .from(apiKeys)
@@ -111,15 +120,12 @@ export default async function ConsoleDashboardPage({
   }
 
   const avgRpm =
-    usageStats.totalRequests > 0
-      ? Math.round(usageStats.totalRequests / daySpan)
+    totalRequests > 0
+      ? Math.round(totalRequests / daySpan)
       : 0;
   const avgTpm =
-    usageStats.totalRequests > 0
-      ? Math.round(
-          (usageStats.totalPromptTokens + usageStats.totalCompletionTokens) /
-            daySpan
-        )
+    totalRequests > 0
+      ? Math.round((totalPromptTokens + totalCompletionTokens) / daySpan)
       : 0;
 
   return (
@@ -129,23 +135,22 @@ export default async function ConsoleDashboardPage({
       range={range}
       stats={{
         totalSpend: Number(usageStats.totalSpend) / 1_000_000,
-        totalRequests: usageStats.totalRequests,
+        totalRequests,
         avgRpm,
-        totalTokens:
-          usageStats.totalPromptTokens + usageStats.totalCompletionTokens,
-        successfulRequests: usageStats.successfulRequests,
+        totalTokens: totalPromptTokens + totalCompletionTokens,
+        successfulRequests,
         avgTpm,
-        keyCount: keyCount.count,
+        keyCount: Number(keyCount.count ?? 0),
       }}
       modelConsumption={modelConsumption.map((m) => ({
         model: m.model,
         cost: Number(m.cost) / 1_000_000,
-        requests: m.requests,
+        requests: Number(m.requests),
       }))}
       dailyTrend={dailyTrend.map((d) => ({
         date: d.date,
         cost: Number(d.cost) / 1_000_000,
-        requests: d.requests,
+        requests: Number(d.requests),
       }))}
     />
   );

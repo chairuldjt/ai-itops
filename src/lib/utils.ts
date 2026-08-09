@@ -8,9 +8,15 @@ export function cn(...inputs: ClassValue[]) {
 /**
  * Format an integer with a "." thousands separator (e.g. 1234567 -> "1.234.567").
  * Deterministic — does not depend on the runtime's ICU/locale data.
+ *
+ * Accepts strings/bigints too: Postgres `count(*)`/`sum()` return bigint, which
+ * the driver hands back as a string, and drizzle `sql<number>` does NOT coerce.
+ * Without this coercion `Number.isFinite("2")` is false and every aggregate
+ * renders as 0 (the dashboard "always zero" bug).
  */
-export function formatNumber(value: number): string {
-  const n = Math.trunc(Number.isFinite(value) ? value : 0)
+export function formatNumber(value: number | string | bigint | null | undefined): string {
+  const num = Number(value)
+  const n = Math.trunc(Number.isFinite(num) ? num : 0)
   const negative = n < 0
   const digits = Math.abs(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".")
   return negative ? `-${digits}` : digits

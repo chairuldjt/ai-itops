@@ -85,7 +85,7 @@ export default async function ConsoleUsagePage({
       }))}
       modelList={modelList.map((m) => m.publicId)}
       currentPage={page}
-      totalPages={Math.ceil((countResult?.count ?? 0) / limit)}
+      totalPages={Math.ceil(Number(countResult?.count ?? 0) / limit)}
     />
   );
 }
