@@ -15,6 +15,7 @@ import {
 } from "@/lib/gateway/openai";
 import {
   anthropicToOpenAI,
+  knownToolNameSet,
   openAIToAnthropic,
   transformOpenAIStreamToAnthropic,
   type AnthropicBody,
@@ -86,6 +87,12 @@ export async function POST(request: NextRequest) {
 
   // 4) Translate to OpenAI
   const openaiBody = anthropicToOpenAI(aBody);
+
+  // Canonical tool names from this request — used to repair duplicated tool
+  // names ("BashBash") introduced by upstream stream aggregation.
+  const knownToolNames = knownToolNameSet(
+    aBody.tools as Array<{ name?: unknown }> | undefined,
+  );
 
   // 5) Capability enforcement
   const enforce = enforceCapabilities(openaiBody, model);
@@ -165,6 +172,7 @@ export async function POST(request: NextRequest) {
       requestId,
       startMs,
       clientIp,
+      knownToolNames,
     });
   }
   return await handleNonStream({
@@ -177,6 +185,7 @@ export async function POST(request: NextRequest) {
     requestId,
     startMs,
     clientIp,
+    knownToolNames,
   });
   } catch (err) {
     if (releaseReservation && billingState.canRelease) await releaseReservation();
@@ -284,8 +293,9 @@ async function handleNonStream(params: {
   requestId: string;
   startMs: number;
   clientIp: string | null;
+  knownToolNames?: ReadonlySet<string>;
 }) {
-  const { request, model, body, reservationId, billingState, requestId, startMs, clientIp } = params;
+  const { request, model, body, reservationId, billingState, requestId, startMs, clientIp, knownToolNames } = params;
   try {
     const upstream = await callUpstream({
       path: "/chat/completions",
@@ -324,6 +334,7 @@ async function handleNonStream(params: {
 
     const anthropicResp = openAIToAnthropic(
       upstream.json as Parameters<typeof openAIToAnthropic>[0],
+      knownToolNames,
     );
     return NextResponse.json(anthropicResp, {
       headers: { "X-Model-Resolved-To": model.upstreamId },
@@ -368,8 +379,9 @@ async function handleStream(params: {
   requestId: string;
   startMs: number;
   clientIp: string | null;
+  knownToolNames?: ReadonlySet<string>;
 }) {
-  const { request, model, body, modelPublicId, reservationId, billingState, requestId, startMs, clientIp } = params;
+  const { request, model, body, modelPublicId, reservationId, billingState, requestId, startMs, clientIp, knownToolNames } = params;
   const streamBody = ensureStreamUsage(body);
 
   let upstream;
@@ -513,6 +525,7 @@ async function handleStream(params: {
     upstream.stream.pipeThrough(transformStream),
     modelPublicId,
     request.signal,
+    knownToolNames,
   ).getReader();
   const anthropicStream = new ReadableStream<Uint8Array>({
     async pull(controller) {

@@ -10,6 +10,7 @@
  */
 
 import type { OpenAIChatBody, OpenAIMessage, OpenAIContentPart } from "./capability-enforcer";
+import { repairToolName } from "./anthropic";
 
 /* -------------------------------------------------------------------------- */
 /*                          Request: Responses -> chat                        */
@@ -196,8 +197,14 @@ interface OpenAICompletionLike {
 
 /**
  * Convert a non-streaming OpenAI chat completion into a Responses API object.
+ *
+ * `knownToolNames` (from the client request) lets us repair duplicated tool
+ * names produced by upstream stream aggregation (see repairToolName).
  */
-export function openAIToResponses(o: OpenAICompletionLike): Record<string, unknown> {
+export function openAIToResponses(
+  o: OpenAICompletionLike,
+  knownToolNames?: ReadonlySet<string>,
+): Record<string, unknown> {
   const output: Record<string, unknown>[] = [];
   const choice = o.choices?.[0];
   const msg = choice?.message;
@@ -216,11 +223,12 @@ export function openAIToResponses(o: OpenAICompletionLike): Record<string, unkno
       id?: string;
       function?: { name?: string; arguments?: string };
     }>) {
+      const name = repairToolName(tc.function?.name ?? "", knownToolNames);
       output.push({
         type: "function_call",
         id: `fc_${fallbackCallId(tc.id ?? "").replace(/^call_/, "")}`,
         call_id: fallbackCallId(tc.id ?? ""),
-        name: tc.function?.name ?? "",
+        name,
         arguments: tc.function?.arguments ?? "",
         status: "completed",
       });
@@ -266,6 +274,7 @@ export function openAIToResponses(o: OpenAICompletionLike): Record<string, unkno
 export function transformOpenAIStreamToResponses(
   upstream: ReadableStream<Uint8Array>,
   modelPublicId: string,
+  knownToolNames?: ReadonlySet<string>,
 ): ReadableStream<Uint8Array> {
   const encoder = new TextEncoder();
   const decoder = new TextDecoder();
@@ -311,7 +320,7 @@ export function transformOpenAIStreamToResponses(
         type: "function_call",
         id: `fc_${(fallbackCallId(fc.id)).replace(/^call_/, "")}`,
         call_id: fallbackCallId(fc.id),
-        name: fc.name,
+        name: repairToolName(fc.name, knownToolNames),
         arguments: fc.args,
         status: "completed",
       });
@@ -413,6 +422,7 @@ export function transformOpenAIStreamToResponses(
     outputIndex = textAcc.length > 0 ? 1 : 0;
     for (const [, fc] of [...fnCalls.entries()].sort((a, b) => a[0] - b[0])) {
       const callId = fallbackCallId(fc.id);
+      const callName = repairToolName(fc.name, knownToolNames);
       controller.enqueue(
         encoder.encode(
           emit("response.output_item.added", {
@@ -422,7 +432,7 @@ export function transformOpenAIStreamToResponses(
               type: "function_call",
               id: `fc_${callId.replace(/^call_/, "")}`,
               call_id: callId,
-              name: fc.name,
+              name: callName,
               arguments: "",
               status: "in_progress",
             },
@@ -448,7 +458,7 @@ export function transformOpenAIStreamToResponses(
               type: "function_call",
               id: `fc_${callId.replace(/^call_/, "")}`,
               call_id: callId,
-              name: fc.name,
+              name: callName,
               arguments: fc.args,
               status: "completed",
             },

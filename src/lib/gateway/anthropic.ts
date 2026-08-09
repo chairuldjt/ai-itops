@@ -161,6 +161,47 @@ function fallbackToolCallId(id: string | null | undefined): string {
 }
 
 /**
+ * Repair duplicated tool names produced upstream.
+ *
+ * Some provider/router combinations emit a tool name repeated two or more
+ * times (seen in the wild: "BashBash", "ReadRead", "AgentAgentAgentAgentAgent").
+ * Concrete cause: 9router's SSE->JSON aggregation appends `function.name`
+ * across stream deltas (`name += delta.name`), and several OpenAI-compatible
+ * providers re-emit the full tool-call name on more than one delta — the
+ * aggregated name becomes name×N. Claude Code rejects such names with
+ * "No such tool available: <name><name>".
+ *
+ * The client request carries the canonical tool list, so an emitted name that
+ * is an exact repetition of a known tool name can be collapsed back safely.
+ * Anything else passes through untouched.
+ */
+export function repairToolName(
+  name: string,
+  knownToolNames?: ReadonlySet<string>,
+): string {
+  if (!name || !knownToolNames || knownToolNames.size === 0) return name;
+  if (knownToolNames.has(name)) return name;
+  for (const known of knownToolNames) {
+    if (known.length >= 2 && name.length > known.length && name.length % known.length === 0) {
+      if (known.repeat(name.length / known.length) === name) return known;
+    }
+  }
+  return name;
+}
+
+/** Collect canonical tool names from an Anthropic request body. */
+export function knownToolNameSet(
+  tools: Array<{ name?: unknown }> | undefined,
+): Set<string> | undefined {
+  if (!tools || tools.length === 0) return undefined;
+  const set = new Set<string>();
+  for (const t of tools) {
+    if (typeof t?.name === "string" && t.name.length > 0) set.add(t.name);
+  }
+  return set.size > 0 ? set : undefined;
+}
+
+/**
  * Insert an empty `tool` response for any assistant tool_call that lacks one.
  * OpenAI-compatible upstreams 400 on unmatched tool_calls; agents frequently
  * leave them dangling after an interrupt.
@@ -298,9 +339,13 @@ export interface OpenAICompletion {
 
 /**
  * Convert a non-streaming OpenAI completion to an Anthropic Messages response.
+ *
+ * `knownToolNames` (from the client request) lets us repair duplicated tool
+ * names produced by upstream aggregation (see repairToolName).
  */
 export function openAIToAnthropic(
   o: OpenAICompletion,
+  knownToolNames?: ReadonlySet<string>,
 ): {
   id: string;
   type: "message";
@@ -340,7 +385,7 @@ export function openAIToAnthropic(
       content.push({
         type: "tool_use",
         id: tc.id,
-        name: tc.function.name,
+        name: repairToolName(tc.function.name, knownToolNames),
         input,
       });
       stop_reason = "tool_use";
@@ -393,6 +438,7 @@ export function transformOpenAIStreamToAnthropic(
   upstream: ReadableStream<Uint8Array>,
   modelPublicId: string,
   signal?: AbortSignal,
+  knownToolNames?: ReadonlySet<string>,
 ): ReadableStream<Uint8Array> {
   const encoder = new TextEncoder();
   let buffer = "";
@@ -425,12 +471,15 @@ export function transformOpenAIStreamToAnthropic(
     for (const [, tool] of sorted) {
       blockIndex += 1;
       const toolId = fallbackToolCallId(tool.id);
+      // Upstream aggregation can duplicate tool names ("BashBash"); repair
+      // against the client's tool list before emitting.
+      const toolName = repairToolName(tool.name, knownToolNames);
       controller.enqueue(
         encoder.encode(
           emit("content_block_start", {
             type: "content_block_start",
             index: blockIndex,
-            content_block: { type: "tool_use", id: toolId, name: tool.name, input: {} },
+            content_block: { type: "tool_use", id: toolId, name: toolName, input: {} },
           }),
         ),
       );

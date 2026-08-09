@@ -18,6 +18,7 @@ import {
   transformOpenAIStreamToResponses,
   type ResponsesRequestBody,
 } from "@/lib/gateway/responses";
+import { knownToolNameSet } from "@/lib/gateway/anthropic";
 import { SSE_HEADERS, parseJsonBody, getClientIp, openaiErrorResponse } from "@/lib/gateway/response";
 import { internalErrorMessage, safeUpstreamMessage } from "@/lib/gateway/errors";
 
@@ -74,6 +75,12 @@ export async function POST(request: NextRequest) {
 
     // 4) Translate to OpenAI chat
     const openaiBody = responsesToOpenAI(rBody);
+
+    // Canonical tool names from this request — used to repair duplicated tool
+    // names ("BashBash") introduced by upstream stream aggregation.
+    const knownToolNames = knownToolNameSet(
+      rBody.tools as Array<{ name?: unknown }> | undefined,
+    );
 
     // 5) Capability enforcement
     const enforce = enforceCapabilities(openaiBody, model);
@@ -136,6 +143,7 @@ export async function POST(request: NextRequest) {
         requestId,
         startMs,
         clientIp,
+        knownToolNames,
       });
     }
     return await handleNonStream({
@@ -147,6 +155,7 @@ export async function POST(request: NextRequest) {
       requestId,
       startMs,
       clientIp,
+      knownToolNames,
     });
   } catch (err) {
     if (releaseReservation && billingState.canRelease) await releaseReservation();
@@ -168,8 +177,9 @@ async function handleNonStream(params: {
   requestId: string;
   startMs: number;
   clientIp: string | null;
+  knownToolNames?: ReadonlySet<string>;
 }) {
-  const { request, model, body, reservationId, billingState, requestId, startMs, clientIp } = params;
+  const { request, model, body, reservationId, billingState, requestId, startMs, clientIp, knownToolNames } = params;
   try {
     const upstream = await callUpstream({ path: "/chat/completions", body, stream: false, signal: request.signal });
     const usage = extractUsageFromResponse(upstream.json);
@@ -200,7 +210,10 @@ async function handleNonStream(params: {
         safeMessage ? undefined : { "X-Request-ID": requestId },
       );
     }
-    const responsesResp = openAIToResponses(upstream.json as Parameters<typeof openAIToResponses>[0]);
+    const responsesResp = openAIToResponses(
+      upstream.json as Parameters<typeof openAIToResponses>[0],
+      knownToolNames,
+    );
     return NextResponse.json(responsesResp, {
       headers: { "Access-Control-Allow-Origin": "*", "X-Model-Resolved-To": model.upstreamId },
     });
@@ -242,8 +255,9 @@ async function handleStream(params: {
   requestId: string;
   startMs: number;
   clientIp: string | null;
+  knownToolNames?: ReadonlySet<string>;
 }) {
-  const { request, model, body, reservationId, billingState, requestId, startMs, clientIp } = params;
+  const { request, model, body, reservationId, billingState, requestId, startMs, clientIp, knownToolNames } = params;
   const streamBody = ensureStreamUsage(body);
 
   let upstream;
@@ -381,6 +395,7 @@ async function handleStream(params: {
   const responsesReader = transformOpenAIStreamToResponses(
     upstream.stream.pipeThrough(usageTap),
     model.publicId,
+    knownToolNames,
   ).getReader();
 
   const responsesStream = new ReadableStream<Uint8Array>({
