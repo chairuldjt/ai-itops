@@ -14,7 +14,7 @@ import type { OpenAIChatBody, OpenAIMessage, OpenAIContentPart } from "./capabil
  */
 export interface AnthropicBody {
   model: string;
-  max_tokens: number;
+  max_tokens?: number;
   system?: string | AnthropicSystemBlock[];
   messages: AnthropicMessage[];
   tools?: AnthropicTool[];
@@ -34,7 +34,7 @@ export interface AnthropicSystemBlock {
 }
 
 export interface AnthropicMessage {
-  role: "user" | "assistant";
+  role: string;
   content: string | AnthropicContentPart[];
 }
 
@@ -86,7 +86,19 @@ export function anthropicToOpenAI(a: AnthropicBody): OpenAIChatBody {
       }
     } else if (m.role === "assistant") {
       messages.push(convertAssistantMessage(m));
+    } else if (m.role === "system" || m.role === "developer") {
+      // Some clients put system content in the messages array; map it to a
+      // system message so it isn't silently dropped.
+      const text =
+        typeof m.content === "string"
+          ? m.content
+          : m.content
+              .filter((p) => p.type === "text")
+              .map((p) => (p as { text: string }).text)
+              .join("\n");
+      if (text) messages.push({ role: "system", content: text });
     }
+    // Any other role is skipped (Anthropic only defines user/assistant).
   }
 
   // Tools
@@ -377,7 +389,7 @@ export function transformOpenAIStreamToAnthropic(
                 emit("message_delta", {
                   type: "message_delta",
                   delta: { stop_reason: stopReason ?? "end_turn", stop_sequence: null },
-                  usage: { output_tokens: outputTokens },
+                  usage: { input_tokens: inputTokens, output_tokens: outputTokens },
                 }),
               ),
             );
@@ -420,7 +432,7 @@ export function transformOpenAIStreamToAnthropic(
                   emit("message_delta", {
                     type: "message_delta",
                     delta: { stop_reason: stopReason ?? "end_turn", stop_sequence: null },
-                    usage: { output_tokens: outputTokens },
+                    usage: { input_tokens: inputTokens, output_tokens: outputTokens },
                   }),
                 ),
               );

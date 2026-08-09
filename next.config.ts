@@ -50,6 +50,15 @@ const nextConfig: NextConfig = {
       // Anthropic Messages API (Claude Code sets ANTHROPIC_BASE_URL=.../v1 and
       // POSTs {base}/messages -> /v1/messages). Also tolerate a doubled /v1 in
       // case a client appends /v1/messages to a base URL that already ends in /v1.
+      // count_tokens must come before the exact /v1/messages rule.
+      {
+        source: "/v1/messages/count_tokens",
+        destination: "/api/anthropic/v1/messages/count_tokens",
+      },
+      {
+        source: "/v1/v1/messages/count_tokens",
+        destination: "/api/anthropic/v1/messages/count_tokens",
+      },
       {
         source: "/v1/messages",
         destination: "/api/anthropic/v1/messages",

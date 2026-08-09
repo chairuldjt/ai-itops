@@ -38,7 +38,8 @@ test("bounded JSON reader distinguishes invalid and oversized bodies", async () 
   const declared = await parseJsonBody(new Request("https://example.test", { method: "POST", headers: { "content-length": String(MAX_JSON_BODY_BYTES + 1) }, body: "{}" }));
   assert.equal(declared.ok, false);
   if (!declared.ok) assert.equal(declared.status, 413);
-  const chunk = new Uint8Array(600_000);
+  // Two chunks whose combined size exceeds the (generous) cap -> 413.
+  const chunk = new Uint8Array(Math.ceil(MAX_JSON_BODY_BYTES / 2) + 1_000_000);
   const stream = new ReadableStream<Uint8Array>({ start(controller) { controller.enqueue(chunk); controller.enqueue(chunk); controller.close(); } });
   const chunked = await parseJsonBody(new Request("https://example.test", { method: "POST", body: stream, duplex: "half" } as RequestInit));
   assert.equal(chunked.ok, false);
@@ -49,10 +50,13 @@ test("OpenAI schema validates trust-boundary shape and bounds", () => {
   assert.equal(openAIChatRequestSchema.safeParse({ model: "", messages: [] }).success, false);
   assert.equal(openAIChatRequestSchema.safeParse({ model: "m", messages: [{ role: "bad", content: "x" }] }).success, false);
   assert.equal(openAIChatRequestSchema.safeParse({ model: "m", messages: [{ role: "user", content: "x" }], temperature: Infinity }).success, false);
-  assert.equal(openAIChatRequestSchema.safeParse({ model: "m", messages: [{ role: "user", content: [{ type: "image_url", image_url: { url: "x".repeat(300_000) } }] }] }).success, false);
+  assert.equal(openAIChatRequestSchema.safeParse({ model: "m", messages: [{ role: "user", content: [{ type: "image_url", image_url: { url: "x".repeat(2_100_000) } }] }] }).success, false);
   assert.equal(openAIChatRequestSchema.safeParse({ model: "m", messages: [{ role: "user", content: "x" }], unknown_safe: true }).success, true);
   assert.equal(openAIChatRequestSchema.safeParse({ model: "m", messages: [{ role: "assistant", content: [{ type: "refusal", refusal: "no" }] }] }).success, true);
-  const tooDeep = { type: "future", nested: { a: { b: { c: { d: { e: 1 } } } } } };
+  // Nesting deeper than the bounded() depth ceiling must be rejected.
+  let deep: unknown = 1;
+  for (let i = 0; i < 14; i++) deep = { d: deep };
+  const tooDeep = { type: "future", nested: deep };
   assert.equal(openAIChatRequestSchema.safeParse({ model: "m", messages: [{ role: "user", content: [tooDeep] }] }).success, false);
 });
 

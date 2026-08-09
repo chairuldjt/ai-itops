@@ -112,8 +112,11 @@ function codeForStatus(status: number): string {
 
 /**
  * Safely parse JSON from a request body.
+ *
+ * Claude Code sends large requests (long conversations, many tools, base64
+ * images), so the cap is generous. Per-key rate limits still bound abuse.
  */
-export const MAX_JSON_BODY_BYTES = 1_048_576;
+export const MAX_JSON_BODY_BYTES = 33_554_432; // 32 MB
 
 export async function parseJsonBody<T = unknown>(
   request: Request,
