@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   knownToolNameSet,
   openAIToAnthropic,
+  repairToolArguments,
   repairToolName,
   transformOpenAIStreamToAnthropic,
 } from "./anthropic";
@@ -77,6 +78,41 @@ test("knownToolNameSet keeps only non-empty string names", () => {
     knownToolNameSet([{ name: "Bash" }, { name: "Read" }, { name: 42 }]),
     new Set(["Bash", "Read"]),
   );
+});
+
+/* -------------------------------------------------------------------------- */
+/*                             repairToolArguments                            */
+/* -------------------------------------------------------------------------- */
+
+test("repairToolArguments passes valid JSON through untouched", () => {
+  assert.equal(repairToolArguments('{"command":"ls"}'), '{"command":"ls"}');
+  assert.equal(repairToolArguments("{}"), "{}");
+  // Braces inside strings must not confuse the scanner.
+  assert.equal(repairToolArguments('{"a":"{}"}'), '{"a":"{}"}');
+});
+
+test("repairToolArguments collapses concatenated JSON documents to the last one", () => {
+  // Identical re-emission (provider repeats the same cumulative state).
+  assert.equal(
+    repairToolArguments('{"command":"ls"}{"command":"ls"}'),
+    '{"command":"ls"}',
+  );
+  // Growing cumulative re-emission: the last document is the complete state.
+  assert.equal(
+    repairToolArguments('{"command":"ls"}{"command":"ls -la"}'),
+    '{"command":"ls -la"}',
+  );
+  // Triple repetition.
+  assert.equal(
+    repairToolArguments('{"a":1}{"a":1}{"a":1}'),
+    '{"a":1}',
+  );
+});
+
+test("repairToolArguments handles empty and unrecoverable input", () => {
+  assert.equal(repairToolArguments(""), "{}");
+  // No JSON document at all -> unchanged (let the client surface the error).
+  assert.equal(repairToolArguments("not json"), "not json");
 });
 
 /* -------------------------------------------------------------------------- */
@@ -208,6 +244,105 @@ test("anthropic streaming keeps correct names intact and emits one block per too
   assert.ok(!out.includes("BashBash"));
 });
 
+test("anthropic streaming repairs concatenated cumulative arguments", async () => {
+  // Cumulative providers re-emit the FULL arguments state on every delta;
+  // routers that append deltas produce `{"a":1}{"a":12}`-style corruption
+  // which surfaces client-side as "Invalid tool parameters".
+  const stream = sseStream([
+    {
+      choices: [
+        {
+          index: 0,
+          delta: {
+            role: "assistant",
+            tool_calls: [
+              { index: 0, id: "call_1", type: "function", function: { name: "Bash", arguments: '{"command":"ls"}' } },
+            ],
+          },
+        },
+      ],
+    },
+    {
+      choices: [
+        {
+          index: 0,
+          delta: { tool_calls: [{ index: 0, function: { arguments: '{"command":"ls -la"}' } }] },
+          finish_reason: "tool_calls",
+        },
+      ],
+    },
+    "[DONE]",
+  ]);
+
+  const out = await readAll(
+    transformOpenAIStreamToAnthropic(stream, "test-model", undefined, new Set(["Bash"])),
+  );
+
+  // Exactly one repaired input_json_delta carrying the complete state.
+  assert.equal(count(out, "input_json_delta"), 1);
+  assert.ok(out.includes("{\\\"command\\\":\\\"ls -la\\\"}"), "last cumulative document must win");
+  assert.ok(!out.includes("ls\\\"} {"), "no concatenated garbage");
+});
+
+test("anthropic streaming emits {} for tool calls without arguments", async () => {
+  const stream = sseStream([
+    {
+      choices: [
+        {
+          index: 0,
+          delta: {
+            role: "assistant",
+            tool_calls: [
+              { index: 0, id: "call_1", type: "function", function: { name: "Bash", arguments: "" } },
+            ],
+          },
+        },
+      ],
+    },
+    { choices: [{ index: 0, delta: {}, finish_reason: "tool_calls" }] },
+    "[DONE]",
+  ]);
+
+  const out = await readAll(
+    transformOpenAIStreamToAnthropic(stream, "test-model", undefined, new Set(["Bash"])),
+  );
+
+  // A tool_use block with no input_json_delta assembles into unparseable
+  // input; we must emit at least "{}".
+  assert.equal(count(out, "input_json_delta"), 1);
+  assert.ok(out.includes('"partial_json":"{}"'));
+});
+
+test("openAIToAnthropic repairs concatenated arguments from aggregated JSON", () => {
+  const resp = openAIToAnthropic(
+    {
+      id: "chatcmpl-3",
+      model: "m",
+      choices: [
+        {
+          index: 0,
+          message: {
+            role: "assistant",
+            content: null,
+            tool_calls: [
+              {
+                id: "call_2",
+                type: "function",
+                function: { name: "Bash", arguments: '{"command":"ls"}{"command":"ls -la"}' },
+              },
+            ],
+          },
+          finish_reason: "tool_calls",
+        },
+      ],
+    } as Parameters<typeof openAIToAnthropic>[0],
+    new Set(["Bash"]),
+  );
+  const toolUse = resp.content.find((c) => c.type === "tool_use");
+  assert.ok(toolUse && toolUse.type === "tool_use");
+  assert.deepEqual(toolUse.input, { command: "ls -la" });
+});
+
 /* -------------------------------------------------------------------------- */
 /*                     Responses translation (same upstream)                  */
 /* -------------------------------------------------------------------------- */
@@ -264,4 +399,39 @@ test("responses streaming repairs duplicated function names", async () => {
   assert.ok(!out.includes("BashBash"), "duplicated name must be repaired");
   assert.match(out, /"name":"Bash"/);
   assert.match(out, /event: response\.completed/);
+});
+
+test("responses translation repairs concatenated function arguments", async () => {
+  const stream = sseStream([
+    {
+      choices: [
+        {
+          index: 0,
+          delta: {
+            role: "assistant",
+            tool_calls: [
+              { index: 0, id: "call_y", type: "function", function: { name: "shell", arguments: '{"cmd":"a"}' } },
+            ],
+          },
+        },
+      ],
+    },
+    {
+      choices: [
+        {
+          index: 0,
+          delta: { tool_calls: [{ index: 0, function: { arguments: '{"cmd":"ab"}' } }] },
+          finish_reason: "tool_calls",
+        },
+      ],
+    },
+    "[DONE]",
+  ]);
+
+  const out = await readAll(
+    transformOpenAIStreamToResponses(stream, "test-model", new Set(["shell"])),
+  );
+
+  // The arguments.done event carries the repaired single JSON document.
+  assert.match(out, /"arguments":"\{\\"cmd\\":\\"ab\\"\}"/);
 });

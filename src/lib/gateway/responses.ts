@@ -10,7 +10,7 @@
  */
 
 import type { OpenAIChatBody, OpenAIMessage, OpenAIContentPart } from "./capability-enforcer";
-import { repairToolName } from "./anthropic";
+import { repairToolArguments, repairToolName } from "./anthropic";
 
 /* -------------------------------------------------------------------------- */
 /*                          Request: Responses -> chat                        */
@@ -229,7 +229,7 @@ export function openAIToResponses(
         id: `fc_${fallbackCallId(tc.id ?? "").replace(/^call_/, "")}`,
         call_id: fallbackCallId(tc.id ?? ""),
         name,
-        arguments: tc.function?.arguments ?? "",
+        arguments: repairToolArguments(tc.function?.arguments ?? ""),
         status: "completed",
       });
     }
@@ -321,7 +321,7 @@ export function transformOpenAIStreamToResponses(
         id: `fc_${(fallbackCallId(fc.id)).replace(/^call_/, "")}`,
         call_id: fallbackCallId(fc.id),
         name: repairToolName(fc.name, knownToolNames),
-        arguments: fc.args,
+        arguments: repairToolArguments(fc.args),
         status: "completed",
       });
     }
@@ -423,6 +423,7 @@ export function transformOpenAIStreamToResponses(
     for (const [, fc] of [...fnCalls.entries()].sort((a, b) => a[0] - b[0])) {
       const callId = fallbackCallId(fc.id);
       const callName = repairToolName(fc.name, knownToolNames);
+      const callArgs = repairToolArguments(fc.args);
       controller.enqueue(
         encoder.encode(
           emit("response.output_item.added", {
@@ -445,7 +446,7 @@ export function transformOpenAIStreamToResponses(
             type: "response.function_call_arguments.done",
             item_id: `fc_${callId.replace(/^call_/, "")}`,
             output_index: outputIndex,
-            arguments: fc.args,
+            arguments: callArgs,
           }),
         ),
       );
@@ -459,7 +460,7 @@ export function transformOpenAIStreamToResponses(
               id: `fc_${callId.replace(/^call_/, "")}`,
               call_id: callId,
               name: callName,
-              arguments: fc.args,
+              arguments: callArgs,
               status: "completed",
             },
           }),

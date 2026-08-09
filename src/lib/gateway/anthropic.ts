@@ -201,6 +201,78 @@ export function knownToolNameSet(
   return set.size > 0 ? set : undefined;
 }
 
+function isValidJson(value: string): boolean {
+  try {
+    JSON.parse(value);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Scan a string for balanced top-level JSON documents (string/escape aware).
+ * Used to split corrupted tool arguments like `{"a":1}{"a":12}` back into
+ * their constituent documents.
+ */
+function topLevelJsonDocs(s: string): Array<{ start: number; end: number }> {
+  const docs: Array<{ start: number; end: number }> = [];
+  let depth = 0;
+  let start = -1;
+  let inString = false;
+  let escaped = false;
+  for (let i = 0; i < s.length; i++) {
+    const ch = s[i];
+    if (inString) {
+      if (escaped) escaped = false;
+      else if (ch === "\\") escaped = true;
+      else if (ch === '"') inString = false;
+      continue;
+    }
+    if (ch === '"') {
+      inString = true;
+      continue;
+    }
+    if (ch === "{" || ch === "[") {
+      if (depth === 0) start = i;
+      depth++;
+    } else if (ch === "}" || ch === "]") {
+      depth--;
+      if (depth === 0 && start >= 0) {
+        docs.push({ start, end: i + 1 });
+        start = -1;
+      } else if (depth < 0) {
+        depth = 0; // tolerate stray closers in corrupted input
+      }
+    }
+  }
+  return docs;
+}
+
+/**
+ * Repair tool-call arguments corrupted by upstream aggregation.
+ *
+ * Same failure family as duplicated tool names: providers that re-emit the
+ * full cumulative tool-call state on every stream delta (and routers that
+ * append deltas, e.g. 9router's SSE->JSON path) yield concatenated JSON
+ * documents — `{"command":"ls"}{"command":"ls -la"}`. Tool arguments must be a
+ * single JSON object, so clients reject the call ("Invalid tool parameters").
+ *
+ * Valid JSON passes through untouched. Otherwise the LAST complete top-level
+ * document wins: with cumulative re-emission it is the most complete state
+ * (and for identical re-emissions all documents are equal).
+ */
+export function repairToolArguments(args: string): string {
+  if (!args) return "{}";
+  if (isValidJson(args)) return args;
+  const docs = topLevelJsonDocs(args);
+  for (let i = docs.length - 1; i >= 0; i--) {
+    const candidate = args.slice(docs[i].start, docs[i].end);
+    if (isValidJson(candidate)) return candidate;
+  }
+  return args;
+}
+
 /**
  * Insert an empty `tool` response for any assistant tool_call that lacks one.
  * OpenAI-compatible upstreams 400 on unmatched tool_calls; agents frequently
@@ -377,8 +449,10 @@ export function openAIToAnthropic(
       function: { name: string; arguments: string };
     }>) {
       let input: unknown = {};
+      // Upstream aggregation can concatenate cumulative argument deltas into
+      // `{"a":1}{"a":12}` — repair to a single JSON object before parsing.
       try {
-        input = JSON.parse(tc.function.arguments || "{}");
+        input = JSON.parse(repairToolArguments(tc.function.arguments || "{}"));
       } catch {
         input = { raw: tc.function.arguments };
       }
@@ -474,6 +548,11 @@ export function transformOpenAIStreamToAnthropic(
       // Upstream aggregation can duplicate tool names ("BashBash"); repair
       // against the client's tool list before emitting.
       const toolName = repairToolName(tool.name, knownToolNames);
+      // Upstream aggregation can also concatenate cumulative argument deltas
+      // (`{"a":1}{"a":12}`); reduce to a single JSON object. Always emit at
+      // least "{}" — a tool_use block with no input_json_delta at all
+      // assembles into unparseable input ("Invalid tool parameters").
+      const toolArgs = repairToolArguments(tool.args);
       controller.enqueue(
         encoder.encode(
           emit("content_block_start", {
@@ -483,17 +562,15 @@ export function transformOpenAIStreamToAnthropic(
           }),
         ),
       );
-      if (tool.args) {
-        controller.enqueue(
-          encoder.encode(
-            emit("content_block_delta", {
-              type: "content_block_delta",
-              index: blockIndex,
-              delta: { type: "input_json_delta", partial_json: tool.args },
-            }),
-          ),
-        );
-      }
+      controller.enqueue(
+        encoder.encode(
+          emit("content_block_delta", {
+            type: "content_block_delta",
+            index: blockIndex,
+            delta: { type: "input_json_delta", partial_json: toolArgs },
+          }),
+        ),
+      );
       controller.enqueue(
         encoder.encode(
           emit("content_block_stop", { type: "content_block_stop", index: blockIndex }),
