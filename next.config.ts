@@ -71,6 +71,12 @@ const nextConfig: NextConfig = {
         source: "/anthropic/v1/:path*",
         destination: "/api/anthropic/v1/:path*",
       },
+      // OpenAI Responses API — /v1/responses is covered by the /v1 wildcard
+      // below; /responses is an alias some Codex/OpenAI SDK clients use.
+      {
+        source: "/responses",
+        destination: "/api/v1/responses",
+      },
       {
         source: "/v1/:path*",
         destination: "/api/v1/:path*",

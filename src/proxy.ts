@@ -14,6 +14,8 @@ const PUBLIC_PATHS = [
   "/release-notes",
   "/docs",
   "/api/auth",
+  // OpenAI Responses API alias (Codex/OpenAI SDK clients without the /v1 prefix).
+  "/responses",
 ];
 
 // FIX #3: Only match known static file extensions, not any path with a dot.
