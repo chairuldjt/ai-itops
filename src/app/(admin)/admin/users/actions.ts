@@ -4,7 +4,7 @@ import { z } from "zod";
 import { eq, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
-import { users, creditTransactions } from "@/lib/db/schema";
+import { users, sessions, creditTransactions } from "@/lib/db/schema";
 import { allocateTopUp, topUpLedgerAmounts } from "@/lib/gateway/billing";
 import { requireAdmin } from "@/lib/auth/session";
 import { createId } from "@/lib/id";
@@ -83,6 +83,14 @@ export async function setUserBanned(input: z.infer<typeof BanSchema>) {
       updatedAt: new Date(),
     })
     .where(eq(users.id, parsed.data.userId));
+
+  // A ban must take effect on the web surface immediately: better-auth only
+  // checks `banned` at session creation, so existing sessions would otherwise
+  // keep working (and renewing) indefinitely. Revoke them all on ban.
+  if (parsed.data.banned) {
+    await db.delete(sessions).where(eq(sessions.userId, parsed.data.userId));
+  }
+
   revalidatePath("/admin/users");
   return { ok: true };
 }

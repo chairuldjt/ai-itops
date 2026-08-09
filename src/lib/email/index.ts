@@ -45,8 +45,22 @@ export async function sendEmail(
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   const resend = getResend();
 
-  // Dev fallback: no API key configured -> print the email to the console.
   if (!resend) {
+    // Fail CLOSED outside development: emails contain one-time codes (OTP,
+    // password-reset tokens). Pretending delivery succeeded would silently
+    // lock users out — and logging the body to production logs would leak
+    // those codes to anyone with log access.
+    if (process.env.NODE_ENV !== "development") {
+      console.error(
+        "[email] RESEND_API_KEY is not configured — email NOT delivered " +
+          "(refusing to log one-time codes in non-development environments).",
+      );
+      return {
+        ok: false,
+        error: "Email is not configured on this server. Contact support.",
+      };
+    }
+    // Dev fallback: no API key configured -> print the email to the console.
     console.info(
       `[email] RESEND_API_KEY not set — email not delivered.\n` +
         `  to: ${input.to}\n  subject: ${input.subject}\n` +

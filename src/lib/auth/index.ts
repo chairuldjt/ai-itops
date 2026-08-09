@@ -12,22 +12,26 @@ import {
   RESET_TOKEN_EXPIRES_IN_SECONDS,
 } from "@/lib/email/auth-emails";
 
-// FIX #4: Throw in production if secret is missing instead of using weak fallback.
+// FIX #4: Throw unless a strong secret is configured. Fail CLOSED: only an
+// explicit development environment (NODE_ENV=development) may use the weak
+// fallback — a production process started without NODE_ENV=production must
+// not silently sign sessions with a publicly known secret.
 const FALLBACK_SECRET = "dev-only-fallback-secret-please-override";
-// Well-known placeholders that must never run in production (session forgery).
+// Well-known placeholders that must never run outside development.
 const KNOWN_WEAK_SECRETS = new Set([
   FALLBACK_SECRET,
   "change-me-to-a-long-random-secret-at-least-32-chars",
 ]);
 // `next build` evaluates this module with NODE_ENV=production while collecting
 // page data, so a runtime-only guard must not fire there. Enforce at runtime
-// (next start / pm2), not at build time.
+// (next start / pm2 / node server.js), not at build time.
 const IS_BUILD_PHASE = process.env.NEXT_PHASE === "phase-production-build";
-if (process.env.NODE_ENV === "production" && !IS_BUILD_PHASE) {
+const IS_DEV = process.env.NODE_ENV === "development";
+if (!IS_BUILD_PHASE && !IS_DEV) {
   const secret = process.env.BETTER_AUTH_SECRET;
   if (!secret || KNOWN_WEAK_SECRETS.has(secret) || secret.length < 32) {
     throw new Error(
-      "BETTER_AUTH_SECRET must be a unique random value of at least 32 characters in production. " +
+      "BETTER_AUTH_SECRET must be a unique random value of at least 32 characters. " +
         "Generate one with `openssl rand -base64 48`, set BETTER_AUTH_SECRET in .env, then restart. Refusing to start.",
     );
   }

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { parseJsonBody } from "@/lib/gateway/response";
 
 /** CORS preflight for browser-based agents. */
 export function OPTIONS() {
@@ -19,15 +20,20 @@ export function OPTIONS() {
  *
  * Claude Code calls this to estimate prompt size. We return a rough estimate
  * (≈4 chars per token) like 9router's mock endpoint. No auth required.
+ *
+ * The body is read through parseJsonBody so this unauthenticated endpoint
+ * enforces the same size cap (32 MB) as the gateway routes — a raw
+ * request.json() would let anyone stream multi-GB payloads into memory.
  */
 export async function POST(request: NextRequest) {
-  let totalChars = 0;
-  try {
-    const body = (await request.json()) as Record<string, unknown>;
-    totalChars = countChars(body);
-  } catch {
-    totalChars = 0;
+  const parsed = await parseJsonBody<Record<string, unknown>>(request);
+  if (!parsed.ok) {
+    return NextResponse.json(
+      { error: { type: "invalid_request_error", message: parsed.message } },
+      { status: parsed.status, headers: { "Access-Control-Allow-Origin": "*" } },
+    );
   }
+  const totalChars = countChars(parsed.body);
   return NextResponse.json(
     { input_tokens: Math.max(1, Math.ceil(totalChars / 4)) },
     { headers: { "Access-Control-Allow-Origin": "*" } },

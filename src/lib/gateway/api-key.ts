@@ -13,6 +13,16 @@ export function hashApiKey(raw: string): string {
 
 export const MAX_RPM_LIMIT = 1_000_000;
 
+/**
+ * Rate limit applied to keys without an explicit rpm_limit.
+ *
+ * Keys created before per-key limits existed (or created without one) would
+ * otherwise be unlimited — each request still costs a DB auth lookup plus a
+ * row-locked billing transaction, so an unbounded key is a cheap DoS vector
+ * even against $0-priced models. Explicit limits always win.
+ */
+export const DEFAULT_KEY_RPM_LIMIT = 600;
+
 export function normalizeRpmLimit(value: unknown): number | null {
   return typeof value === "number" && Number.isInteger(value) && value >= 1 && value <= MAX_RPM_LIMIT ? value : null;
 }
@@ -95,13 +105,12 @@ export async function authenticateApiKey(
   const access = apiKeyAccessDecision(key, user);
   if (!access.ok) return access;
 
-  if (key.rpmLimit != null) {
-    const rpmLimit = normalizeRpmLimit(key.rpmLimit);
-    if (rpmLimit == null) return { ok: false, status: 403, message: "API key rate limit is invalid" };
-    const rate = await consumeRateLimit(key.id, rpmLimit);
-    if (!rate.allowed) {
-      return { ok: false, status: 429, message: "Rate limit exceeded. Try again later.", retryAfterSeconds: rate.retryAfterSeconds };
-    }
+  // Keys without an explicit limit fall back to the default ceiling so no key
+  // is ever unlimited (see DEFAULT_KEY_RPM_LIMIT).
+  const rpmLimit = normalizeRpmLimit(key.rpmLimit) ?? DEFAULT_KEY_RPM_LIMIT;
+  const rate = await consumeRateLimit(key.id, rpmLimit);
+  if (!rate.allowed) {
+    return { ok: false, status: 429, message: "Rate limit exceeded. Try again later.", retryAfterSeconds: rate.retryAfterSeconds };
   }
 
   return { ok: true, user, apiKey: key };
