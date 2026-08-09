@@ -414,14 +414,23 @@ async function settleReservation(
     );
     await tx.update(apiKeys).set({ monthlySpent }).where(eq(apiKeys.id, locator.apiKeyId));
 
-    if (settlement.balanceDelta !== 0n) {
+    // Ledger: record what this request ACTUALLY cost the user as a single
+    // intuitive entry. The preflight hold and the settlement net out to
+    // `chargedMicroUsd` (the amount really taken from the balance), so users
+    // see one usage deduction per request — not an unexplained "refund" for
+    // the released hold (the hold itself was never a visible balance credit).
+    // Zero-cost outcomes (errors, canned responses, expired-hold reclaims)
+    // write nothing, since the user's balance is unchanged overall.
+    if (settlement.chargedMicroUsd > 0n) {
       await tx.insert(creditTransactions).values({
         id: createId("ctx"),
         userId: locator.userId,
-        type: settlement.balanceDelta > 0n ? "refund" : "deduction",
-        amount: settlement.balanceDelta,
+        type: "deduction",
+        amount: -settlement.chargedMicroUsd,
         balanceAfter: updatedUser.balance,
-        note: `Settlement ${reservationId}`,
+        note: usage
+          ? `Usage: ${usage.modelPublicId} (${usage.endpoint})`
+          : `Settlement ${reservationId}`,
         usageLogId,
       });
     }

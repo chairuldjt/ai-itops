@@ -95,6 +95,10 @@ function txTypeBadge(type: string) {
 export function BalanceClient({ creditBalance, transactions }: Props) {
   const [voucherCode, setVoucherCode] = React.useState("");
 
+  // Top-up History is strictly money ADDED to the account (top-ups, signup
+  // bonus, manual adjustments, and true refunds). Usage costs are NOT shown
+  // here — they are recorded as "deduction" entries and live on the Usage
+  // page, so this tab never shows unexplained per-request credits.
   const topupHistory = transactions.filter((t) =>
     ["topup", "refund", "signup_bonus", "adjustment"].includes(t.type)
   );
@@ -193,7 +197,7 @@ export function BalanceClient({ creditBalance, transactions }: Props) {
             <TabsContent value="topup" className="pt-4">
               {topupHistory.length === 0 ? (
                 <EmptyState
-                  title="No Bills Available"
+                  title="No Top-ups Yet"
                   description="Your top-up history will appear here."
                 />
               ) : (
