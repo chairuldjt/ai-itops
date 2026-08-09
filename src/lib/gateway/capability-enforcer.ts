@@ -117,6 +117,10 @@ export function enforceCapabilities(
   const hasTools = bodyContainsTools(body);
   const hasAudio = bodyContainsAudio(body);
 
+  let current = body;
+  let strippedAny = false;
+  let removedImages = 0;
+
   // 1. Image input on non-vision model -> apply policy
   if (hasImage && !caps.supportsImageInput) {
     const policy: ImageInputPolicy =
@@ -134,19 +138,27 @@ export function enforceCapabilities(
       const text =
         model.cannedResponseText?.trim() ||
         `I'm sorry — the model "${model.publicId}" does not currently support image input. Please try again with a vision-capable model, or send your request as text and I'll be happy to help.`;
+      // No upstream call happens for canned responses, so remaining
+      // capability issues (tools/audio) are moot.
       return { kind: "canned", text };
     }
 
-    // Default: strip_and_instruct
-    return stripImages(body, model);
+    // Default: strip_and_instruct — then keep enforcing the other policies
+    // on the stripped body (an image+tools request to a text-only model must
+    // not sneak the tools through).
+    const stripped = stripImages(current, model);
+    current = stripped.body;
+    removedImages = stripped.removed;
+    strippedAny = true;
   }
 
   // 2. Tool use on model without tool support -> silently drop tools
   if (hasTools && !caps.supportsTools) {
-    const next: OpenAIChatBody = { ...body };
+    const next: OpenAIChatBody = { ...current };
     delete next.tools;
     delete next.tool_choice;
-    return { kind: "stripped", body: next, removed: 0 };
+    current = next;
+    strippedAny = true;
   }
 
   // 3. Audio on model without audio support -> reject (audio can't be stripped
@@ -159,7 +171,10 @@ export function enforceCapabilities(
     };
   }
 
-  return { kind: "pass", body };
+  if (strippedAny) {
+    return { kind: "stripped", body: current, removed: removedImages };
+  }
+  return { kind: "pass", body: current };
 }
 
 /* -------------------------------------------------------------------------- */
@@ -199,8 +214,7 @@ function stripImages(
     content: instruction,
   };
 
-  const hasSystem = messages.some((m) => m.role === "system");
-  const newMessages = hasSystem ? [systemNote, ...messages] : [systemNote, ...messages];
+  const newMessages = [systemNote, ...messages];
 
   return {
     kind: "stripped",

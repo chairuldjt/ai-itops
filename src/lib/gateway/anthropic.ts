@@ -146,6 +146,21 @@ export function anthropicToOpenAI(a: AnthropicBody): OpenAIChatBody {
 const DEFAULT_MAX_TOKENS = 8192;
 
 /**
+ * Placeholder for empty tool results. Some strict upstreams reject empty tool
+ * message content; 9router uses the same convention.
+ */
+const EMPTY_TOOL_RESULT_PLACEHOLDER = "[No response received]";
+
+/**
+ * Providers occasionally omit tool-call ids. Emitting an empty id breaks
+ * clients that must echo it back in tool_result blocks, so synthesize one
+ * (9router's fallbackToolCallId).
+ */
+function fallbackToolCallId(id: string | null | undefined): string {
+  return id && id.length > 0 ? id : `call_${crypto.randomUUID().replace(/-/g, "").slice(0, 24)}`;
+}
+
+/**
  * Insert an empty `tool` response for any assistant tool_call that lacks one.
  * OpenAI-compatible upstreams 400 on unmatched tool_calls; agents frequently
  * leave them dangling after an interrupt.
@@ -162,7 +177,7 @@ function repairOrphanedToolCalls(messages: OpenAIMessage[]): void {
     for (const tc of m.tool_calls as Array<{ id?: string }>) {
       const id = tc?.id;
       if (id && !responded.has(id)) {
-        inserts.push({ role: "tool", tool_call_id: id, content: "" });
+        inserts.push({ role: "tool", tool_call_id: id, content: EMPTY_TOOL_RESULT_PLACEHOLDER });
         responded.add(id);
       }
     }
@@ -213,18 +228,21 @@ export function convertUserMessage(m: AnthropicMessage): OpenAIMessage | OpenAIM
     return toolResults.map((tr) => ({
       role: "tool" as const,
       tool_call_id: tr.id,
-      content: tr.content,
+      content: tr.content || EMPTY_TOOL_RESULT_PLACEHOLDER,
     }));
   }
 
-  // Mixed: text/images + tool results → return user message + tool messages.
+  // Mixed: text/images + tool results. Tool messages MUST come first so they
+  // directly follow the assistant message carrying the matching tool_calls —
+  // OpenAI-compatible validators reject a user message wedged in between
+  // (same ordering as 9router's claude-to-openai translator).
   if (textOrImageParts.length > 0 && toolResults.length > 0) {
-    const messages: OpenAIMessage[] = [
-      { role: "user", content: textOrImageParts },
-    ];
-    for (const tr of toolResults) {
-      messages.push({ role: "tool", tool_call_id: tr.id, content: tr.content });
-    }
+    const messages: OpenAIMessage[] = toolResults.map((tr) => ({
+      role: "tool" as const,
+      tool_call_id: tr.id,
+      content: tr.content || EMPTY_TOOL_RESULT_PLACEHOLDER,
+    }));
+    messages.push({ role: "user", content: textOrImageParts });
     return messages;
   }
 
@@ -406,12 +424,13 @@ export function transformOpenAIStreamToAnthropic(
     const sorted = [...pendingTools.entries()].sort((a, b) => a[0] - b[0]);
     for (const [, tool] of sorted) {
       blockIndex += 1;
+      const toolId = fallbackToolCallId(tool.id);
       controller.enqueue(
         encoder.encode(
           emit("content_block_start", {
             type: "content_block_start",
             index: blockIndex,
-            content_block: { type: "tool_use", id: tool.id, name: tool.name, input: {} },
+            content_block: { type: "tool_use", id: toolId, name: tool.name, input: {} },
           }),
         ),
       );
@@ -435,6 +454,94 @@ export function transformOpenAIStreamToAnthropic(
     pendingTools.clear();
   };
 
+  // Emits message_start if it was never sent. Strict clients (Claude Code)
+  // reject terminal events that arrive without a message_start — which happens
+  // when the upstream closes before any content chunk (empty completion,
+  // usage-only chunk, mid-stream error).
+  const ensureMessageStart = (controller: ReadableStreamDefaultController<Uint8Array>) => {
+    if (started) return;
+    started = true;
+    controller.enqueue(
+      encoder.encode(
+        emit("message_start", {
+          type: "message_start",
+          message: {
+            id: messageId,
+            type: "message",
+            role: "assistant",
+            content: [],
+            model: modelPublicId,
+            stop_reason: null,
+            stop_sequence: null,
+            usage: { input_tokens: 0, output_tokens: 0 },
+          },
+        }),
+      ),
+    );
+  };
+
+  // Single finalization path for EOF and [DONE] (previously duplicated).
+  const finalizeStream = (controller: ReadableStreamDefaultController<Uint8Array>) => {
+    if (streamClosed) return;
+    streamClosed = true;
+    if (keepaliveTimer) clearInterval(keepaliveTimer);
+    ensureMessageStart(controller);
+    if (currentBlockType != null) {
+      controller.enqueue(
+        encoder.encode(
+          emit("content_block_stop", { type: "content_block_stop", index: blockIndex }),
+        ),
+      );
+      currentBlockType = null;
+    }
+    flushToolBlocks(controller);
+    controller.enqueue(
+      encoder.encode(
+        emit("message_delta", {
+          type: "message_delta",
+          delta: { stop_reason: stopReason ?? "end_turn", stop_sequence: null },
+          usage: { input_tokens: inputTokens, output_tokens: outputTokens },
+        }),
+      ),
+    );
+    controller.enqueue(encoder.encode(emit("message_stop", { type: "message_stop" })));
+    controller.close();
+  };
+
+  // Upstream routers (9router included) surface provider failures mid-stream
+  // as an error JSON chunk followed by close. Emit an Anthropic `error` event
+  // instead of silently finishing a truncated message with stop_reason
+  // "end_turn".
+  const failStream = (
+    controller: ReadableStreamDefaultController<Uint8Array>,
+    error: { message?: string; type?: string; code?: string | null },
+  ) => {
+    if (streamClosed) return;
+    streamClosed = true;
+    if (keepaliveTimer) clearInterval(keepaliveTimer);
+    ensureMessageStart(controller);
+    if (currentBlockType != null) {
+      controller.enqueue(
+        encoder.encode(
+          emit("content_block_stop", { type: "content_block_stop", index: blockIndex }),
+        ),
+      );
+      currentBlockType = null;
+    }
+    controller.enqueue(
+      encoder.encode(
+        emit("error", {
+          type: "error",
+          error: {
+            type: error.type ?? "api_error",
+            message: error.message ?? "Upstream error",
+          },
+        }),
+      ),
+    );
+    controller.close();
+  };
+
   return new ReadableStream<Uint8Array>({
     start(controller) {
       // Cloudflare proxy timeout is 100-120s. Send pings every 30s
@@ -454,35 +561,7 @@ export function transformOpenAIStreamToAnthropic(
         const { value, done } = await reader.read();
         // FIX #14: Skip if stream already closed (e.g. by [DONE] event).
         if (done || streamClosed) {
-          if (!streamClosed) {
-            streamClosed = true;
-            if (keepaliveTimer) clearInterval(keepaliveTimer);
-            // Finish up — close any open block, flush buffered tool blocks, then
-            // emit final events.
-            if (currentBlockType != null) {
-              controller.enqueue(
-                encoder.encode(
-                  emit("content_block_stop", {
-                    type: "content_block_stop",
-                    index: blockIndex,
-                  }),
-                ),
-              );
-              currentBlockType = null;
-            }
-            flushToolBlocks(controller);
-            controller.enqueue(
-              encoder.encode(
-                emit("message_delta", {
-                  type: "message_delta",
-                  delta: { stop_reason: stopReason ?? "end_turn", stop_sequence: null },
-                  usage: { input_tokens: inputTokens, output_tokens: outputTokens },
-                }),
-              ),
-            );
-            controller.enqueue(encoder.encode(emit("message_stop", { type: "message_stop" })));
-          }
-          controller.close();
+          finalizeStream(controller);
           return;
         }
 
@@ -500,35 +579,7 @@ export function transformOpenAIStreamToAnthropic(
           const joined = dataLines.join("\n");
           if (joined === "[DONE]") {
             // FIX #14: Only emit close events once.
-            if (!streamClosed) {
-              streamClosed = true;
-              if (keepaliveTimer) clearInterval(keepaliveTimer);
-              // Close any open content block, flush buffered tool blocks, then
-              // emit final events.
-              if (currentBlockType != null) {
-                controller.enqueue(
-                  encoder.encode(
-                    emit("content_block_stop", {
-                      type: "content_block_stop",
-                      index: blockIndex,
-                    }),
-                  ),
-                );
-                currentBlockType = null;
-              }
-              flushToolBlocks(controller);
-              controller.enqueue(
-                encoder.encode(
-                  emit("message_delta", {
-                    type: "message_delta",
-                    delta: { stop_reason: stopReason ?? "end_turn", stop_sequence: null },
-                    usage: { input_tokens: inputTokens, output_tokens: outputTokens },
-                  }),
-                ),
-              );
-              controller.enqueue(encoder.encode(emit("message_stop", { type: "message_stop" })));
-              controller.close();
-            }
+            finalizeStream(controller);
             return;
           }
           let chunk: unknown;
@@ -536,6 +587,16 @@ export function transformOpenAIStreamToAnthropic(
             chunk = JSON.parse(joined);
           } catch {
             continue;
+          }
+          // Mid-stream upstream failure (9router surfaces provider errors as an
+          // error JSON chunk): emit an Anthropic error event instead of
+          // silently finishing a truncated message.
+          const upstreamError = (chunk as {
+            error?: { message?: string; type?: string; code?: string | null };
+          }).error;
+          if (upstreamError) {
+            failStream(controller, upstreamError);
+            return;
           }
           const events = translateChunk(
             chunk as OpenAIStreamChunk,

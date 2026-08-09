@@ -105,27 +105,41 @@ function convertResponsesInput(input: ResponsesRequestBody["input"]): OpenAIMess
     return [{ role: "user", content: input }];
   }
   const messages: OpenAIMessage[] = [];
+  // Parallel tool calls arrive as separate consecutive function_call items in
+  // Responses history. OpenAI-compatible upstreams reject consecutive
+  // assistant messages carrying tool_calls ("assistant message with tool_calls
+  // must be followed by tool messages responding to each call"), so buffer
+  // consecutive function_call items into a SINGLE assistant message — the same
+  // strategy as 9router's openai-responses translator.
+  let pendingAssistant: OpenAIMessage | null = null;
+  const flushPendingAssistant = () => {
+    if (pendingAssistant) {
+      messages.push(pendingAssistant);
+      pendingAssistant = null;
+    }
+  };
   for (const item of input) {
     // Items with a role but no type are treated as plain messages (some
     // clients, e.g. Droid, omit the type).
     const type = item.type ?? (item.role ? "message" : undefined);
     if (type === "message") {
+      flushPendingAssistant();
       const role = (item.role as OpenAIMessage["role"]) ?? "user";
       messages.push({ role, content: convertMessageContent(item.content) });
     } else if (type === "function_call") {
-      // Assistant tool call.
-      messages.push({
-        role: "assistant",
-        content: "",
-        tool_calls: [
-          {
-            id: item.call_id ?? item.id ?? "",
-            type: "function",
-            function: { name: item.name ?? "", arguments: item.arguments ?? "" },
-          },
-        ],
+      // Assistant tool call — accumulate into the pending assistant message.
+      if (!pendingAssistant) {
+        pendingAssistant = { role: "assistant", content: "", tool_calls: [] };
+      }
+      (pendingAssistant.tool_calls as Array<Record<string, unknown>>).push({
+        id: item.call_id ?? item.id ?? "",
+        type: "function",
+        function: { name: item.name ?? "", arguments: item.arguments ?? "" },
       });
     } else if (type === "function_call_output") {
+      // Tool results must directly follow the assistant message carrying the
+      // matching tool_calls.
+      flushPendingAssistant();
       messages.push({
         role: "tool",
         tool_call_id: item.call_id ?? "",
@@ -134,7 +148,17 @@ function convertResponsesInput(input: ResponsesRequestBody["input"]): OpenAIMess
     }
     // reasoning / other item types are skipped.
   }
+  flushPendingAssistant();
   return messages;
+}
+
+/**
+ * Providers occasionally omit tool-call ids (or split them across chunks).
+ * Emitting an empty call_id breaks clients that must echo it back in
+ * function_call_output, so synthesize one (9router's fallbackToolCallId).
+ */
+function fallbackCallId(id: string): string {
+  return id || `call_${crypto.randomUUID().replace(/-/g, "").slice(0, 24)}`;
 }
 
 function convertMessageContent(
@@ -194,8 +218,8 @@ export function openAIToResponses(o: OpenAICompletionLike): Record<string, unkno
     }>) {
       output.push({
         type: "function_call",
-        id: `fc_${(tc.id ?? Date.now().toString(36)).replace(/^call_/, "")}`,
-        call_id: tc.id ?? "",
+        id: `fc_${fallbackCallId(tc.id ?? "").replace(/^call_/, "")}`,
+        call_id: fallbackCallId(tc.id ?? ""),
         name: tc.function?.name ?? "",
         arguments: tc.function?.arguments ?? "",
         status: "completed",
@@ -285,8 +309,8 @@ export function transformOpenAIStreamToResponses(
     for (const [, fc] of [...fnCalls.entries()].sort((a, b) => a[0] - b[0])) {
       output.push({
         type: "function_call",
-        id: `fc_${fc.id.replace(/^call_/, "")}`,
-        call_id: fc.id,
+        id: `fc_${(fallbackCallId(fc.id)).replace(/^call_/, "")}`,
+        call_id: fallbackCallId(fc.id),
         name: fc.name,
         arguments: fc.args,
         status: "completed",
@@ -388,6 +412,7 @@ export function transformOpenAIStreamToResponses(
     // If a text item exists it occupies output_index 0; function calls follow.
     outputIndex = textAcc.length > 0 ? 1 : 0;
     for (const [, fc] of [...fnCalls.entries()].sort((a, b) => a[0] - b[0])) {
+      const callId = fallbackCallId(fc.id);
       controller.enqueue(
         encoder.encode(
           emit("response.output_item.added", {
@@ -395,8 +420,8 @@ export function transformOpenAIStreamToResponses(
             output_index: outputIndex,
             item: {
               type: "function_call",
-              id: `fc_${fc.id.replace(/^call_/, "")}`,
-              call_id: fc.id,
+              id: `fc_${callId.replace(/^call_/, "")}`,
+              call_id: callId,
               name: fc.name,
               arguments: "",
               status: "in_progress",
@@ -408,7 +433,7 @@ export function transformOpenAIStreamToResponses(
         encoder.encode(
           emit("response.function_call_arguments.done", {
             type: "response.function_call_arguments.done",
-            item_id: `fc_${fc.id.replace(/^call_/, "")}`,
+            item_id: `fc_${callId.replace(/^call_/, "")}`,
             output_index: outputIndex,
             arguments: fc.args,
           }),
@@ -421,8 +446,8 @@ export function transformOpenAIStreamToResponses(
             output_index: outputIndex,
             item: {
               type: "function_call",
-              id: `fc_${fc.id.replace(/^call_/, "")}`,
-              call_id: fc.id,
+              id: `fc_${callId.replace(/^call_/, "")}`,
+              call_id: callId,
               name: fc.name,
               arguments: fc.args,
               status: "completed",
@@ -442,6 +467,35 @@ export function transformOpenAIStreamToResponses(
     flushFunctionCalls(controller);
     controller.enqueue(
       encoder.encode(emit("response.completed", { type: "response.completed", response: buildFinalResponse() })),
+    );
+    controller.close();
+  };
+
+  // Upstream routers (9router included) surface provider failures mid-stream
+  // as an error JSON chunk followed by close. Emit a proper failed response
+  // instead of silently finishing a truncated "completed" response.
+  const failWithError = (
+    controller: ReadableStreamDefaultController<Uint8Array>,
+    error: { message?: string; type?: string; code?: string | number | null },
+  ) => {
+    if (closed) return;
+    closed = true;
+    closeTextItem(controller);
+    const errorBody = {
+      code: error.code ?? null,
+      message: error.message ?? "Upstream error",
+      type: error.type ?? "upstream_error",
+    };
+    controller.enqueue(
+      encoder.encode(emit("error", { type: "error", error: errorBody })),
+    );
+    controller.enqueue(
+      encoder.encode(
+        emit("response.failed", {
+          type: "response.failed",
+          response: { ...baseResponse("failed"), error: errorBody },
+        }),
+      ),
     );
     controller.close();
   };
@@ -493,11 +547,18 @@ export function transformOpenAIStreamToResponses(
               finish_reason?: string | null;
             }>;
             usage?: { prompt_tokens?: number; completion_tokens?: number };
+            error?: { message?: string; type?: string; code?: string | number | null };
           };
           try {
             chunk = JSON.parse(joined);
           } catch {
             continue;
+          }
+          // Mid-stream upstream failure: surface it instead of finishing a
+          // truncated "completed" response.
+          if (chunk.error) {
+            failWithError(controller, chunk.error);
+            return;
           }
           // Usage-only final chunk.
           if (chunk.usage && (!chunk.choices || chunk.choices.length === 0)) {
