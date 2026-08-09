@@ -31,8 +31,9 @@ export type ImageInputPolicy =
   | "reject_error";
 
 export interface ModelPricing {
-  // Price per single token in USD (e.g. 0.000003 = $3/1M tokens).
-  // For image/tts/stt/rerank, use perUnit / perImage / perMinute / perSecond as needed.
+  // USD per 1M tokens (e.g. 3 = $3 per 1M tokens). Numerically this equals
+  // micro-USD per single token, so `tokens * per1M` yields micro-USD directly.
+  // For image/tts/stt/rerank, use perUnit (e.g. per image, per second).
   per1MInput?: number;
   per1MOutput?: number;
   /**

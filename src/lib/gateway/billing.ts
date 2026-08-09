@@ -72,6 +72,32 @@ export function estimateInputTokens(body: ReservableBody): number {
   }).length / 4));
 }
 
+/**
+ * Output budget reserved when a request omits max_tokens /
+ * max_completion_tokens. Without a default, the hold only covers input tokens
+ * and any generated output settles as uncollectible outstanding debt — the
+ * platform has already paid the upstream for those tokens. Capped so expensive
+ * models don't lock a full context window's worth of credits per request.
+ */
+export const DEFAULT_OUTPUT_TOKEN_ESTIMATE = 4096;
+
+/**
+ * Return a reservation body with a default output budget applied when the
+ * client didn't specify one. Only affects the hold — the forwarded request is
+ * unchanged.
+ */
+export function withDefaultOutputBudget(
+  body: ReservableBody,
+  maxContextTokens?: number | null,
+): ReservableBody {
+  if (body.max_tokens != null || body.max_completion_tokens != null) return body;
+  const context =
+    typeof maxContextTokens === "number" && maxContextTokens > 0
+      ? maxContextTokens
+      : DEFAULT_OUTPUT_TOKEN_ESTIMATE;
+  return { ...body, max_tokens: Math.min(context, DEFAULT_OUTPUT_TOKEN_ESTIMATE) };
+}
+
 export function validateReservationMode(params: ReservationMode): void {
   const estimated = params.model !== undefined && params.body !== undefined;
   const partialEstimated = (params.model !== undefined) !== (params.body !== undefined);
@@ -469,4 +495,29 @@ export async function finalizeBilling(
   }
   if (actual < 0n) throw new RangeError("Actual amount must be non-negative");
   await settleReservation(reservationId, actual, usage);
+}
+
+/**
+ * Refund every unfinalized reservation belonging to an API key.
+ *
+ * Must run BEFORE the key row is deleted: `billing_reservation.api_key_id`
+ * is ON DELETE CASCADE, so deleting the key would silently destroy open
+ * reservations whose hold was already debited from the user's balance —
+ * money that could then never be refunded or settled.
+ *
+ * Streams still in flight settle later as no-ops (reservation already
+ * finalized); their upstream cost is absorbed, matching the reclaim path.
+ */
+export async function refundOpenReservationsForApiKey(apiKeyId: string): Promise<number> {
+  const open = await db.select({ id: billingReservations.id })
+    .from(billingReservations)
+    .where(and(
+      eq(billingReservations.apiKeyId, apiKeyId),
+      isNull(billingReservations.finalizedAt),
+    ));
+  const now = new Date();
+  for (const { id } of open) {
+    await settleReservation(id, 0n, null, now);
+  }
+  return open.length;
 }

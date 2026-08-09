@@ -7,7 +7,8 @@ import { db } from "@/lib/db";
 import { apiKeys, models } from "@/lib/db/schema";
 import { requireSession } from "@/lib/auth/session";
 import { createId, generateApiKey } from "@/lib/id";
-import { hashApiKey, MAX_RPM_LIMIT } from "@/lib/gateway/api-key";
+import { hashApiKey, MAX_RPM_LIMIT, DEFAULT_KEY_RPM_LIMIT } from "@/lib/gateway/api-key";
+import { refundOpenReservationsForApiKey } from "@/lib/gateway/billing";
 
 /* -------------------------------------------------------------------------- */
 /*                                     GET                                    */
@@ -97,7 +98,8 @@ export async function createApiKey(input: z.infer<typeof CreateSchema>) {
     name: parsed.data.name,
     keyHash,
     keyPrefix: prefix,
-    rpmLimit: parsed.data.rpmLimit ?? null,
+    // Never create unlimited keys: omitting a limit applies the default ceiling.
+    rpmLimit: parsed.data.rpmLimit ?? DEFAULT_KEY_RPM_LIMIT,
     monthlyBudget,
     allowedModels,
     enabled: true,
@@ -116,9 +118,27 @@ export async function createApiKey(input: z.infer<typeof CreateSchema>) {
 
 export async function deleteApiKey(id: string) {
   const session = await requireSession();
+  const parsed = z.string().min(1).safeParse(id);
+  if (!parsed.success) {
+    return { ok: false, error: { id: ["Invalid key id"] } };
+  }
+  // Ownership check first — never settle reservations for someone else's key.
+  const [owned] = await db
+    .select({ id: apiKeys.id })
+    .from(apiKeys)
+    .where(and(eq(apiKeys.id, parsed.data), eq(apiKeys.userId, session.user.id)))
+    .limit(1);
+  if (!owned) {
+    return { ok: false, error: { id: ["API key not found"] } };
+  }
+  // Refund all open reservations BEFORE deleting the key row: the
+  // billing_reservation.api_key_id FK is ON DELETE CASCADE, so deleting first
+  // would silently destroy unsettled holds whose money was already debited
+  // from the user's balance (permanent loss, no refund path).
+  await refundOpenReservationsForApiKey(owned.id);
   await db
     .delete(apiKeys)
-    .where(and(eq(apiKeys.id, id), eq(apiKeys.userId, session.user.id)));
+    .where(and(eq(apiKeys.id, owned.id), eq(apiKeys.userId, session.user.id)));
   revalidatePath("/dashboard/keys");
   revalidatePath("/console/api-keys");
   return { ok: true };

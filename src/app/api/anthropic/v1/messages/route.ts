@@ -7,7 +7,7 @@ import {
   enforceCapabilities,
   type OpenAIChatBody,
 } from "@/lib/gateway/capability-enforcer";
-import { createSettlementController, extendBillingLease, finalizeBilling, preflightBilling } from "@/lib/gateway/billing";
+import { createLeaseExtender, createSettlementController, finalizeBilling, preflightBilling } from "@/lib/gateway/billing";
 import { callUpstream, callUpstreamStream } from "@/lib/gateway/openai";
 import {
   ensureStreamUsage,
@@ -93,12 +93,15 @@ export async function POST(request: NextRequest) {
     return anthropicErrorResponse(enforce.status, enforce.message);
   }
 
-  // 6) Preflight credit/budget
+  // 6) Preflight credit/budget. Estimate from the translated OpenAI body: it
+  // includes the injected max_tokens default (8192) that Anthropic clients
+  // omitting max_tokens would otherwise leave unreserved, and the system
+  // prompt folded into messages.
   const pre = await preflightBilling({
     userId: auth.user.id,
     apiKeyId: auth.apiKey.id,
     model,
-    body: aBody,
+    body: openaiBody,
   });
   if (!pre.ok) return anthropicErrorResponse(pre.status, pre.message);
   const reservationId = pre.reservation.id;
@@ -398,9 +401,17 @@ async function handleStream(params: {
   }
 
   // Capture the final usage from the upstream OpenAI SSE for metering.
-  let finalUsage = { promptTokens: 0, completionTokens: 0 };
+  let finalUsage = { promptTokens: 0, completionTokens: 0, cachedTokens: 0 };
+  // Whether any content chunk was actually delivered. When the stream ends
+  // without a usage report we only charge the reserved estimate if content was
+  // delivered; an empty stream (early cancel, dead upstream) gets refunded —
+  // same policy as /v1/chat/completions.
+  let sawContent = false;
   const decoder = new TextDecoder();
   let sseAccum = "";
+  // Throttled (60s) lease extension — per-chunk extension would issue a DB
+  // write for every SSE chunk.
+  const extendLease = createLeaseExtender(reservationId);
 
   const settlement = createSettlementController(async (usage: typeof finalUsage) => {
     await finalizeBilling(reservationId, {
@@ -415,7 +426,7 @@ async function handleStream(params: {
       latencyMs: Date.now() - startMs,
       clientIp,
       model,
-    }, { chargeReserved: usage.promptTokens === 0 && usage.completionTokens === 0 });
+    }, { chargeReserved: usage.promptTokens === 0 && usage.completionTokens === 0 && sawContent });
   });
   const recordFinalUsage = () => {
     billingState.canRelease = false;
@@ -424,7 +435,11 @@ async function handleStream(params: {
 
   const transformStream = new TransformStream<Uint8Array, Uint8Array>({
     async transform(chunk, controller) {
-      await extendBillingLease(reservationId);
+      // Best-effort lease extension: a transient DB failure must not error the
+      // client stream mid-generation.
+      void extendLease().catch((err) =>
+        console.error(`[${requestId}] [anthropic lease extension]`, err),
+      );
       // Pass chunk through untouched, but also inspect for usage.
       try {
         // FIX #1: Use stream-safe decoder to handle multi-byte UTF-8 splits.
@@ -446,12 +461,32 @@ async function handleStream(params: {
           if (joined === "[DONE]") continue;
           try {
             const obj = JSON.parse(joined) as {
-              usage?: { prompt_tokens?: number; completion_tokens?: number };
+              choices?: unknown[];
+              usage?: {
+                prompt_tokens?: number;
+                completion_tokens?: number;
+                prompt_tokens_details?: {
+                  cached_tokens?: number;
+                  cache_creation_tokens?: number;
+                };
+              };
             };
+            // Content-bearing chunks have a non-empty `choices` array (the
+            // final usage-only chunk has `choices: []`).
+            if (Array.isArray(obj.choices) && obj.choices.length > 0) {
+              sawContent = true;
+            }
             if (obj.usage) {
+              const details = obj.usage.prompt_tokens_details;
               finalUsage = {
                 promptTokens: Number(obj.usage.prompt_tokens ?? 0) || 0,
                 completionTokens: Number(obj.usage.completion_tokens ?? 0) || 0,
+                // The upstream's "cached tokens" bucket = cache read + cache
+                // write. Dropping this bills cached prompts at the full input
+                // rate (systematic overcharge for cached agents).
+                cachedTokens:
+                  (Number(details?.cached_tokens ?? 0) || 0) +
+                  (Number(details?.cache_creation_tokens ?? 0) || 0),
               };
             }
           } catch {

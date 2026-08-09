@@ -7,7 +7,7 @@ import {
   enforceCapabilities,
   type OpenAIChatBody,
 } from "@/lib/gateway/capability-enforcer";
-import { createLeaseExtender, createSettlementController, finalizeBilling, preflightBilling } from "@/lib/gateway/billing";
+import { createLeaseExtender, createSettlementController, finalizeBilling, preflightBilling, withDefaultOutputBudget } from "@/lib/gateway/billing";
 import { callUpstream, callUpstreamStream } from "@/lib/gateway/openai";
 import {
   buildCannedCompletionResponse,
@@ -23,6 +23,23 @@ import {
 } from "@/lib/gateway/response";
 import { openAIChatRequestSchema } from "@/lib/gateway/validation";
 import { internalErrorMessage, safeUpstreamMessage } from "@/lib/gateway/errors";
+
+/* -------------------------------------------------------------------------- */
+/*                              CORS preflight                                  */
+/* -------------------------------------------------------------------------- */
+
+/** CORS preflight for browser-based agents (this route had POST only). */
+export function OPTIONS() {
+  return new NextResponse(null, {
+    status: 204,
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+      "Access-Control-Allow-Headers": "*",
+      "Access-Control-Max-Age": "86400",
+    },
+  });
+}
 
 /* -------------------------------------------------------------------------- */
 /*                              GET /v1/models                                */
@@ -99,7 +116,9 @@ export async function POST(request: NextRequest) {
     userId: auth.user.id,
     apiKeyId: auth.apiKey.id,
     model,
-    body,
+    // Requests without max_tokens would otherwise reserve zero output tokens
+    // and settle any generated output as uncollectible debt.
+    body: withDefaultOutputBudget(body, model.capabilities?.maxContextTokens),
   });
   if (!pre.ok) return openaiErrorResponse(pre.status, pre.message);
   const reservationId = pre.reservation.id;
