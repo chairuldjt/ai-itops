@@ -41,10 +41,27 @@ const nextConfig: NextConfig = {
 
   // Rewrite external-facing gateway URLs to internal Next.js route handlers.
   // This lets clients point at the canonical paths:
-  //   POST https://your-domain/v1/chat/completions
-  //   GET  https://your-domain/v1/models
+  //   POST https://your-domain/v1/chat/completions   (OpenAI)
+  //   GET  https://your-domain/v1/models             (OpenAI)
+  //   POST https://your-domain/v1/messages           (Anthropic / Claude Code)
+  // The specific Anthropic rules must come BEFORE the /v1 wildcard so they win.
   async rewrites() {
     return [
+      // Anthropic Messages API (Claude Code sets ANTHROPIC_BASE_URL=.../v1 and
+      // POSTs {base}/messages -> /v1/messages). Also tolerate a doubled /v1 in
+      // case a client appends /v1/messages to a base URL that already ends in /v1.
+      {
+        source: "/v1/messages",
+        destination: "/api/anthropic/v1/messages",
+      },
+      {
+        source: "/v1/v1/messages",
+        destination: "/api/anthropic/v1/messages",
+      },
+      {
+        source: "/anthropic/v1/:path*",
+        destination: "/api/anthropic/v1/:path*",
+      },
       {
         source: "/v1/:path*",
         destination: "/api/v1/:path*",

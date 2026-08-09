@@ -25,18 +25,37 @@ export async function resolveModel(
     return { ok: true, model: cached.model };
   }
 
-  const rows = await db
+  const rows = await lookupByPublicId(publicId);
+  if (rows.length === 0) {
+    // Fallback: some clients (e.g. Claude Code via ANTHROPIC_DEFAULT_*_MODEL)
+    // append a context-window suffix like "model[1m]". Retry without it so the
+    // admin can register the base model name.
+    const stripped = publicId.replace(/\[[^\]]*\]$/, "");
+    if (stripped !== publicId) {
+      const retry = await lookupByPublicId(stripped);
+      if (retry.length > 0) {
+        return finishResolve(retry[0], publicId, now);
+      }
+    }
+    return { ok: false, status: 404, message: `Model '${publicId}' not found` };
+  }
+  return finishResolve(rows[0], publicId, now);
+}
+
+function lookupByPublicId(publicId: string) {
+  return db
     .select()
     .from(models)
     .where(eq(models.publicId, publicId))
     .limit(1);
+}
 
-  if (rows.length === 0) {
-    return { ok: false, status: 404, message: `Model '${publicId}' not found` };
-  }
-  const model = rows[0];
+function finishResolve(
+  model: Model,
+  publicId: string,
+  now: number,
+): { ok: true; model: Model } | { ok: false; status: number; message: string } {
   modelCache.set(publicId, { model, expiry: now + CACHE_TTL_MS });
-
   if (!model.enabled) {
     return {
       ok: false,

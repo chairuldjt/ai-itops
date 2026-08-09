@@ -46,11 +46,6 @@ function isAdminPath(pathname: string): boolean {
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Anthropic compatibility has been removed — return a clean 404.
-  if (pathname.startsWith("/anthropic") || pathname.startsWith("/api/anthropic")) {
-    return new NextResponse("Not Found", { status: 404 });
-  }
-
   // FIX #3: Strict static asset check — only known extensions, not any dot.
   const extMatch = pathname.match(STATIC_EXTENSION_RE);
   const isStaticAsset = extMatch
@@ -63,6 +58,10 @@ export async function proxy(request: NextRequest) {
     pathname.startsWith("/favicon") ||
     pathname.startsWith("/api/v1") ||
     pathname.startsWith("/v1") ||
+    // Anthropic Messages API is authenticated by API key in the handler, not by
+    // session cookie, so it must pass through the proxy unauthenticated.
+    pathname.startsWith("/api/anthropic") ||
+    pathname.startsWith("/anthropic") ||
     isStaticAsset;
 
   if (isPublic) return NextResponse.next();
