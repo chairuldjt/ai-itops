@@ -396,6 +396,45 @@ export function transformOpenAIStreamToAnthropic(
   const emit = (event: string, data: unknown): string =>
     `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
 
+  // Buffered tool calls keyed by OpenAI tool_call index. They are emitted as
+  // complete blocks when the stream finishes, which is robust for parallel tool
+  // calls (incremental emission can interleave arguments across blocks and
+  // garble the tool names/inputs the client sees).
+  const pendingTools = new Map<number, { id: string; name: string; args: string }>();
+  const flushToolBlocks = (controller: ReadableStreamDefaultController<Uint8Array>) => {
+    if (pendingTools.size === 0) return;
+    const sorted = [...pendingTools.entries()].sort((a, b) => a[0] - b[0]);
+    for (const [, tool] of sorted) {
+      blockIndex += 1;
+      controller.enqueue(
+        encoder.encode(
+          emit("content_block_start", {
+            type: "content_block_start",
+            index: blockIndex,
+            content_block: { type: "tool_use", id: tool.id, name: tool.name, input: {} },
+          }),
+        ),
+      );
+      if (tool.args) {
+        controller.enqueue(
+          encoder.encode(
+            emit("content_block_delta", {
+              type: "content_block_delta",
+              index: blockIndex,
+              delta: { type: "input_json_delta", partial_json: tool.args },
+            }),
+          ),
+        );
+      }
+      controller.enqueue(
+        encoder.encode(
+          emit("content_block_stop", { type: "content_block_stop", index: blockIndex }),
+        ),
+      );
+    }
+    pendingTools.clear();
+  };
+
   return new ReadableStream<Uint8Array>({
     start(controller) {
       // Cloudflare proxy timeout is 100-120s. Send pings every 30s
@@ -418,7 +457,8 @@ export function transformOpenAIStreamToAnthropic(
           if (!streamClosed) {
             streamClosed = true;
             if (keepaliveTimer) clearInterval(keepaliveTimer);
-            // Finish up — close any open block and emit final events.
+            // Finish up — close any open block, flush buffered tool blocks, then
+            // emit final events.
             if (currentBlockType != null) {
               controller.enqueue(
                 encoder.encode(
@@ -428,7 +468,9 @@ export function transformOpenAIStreamToAnthropic(
                   }),
                 ),
               );
+              currentBlockType = null;
             }
+            flushToolBlocks(controller);
             controller.enqueue(
               encoder.encode(
                 emit("message_delta", {
@@ -461,7 +503,8 @@ export function transformOpenAIStreamToAnthropic(
             if (!streamClosed) {
               streamClosed = true;
               if (keepaliveTimer) clearInterval(keepaliveTimer);
-              // Close any open content block before final events
+              // Close any open content block, flush buffered tool blocks, then
+              // emit final events.
               if (currentBlockType != null) {
                 controller.enqueue(
                   encoder.encode(
@@ -471,7 +514,9 @@ export function transformOpenAIStreamToAnthropic(
                     }),
                   ),
                 );
+                currentBlockType = null;
               }
+              flushToolBlocks(controller);
               controller.enqueue(
                 encoder.encode(
                   emit("message_delta", {
@@ -520,6 +565,21 @@ export function transformOpenAIStreamToAnthropic(
           if (events.state.inputTokens != null) inputTokens = events.state.inputTokens;
           if (events.state.outputTokens != null) outputTokens = events.state.outputTokens;
           if (events.state.stopReason != null) stopReason = events.state.stopReason;
+          // Accumulate buffered tool calls (emitted as complete blocks at end).
+          for (const td of events.toolDeltas) {
+            const existing = pendingTools.get(td.index);
+            if (!existing) {
+              pendingTools.set(td.index, {
+                id: td.id ?? "",
+                name: td.name ?? "",
+                args: td.arguments ?? "",
+              });
+            } else {
+              if (td.id) existing.id = td.id;
+              if (td.name) existing.name = td.name;
+              if (td.arguments) existing.args += td.arguments;
+            }
+          }
         }
       } catch (err) {
         if (keepaliveTimer) clearInterval(keepaliveTimer);
@@ -590,12 +650,21 @@ function mapFinishReason(reason: string | null): AnthropicStopReason {
   return "end_turn";
 }
 
+/** A single tool_call delta collected from an upstream OpenAI chunk. */
+interface ToolDelta {
+  index: number;
+  id?: string;
+  name?: string;
+  arguments?: string;
+}
+
 function translateChunk(
   chunk: OpenAIStreamChunk,
   state: TranslationState,
-): { lines: string[]; state: TranslationStateUpdate } {
+): { lines: string[]; state: TranslationStateUpdate; toolDeltas: ToolDelta[] } {
   const lines: string[] = [];
   const next: TranslationStateUpdate = {};
+  const toolDeltas: ToolDelta[] = [];
 
   const emit = (event: string, data: unknown) =>
     `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
@@ -606,7 +675,7 @@ function translateChunk(
   if (chunk.usage && (!chunk.choices || chunk.choices.length === 0)) {
     if (chunk.usage.prompt_tokens != null) next.inputTokens = chunk.usage.prompt_tokens;
     if (chunk.usage.completion_tokens != null) next.outputTokens = chunk.usage.completion_tokens;
-    return { lines, state: next };
+    return { lines, state: next, toolDeltas };
   }
 
   // Emit message_start on first chunk
@@ -630,7 +699,7 @@ function translateChunk(
   }
 
   const choice = chunk.choices?.[0];
-  if (!choice) return { lines, state: next };
+  if (!choice) return { lines, state: next, toolDeltas };
 
   // Track finish_reason from upstream and map to Anthropic stop_reason
   if (choice.finish_reason) {
@@ -712,51 +781,18 @@ function translateChunk(
       state.outputTokens + Math.max(1, Math.ceil(delta.content.length / 4));
   }
 
-  // Tool calls
+  // Tool calls — buffer them; they are emitted as complete blocks when the
+  // stream finishes (same strategy as 9router). Incremental emission is fragile
+  // for parallel tool calls (arguments can land on the wrong block), so we
+  // accumulate id/name/arguments per tool index and flush at the end.
   if (Array.isArray(delta.tool_calls)) {
     for (const tc of delta.tool_calls) {
-      if (tc.id && state.toolCallId !== tc.id) {
-        // Close previous block if open
-        if (state.currentBlockType != null) {
-          lines.push(
-            emit("content_block_stop", {
-              type: "content_block_stop",
-              index: state.blockIndex,
-            }),
-          );
-        }
-        // Start a new tool_use block — input starts empty, built via input_json_delta
-        const idx = (next.blockIndex ?? state.blockIndex) + 1;
-        lines.push(
-          emit("content_block_start", {
-            type: "content_block_start",
-            index: idx,
-            content_block: {
-              type: "tool_use",
-              id: tc.id,
-              name: tc.function?.name ?? "",
-              input: {},
-            },
-          }),
-        );
-        next.blockIndex = idx;
-        next.currentBlockType = "tool_use";
-        next.toolCallIndex = tc.index;
-        next.toolCallId = tc.id;
-      }
-      // Arguments delta (as raw JSON string)
-      if (tc.function?.arguments) {
-        lines.push(
-          emit("content_block_delta", {
-            type: "content_block_delta",
-            index: next.blockIndex ?? state.blockIndex,
-            delta: {
-              type: "input_json_delta",
-              partial_json: tc.function.arguments,
-            },
-          }),
-        );
-      }
+      toolDeltas.push({
+        index: tc.index,
+        id: tc.id,
+        name: tc.function?.name,
+        arguments: tc.function?.arguments,
+      });
     }
   }
 
@@ -771,5 +807,5 @@ function translateChunk(
     if (chunk.usage.completion_tokens != null) next.outputTokens = chunk.usage.completion_tokens;
   }
 
-  return { lines, state: next };
+  return { lines, state: next, toolDeltas };
 }
