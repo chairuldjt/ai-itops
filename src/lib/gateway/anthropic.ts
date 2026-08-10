@@ -45,7 +45,7 @@ export type AnthropicContentPart =
       source: { type: "base64"; media_type: string; data: string } | { type: "url"; url: string };
     }
   | { type: "tool_use"; id: string; name: string; input: unknown }
-  | { type: "tool_result"; tool_use_id: string; content: string | AnthropicContentPart[] };
+  | { type: "tool_result"; tool_use_id: string; content?: string | AnthropicContentPart[] | null };
 
 export interface AnthropicTool {
   name: string;
@@ -313,7 +313,7 @@ export function convertUserMessage(m: AnthropicMessage): OpenAIMessage | OpenAIM
   // Mixed content (text + image + tool_result)
   // Tool results must be sent as separate `tool` role messages in OpenAI.
   const textOrImageParts: OpenAIContentPart[] = [];
-  const toolResults: Array<{ id: string; content: string }> = [];
+  const toolResults: Array<{ id: string; content: string | OpenAIContentPart[] }> = [];
 
   for (const part of m.content) {
     if (part.type === "text") {
@@ -325,14 +325,7 @@ export function convertUserMessage(m: AnthropicMessage): OpenAIMessage | OpenAIM
           : (part.source as { url: string }).url;
       textOrImageParts.push({ type: "image_url", image_url: { url } });
     } else if (part.type === "tool_result") {
-      const content =
-        typeof part.content === "string"
-          ? part.content
-          : part.content
-              .filter((p) => p.type === "text")
-              .map((p) => (p as { text: string }).text)
-              .join("\n");
-      toolResults.push({ id: part.tool_use_id, content });
+      toolResults.push({ id: part.tool_use_id, content: convertToolResultContent(part.content) });
     }
   }
 
@@ -341,6 +334,8 @@ export function convertUserMessage(m: AnthropicMessage): OpenAIMessage | OpenAIM
     return toolResults.map((tr) => ({
       role: "tool" as const,
       tool_call_id: tr.id,
+      // Arrays (image-bearing results) are always truthy, so they pass through;
+      // empty strings get the placeholder.
       content: tr.content || EMPTY_TOOL_RESULT_PLACEHOLDER,
     }));
   }
@@ -361,6 +356,41 @@ export function convertUserMessage(m: AnthropicMessage): OpenAIMessage | OpenAIM
 
   // Empty content arrays are rejected by OpenAI-compatible upstreams; send "".
   return { role: "user", content: textOrImageParts.length > 0 ? textOrImageParts : "" };
+}
+
+/**
+ * Convert tool_result content blocks to OpenAI tool-message content.
+ *
+ * Text-only results stay plain strings (maximum upstream compatibility).
+ * Results carrying images become content-part arrays with `image_url`
+ * entries — the OpenAI tool-result vision format. Claude Code's Read tool
+ * returns PNG/JPEG screenshots as nested `image` blocks inside tool_result;
+ * dropping them (the old behavior) left the model unable to see the file.
+ */
+export function convertToolResultContent(
+  content: AnthropicContentPart[] | string | null | undefined,
+): string | OpenAIContentPart[] {
+  if (content == null) return "";
+  if (typeof content === "string") return content;
+  const parts: OpenAIContentPart[] = [];
+  let hasImage = false;
+  for (const p of content) {
+    if (p.type === "text") {
+      parts.push({ type: "text", text: p.text });
+    } else if (p.type === "image") {
+      hasImage = true;
+      const url =
+        p.source.type === "base64"
+          ? `data:${p.source.media_type};base64,${p.source.data}`
+          : (p.source as { url: string }).url;
+      parts.push({ type: "image_url", image_url: { url } });
+    }
+    // Any other nested block type is not representable in a tool message.
+  }
+  if (!hasImage) {
+    return parts.map((p) => (p as { text: string }).text).join("\n");
+  }
+  return parts;
 }
 
 function convertAssistantMessage(m: AnthropicMessage): OpenAIMessage {

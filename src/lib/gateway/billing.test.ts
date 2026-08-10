@@ -120,6 +120,30 @@ test("computeReservationMicroUsd reserves cached tokens conservatively", () => {
   );
 });
 
+test("computeReservationMicroUsd does not inflate holds for bulky base64 images", () => {
+  // A ~2 MB base64 screenshot counts as ~550K chars; at 4 chars/token that
+  // would reserve ~$5 of input per image and 402 users with modest balances.
+  // Vision providers bill images as ~1K tokens regardless of payload size.
+  const textOnly = computeReservationMicroUsd({
+    model,
+    body: { messages: [{ content: [{ type: "text", text: "look at this screenshot" }] }], max_tokens: 10 },
+  });
+  const withImage = computeReservationMicroUsd({
+    model,
+    body: {
+      messages: [{
+        content: [
+          { type: "text", text: "look at this screenshot" },
+          { type: "image_url", image_url: { url: `data:image/png;base64,${"A".repeat(2_000_000)}` } },
+        ],
+      }],
+      max_tokens: 10,
+    },
+  });
+  const delta = withImage > textOnly ? withImage - textOnly : textOnly - withImage;
+  assert.ok(delta < 50n, `image payload inflated the hold by ${delta} micro-USD`);
+});
+
 test("validateReservationMode requires exactly model and body or amount", () => {
   assert.throws(() => validateReservationMode({}), /exactly one/);
   assert.throws(

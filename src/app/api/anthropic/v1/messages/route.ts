@@ -27,7 +27,7 @@ import {
   getClientIp,
   sseLine,
 } from "@/lib/gateway/response";
-import { anthropicRequestSchema } from "@/lib/gateway/validation";
+import { anthropicRequestSchema, formatValidationError } from "@/lib/gateway/validation";
 import { internalErrorMessage, safeUpstreamMessage } from "@/lib/gateway/errors";
 
 /* -------------------------------------------------------------------------- */
@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
   const parsed = await parseJsonBody(request);
   if (!parsed.ok) return anthropicErrorResponse(parsed.status, parsed.message);
   const validated = anthropicRequestSchema.safeParse(parsed.body);
-  if (!validated.success) return anthropicErrorResponse(400, validated.error.issues[0]?.message ?? "Invalid request body");
+  if (!validated.success) return anthropicErrorResponse(400, formatValidationError(validated.error));
   const aBody = validated.data as AnthropicBody;
 
   // Accept-header negotiation: some clients (e.g. Vercel AI SDK) send

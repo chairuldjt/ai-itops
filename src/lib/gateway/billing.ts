@@ -66,10 +66,46 @@ export function monthStartUtc(now = new Date()): Date {
 
 export function estimateInputTokens(body: ReservableBody): number {
   return Math.max(1, Math.ceil(JSON.stringify({
-    messages: body.messages ?? [],
+    messages: withoutInlineMedia(body.messages ?? []),
     system: body.system,
     tools: body.tools,
   }).length / 4));
+}
+
+/**
+ * Inline media would otherwise dominate the char-count estimate: a 1 MB
+ * screenshot is ~1.3M base64 chars ≈ 340K "tokens", while vision models bill
+ * it as roughly a thousand image tokens. The inflated hold can exceed a
+ * user's balance and turn image requests into spurious 402s. Replace bulky
+ * data URLs / audio blobs with a small placeholder before measuring (small
+ * payloads are left untouched to keep estimates stable for text-heavy bodies).
+ */
+function withoutInlineMedia(messages: unknown): unknown {
+  if (!Array.isArray(messages)) return messages;
+  return messages.map((m) => {
+    const content = (m as { content?: unknown } | null)?.content;
+    if (!Array.isArray(content)) return m;
+    let changed = false;
+    const parts = content.map((p) => {
+      if (!p || typeof p !== "object") return p;
+      const part = p as Record<string, unknown>;
+      if (part.type === "image_url" && part.image_url && typeof part.image_url === "object") {
+        const url = (part.image_url as { url?: unknown }).url;
+        if (typeof url === "string" && url.startsWith("data:") && url.length > 1024) {
+          changed = true;
+          return { ...part, image_url: { ...(part.image_url as Record<string, unknown>), url: "data:[inline-image]" } };
+        }
+      } else if (part.type === "input_audio" && part.input_audio && typeof part.input_audio === "object") {
+        const data = (part.input_audio as { data?: unknown }).data;
+        if (typeof data === "string" && data.length > 1024) {
+          changed = true;
+          return { ...part, input_audio: { ...(part.input_audio as Record<string, unknown>), data: "[inline-audio]" } };
+        }
+      }
+      return p;
+    });
+    return changed ? { ...(m as Record<string, unknown>), content: parts } : m;
+  });
 }
 
 /**

@@ -5,10 +5,15 @@ import { z } from "zod";
 // requests aren't rejected; parseJsonBody still caps total body size.
 const TEXT_MAX = 2_000_000;
 const DATA_MAX = 20_000_000;
-const URL_MAX = 2_000_000;
+// image_url.url frequently carries a base64 data URL (client-side uploads),
+// so it gets the media cap, not a plain-URL cap.
+const URL_MAX = DATA_MAX;
 const MESSAGES_MAX = 2048;
 const TOOLS_MAX = 512;
-const VALUE_BYTES_MAX = 2_000_000;
+// Inline media (base64 images/PDFs in content blocks) legitimately reaches
+// tens of megabytes; the 32 MB parseJsonBody cap already bounds memory, so
+// per-string limits must not reject payloads the body cap already accepted.
+const VALUE_BYTES_MAX = DATA_MAX;
 const finite = (min: number, max: number) => z.number().finite().min(min).max(max);
 const text = z.string().max(TEXT_MAX);
 const knownOpenAI = new Set(["text", "image_url", "input_audio"]);
@@ -59,8 +64,12 @@ const anthropicImage = z.object({ type: z.literal("image"), source: z.discrimina
   z.object({ type: z.literal("url"), url: z.string().min(1).max(URL_MAX) }).passthrough(),
 ]) }).passthrough();
 const toolUse = z.object({ type: z.literal("tool_use"), id: z.string().min(1).max(256), name: z.string().min(1).max(256), input: z.unknown().refine(bounded) }).passthrough();
-const nestedPart: z.ZodType = z.lazy(() => z.union([anthropicText, fallback(knownAnthropic)]));
-const toolResult = z.object({ type: z.literal("tool_result"), tool_use_id: z.string().min(1).max(256), content: z.union([text, z.array(nestedPart).max(512)]) }).passthrough();
+// Claude Code's Read tool returns images nested inside tool_result blocks
+// (screenshot/PNG reads). They must validate like top-level image blocks —
+// rejecting them surfaced as 400 "Invalid input" on every image read.
+const nestedPart: z.ZodType = z.lazy(() => z.union([anthropicText, anthropicImage, fallback(knownAnthropic)]));
+// `content` is optional per the Anthropic API (some clients omit/null it).
+const toolResult = z.object({ type: z.literal("tool_result"), tool_use_id: z.string().min(1).max(256), content: z.union([text, z.array(nestedPart).max(512), z.null()]).optional() }).passthrough();
 const anthropicPart = z.union([anthropicText, anthropicImage, toolUse, toolResult, fallback(knownAnthropic)]);
 
 // NOTE: `role` is accepted as any non-empty string (not just user/assistant).
@@ -73,3 +82,20 @@ export const anthropicRequestSchema = z.object({
   system: z.union([text, z.array(z.union([anthropicText, fallback(knownAnthropic)])).max(128)]).optional(), tools, stream: z.boolean().optional(),
   temperature: finite(0, 1).optional(), top_p: finite(0, 1).optional(), top_k: z.number().int().positive().max(1_000_000).optional(), stop_sequences: z.array(z.string().max(1000)).max(16).optional(),
 }).passthrough();
+
+/* -------------------------------------------------------------------------- */
+/*                               Error formatting                             */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Format the first zod issue as a client-facing message. Zod v4's default
+ * issue messages are generic ("Invalid input"), which made 400s impossible
+ * to diagnose; appending the issue path points clients at the offending field.
+ */
+export function formatValidationError(error: z.ZodError): string {
+  const issue = error.issues[0];
+  if (!issue) return "Invalid request body";
+  const message = issue.message || "Invalid request body";
+  const path = issue.path.map(String).join(".");
+  return path ? `${message} (at ${path})` : message;
+}

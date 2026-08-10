@@ -21,7 +21,7 @@ import {
   parseJsonBody,
   getClientIp,
 } from "@/lib/gateway/response";
-import { openAIChatRequestSchema } from "@/lib/gateway/validation";
+import { openAIChatRequestSchema, formatValidationError } from "@/lib/gateway/validation";
 import { internalErrorMessage, safeUpstreamMessage } from "@/lib/gateway/errors";
 
 /* -------------------------------------------------------------------------- */
@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
   const parsed = await parseJsonBody(request);
   if (!parsed.ok) return openaiErrorResponse(parsed.status, parsed.message);
   const validated = openAIChatRequestSchema.safeParse(parsed.body);
-  if (!validated.success) return openaiErrorResponse(400, validated.error.issues[0]?.message ?? "Invalid request body");
+  if (!validated.success) return openaiErrorResponse(400, formatValidationError(validated.error));
   const body = validated.data as OpenAIChatBody;
 
   // 3) Resolve model

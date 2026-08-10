@@ -2,12 +2,16 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  anthropicToOpenAI,
+  convertToolResultContent,
+  convertUserMessage,
   knownToolNameSet,
   openAIToAnthropic,
   repairToolArguments,
   repairToolName,
   transformOpenAIStreamToAnthropic,
 } from "./anthropic";
+import { bodyContainsImage } from "./capability-enforcer";
 import { openAIToResponses, transformOpenAIStreamToResponses } from "./responses";
 
 /* -------------------------------------------------------------------------- */
@@ -79,6 +83,116 @@ test("knownToolNameSet keeps only non-empty string names", () => {
     new Set(["Bash", "Read"]),
   );
 });
+
+/* -------------------------------------------------------------------------- */
+/*            Claude Code Read-tool images (nested in tool_result)            */
+/* -------------------------------------------------------------------------- */
+
+test("convertToolResultContent keeps nested images as image_url parts", () => {
+  const out = convertToolResultContent([
+    { type: "text", text: "Screenshot of the failing test" },
+    { type: "image", source: { type: "base64", media_type: "image/png", data: "AAA" } },
+  ]);
+  assert.deepEqual(out, [
+    { type: "text", text: "Screenshot of the failing test" },
+    { type: "image_url", image_url: { url: "data:image/png;base64,AAA" } },
+  ]);
+});
+
+test("convertToolResultContent maps url image sources", () => {
+  const out = convertToolResultContent([
+    { type: "image", source: { type: "url", url: "https://example.test/shot.png" } },
+  ]);
+  assert.deepEqual(out, [
+    { type: "image_url", image_url: { url: "https://example.test/shot.png" } },
+  ]);
+});
+
+test("convertToolResultContent keeps text-only results as plain strings", () => {
+  assert.equal(
+    convertToolResultContent([
+      { type: "text", text: "line one" },
+      { type: "text", text: "line two" },
+    ]),
+    "line one\nline two",
+  );
+  assert.equal(convertToolResultContent("raw string result"), "raw string result");
+  assert.equal(convertToolResultContent(undefined), "");
+  assert.equal(convertToolResultContent(null), "");
+});
+
+test("convertUserMessage emits an image-bearing tool message (Claude Code Read)", () => {
+  const converted = convertUserMessage({
+    role: "user",
+    content: [
+      {
+        type: "tool_result",
+        tool_use_id: "toolu_read1",
+        content: [
+          { type: "image", source: { type: "base64", media_type: "image/png", data: "AAA" } },
+        ],
+      },
+    ],
+  });
+  assert.ok(Array.isArray(converted));
+  assert.equal(converted.length, 1);
+  assert.equal(converted[0].role, "tool");
+  assert.equal(converted[0].tool_call_id, "toolu_read1");
+  assert.deepEqual(converted[0].content, [
+    { type: "image_url", image_url: { url: "data:image/png;base64,AAA" } },
+  ]);
+});
+
+test("convertUserMessage placeholders empty/omitted tool results", () => {
+  const converted = convertUserMessage({
+    role: "user",
+    content: [{ type: "tool_result", tool_use_id: "toolu_empty", content: [] }],
+  });
+  assert.ok(Array.isArray(converted));
+  assert.equal(converted[0].content, "[No response received]");
+
+  const omitted = convertUserMessage({
+    role: "user",
+    content: [{ type: "tool_result", tool_use_id: "toolu_none" }],
+  });
+  assert.ok(Array.isArray(omitted));
+  assert.equal(omitted[0].content, "[No response received]");
+});
+
+test("anthropicToOpenAI carries Read-tool screenshots to the upstream", () => {
+  const body = anthropicToOpenAI({
+    model: "kimi-k3",
+    messages: [
+      {
+        role: "assistant",
+        content: [
+          { type: "tool_use", id: "toolu_read1", name: "Read", input: { file_path: "shot.png" } },
+        ],
+      },
+      {
+        role: "user",
+        content: [
+          {
+            type: "tool_result",
+            tool_use_id: "toolu_read1",
+            content: [
+              { type: "image", source: { type: "base64", media_type: "image/png", data: "AAA" } },
+            ],
+          },
+        ],
+      },
+    ],
+  });
+  // The tool message directly follows the assistant tool_call and carries the
+  // image, so capability enforcement sees it as an image request.
+  const toolMsg = body.messages.find((m) => m.role === "tool");
+  assert.ok(toolMsg);
+  assert.equal(toolMsg.tool_call_id, "toolu_read1");
+  assert.ok(Array.isArray(toolMsg.content));
+  assert.equal(bodyContainsImage(body), true);
+});
+
+/* -------------------------------------------------------------------------- */
 
 /* -------------------------------------------------------------------------- */
 /*                             repairToolArguments                            */

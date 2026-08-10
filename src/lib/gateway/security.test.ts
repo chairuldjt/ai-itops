@@ -5,7 +5,7 @@ import { extractApiKey, apiKeyAccessDecision, normalizeRpmLimit } from "./api-ke
 import { MAX_JSON_BODY_BYTES, openaiErrorResponse, parseJsonBody } from "./response";
 import { getClient } from "../db";
 import { consumeRateLimit } from "./rate-limit";
-import { openAIChatRequestSchema } from "./validation";
+import { openAIChatRequestSchema, anthropicRequestSchema, formatValidationError } from "./validation";
 import { safeUpstreamMessage, internalErrorMessage } from "./errors";
 import { tokenBucketState } from "./rate-limit";
 
@@ -50,7 +50,7 @@ test("OpenAI schema validates trust-boundary shape and bounds", () => {
   assert.equal(openAIChatRequestSchema.safeParse({ model: "", messages: [] }).success, false);
   assert.equal(openAIChatRequestSchema.safeParse({ model: "m", messages: [{ role: "bad", content: "x" }] }).success, false);
   assert.equal(openAIChatRequestSchema.safeParse({ model: "m", messages: [{ role: "user", content: "x" }], temperature: Infinity }).success, false);
-  assert.equal(openAIChatRequestSchema.safeParse({ model: "m", messages: [{ role: "user", content: [{ type: "image_url", image_url: { url: "x".repeat(2_100_000) } }] }] }).success, false);
+  assert.equal(openAIChatRequestSchema.safeParse({ model: "m", messages: [{ role: "user", content: [{ type: "image_url", image_url: { url: "x".repeat(20_000_001) } }] }] }).success, false);
   assert.equal(openAIChatRequestSchema.safeParse({ model: "m", messages: [{ role: "user", content: "x" }], unknown_safe: true }).success, true);
   assert.equal(openAIChatRequestSchema.safeParse({ model: "m", messages: [{ role: "assistant", content: [{ type: "refusal", refusal: "no" }] }] }).success, true);
   // Nesting deeper than the bounded() depth ceiling must be rejected.
@@ -58,6 +58,47 @@ test("OpenAI schema validates trust-boundary shape and bounds", () => {
   for (let i = 0; i < 14; i++) deep = { d: deep };
   const tooDeep = { type: "future", nested: deep };
   assert.equal(openAIChatRequestSchema.safeParse({ model: "m", messages: [{ role: "user", content: [tooDeep] }] }).success, false);
+});
+
+test("Anthropic schema accepts images nested in tool_result (Claude Code Read)", () => {
+  const toolResultWithImage = (source: unknown) => ({
+    model: "kimi-k3",
+    max_tokens: 1024,
+    messages: [
+      { role: "assistant", content: [{ type: "tool_use", id: "toolu_1", name: "Read", input: {} }] },
+      { role: "user", content: [{ type: "tool_result", tool_use_id: "toolu_1", content: [{ type: "image", source }] }] },
+    ],
+  });
+  assert.equal(
+    anthropicRequestSchema.safeParse(toolResultWithImage({ type: "base64", media_type: "image/png", data: "A".repeat(1000) })).success,
+    true,
+  );
+  assert.equal(
+    anthropicRequestSchema.safeParse(toolResultWithImage({ type: "url", url: "https://example.test/shot.png" })).success,
+    true,
+  );
+  // content may be omitted or null per the Anthropic API.
+  assert.equal(
+    anthropicRequestSchema.safeParse({ model: "m", max_tokens: 1, messages: [{ role: "user", content: [{ type: "tool_result", tool_use_id: "t" }] }] }).success,
+    true,
+  );
+  assert.equal(
+    anthropicRequestSchema.safeParse({ model: "m", max_tokens: 1, messages: [{ role: "user", content: [{ type: "tool_result", tool_use_id: "t", content: null }] }] }).success,
+    true,
+  );
+  // Oversized nested image data is still rejected — but now with a path.
+  const oversized = anthropicRequestSchema.safeParse(toolResultWithImage({ type: "base64", media_type: "image/png", data: "A".repeat(20_000_001) }));
+  assert.equal(oversized.success, false);
+  if (!oversized.success) assert.match(formatValidationError(oversized.error), /at messages/);
+});
+
+test("formatValidationError appends the offending field path", () => {
+  const res = anthropicRequestSchema.safeParse({ model: "m", max_tokens: 1, messages: [{ role: "user", content: [{ type: "tool_result", tool_use_id: "" }] }] });
+  assert.equal(res.success, false);
+  if (!res.success) {
+    const message = formatValidationError(res.error);
+    assert.ok(message.includes("(at "), `expected a path suffix in: ${message}`);
+  }
 });
 
 test("upstream message allowlist passes only structured safe 4xx", () => {
